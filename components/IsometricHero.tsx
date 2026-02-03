@@ -7,12 +7,12 @@ import { useEffect, useRef, useCallback, useState } from "react";
 // ============================================================================
 const CONFIG = {
   // Tile geometry (matching Lua)
-  tileHalfW: 80,
-  tileHalfH: 40,
+  tileHalfW: 90,
+  tileHalfH: 45,
   tileLine: 4,
 
   // Circle (matching Lua)
-  circleR: 24,
+  circleR: 28,
   circleLine: 4,
 
   // Timing (ms) - matching Lua reference
@@ -24,6 +24,10 @@ const CONFIG = {
 
   // Ball movement
   ballMoveDuration: 200,
+
+  // Idle pulse
+  idlePulseDelay: 3000,
+  idlePulseDuration: 600,
 
   // Colors
   tileFill: "#ffffff",
@@ -85,6 +89,7 @@ interface Ball {
   animationStart: number | null;
   dropStart: number | null;
   isDropping: boolean;
+  lastInteraction: number;
 }
 
 // ============================================================================
@@ -213,17 +218,21 @@ export default function IsometricHero() {
   );
 
   // Draw the ball
-  const drawBall = useCallback((ctx: CanvasRenderingContext2D, x: number, y: number) => {
-    ctx.beginPath();
-    ctx.arc(x, y - CONFIG.circleR - 5, CONFIG.circleR, 0, Math.PI * 2);
+  const drawBall = useCallback(
+    (ctx: CanvasRenderingContext2D, x: number, y: number, scale = 1) => {
+      const radius = CONFIG.circleR * scale;
+      ctx.beginPath();
+      ctx.arc(x, y - radius - 5, radius, 0, Math.PI * 2);
 
-    ctx.fillStyle = CONFIG.ballFill;
-    ctx.fill();
+      ctx.fillStyle = CONFIG.ballFill;
+      ctx.fill();
 
-    ctx.strokeStyle = CONFIG.ballStroke;
-    ctx.lineWidth = CONFIG.circleLine;
-    ctx.stroke();
-  }, []);
+      ctx.strokeStyle = CONFIG.ballStroke;
+      ctx.lineWidth = CONFIG.circleLine;
+      ctx.stroke();
+    },
+    []
+  );
 
   // Find which tile was clicked/touched
   const findTileAtPoint = useCallback(
@@ -256,6 +265,8 @@ export default function IsometricHero() {
     (row: number, col: number) => {
       const ball = ballRef.current;
       if (!ball || !interactiveRef.current || isMovingRef.current) return;
+
+      ball.lastInteraction = performance.now();
 
       // Calculate delta
       const dRow = row - ball.row;
@@ -453,7 +464,21 @@ export default function IsometricHero() {
           }
         }
 
-        drawBall(ctx, ball.x, ball.y);
+        let ballScale = 1;
+        if (
+          !ball.isDropping &&
+          ball.animationStart === null &&
+          now - ball.lastInteraction > CONFIG.idlePulseDelay
+        ) {
+          const idleElapsed = (now - ball.lastInteraction - CONFIG.idlePulseDelay) % 2000;
+          if (idleElapsed < CONFIG.idlePulseDuration) {
+            const pulseProgress = idleElapsed / CONFIG.idlePulseDuration;
+            // Simple bounce/pulse: scales up slightly then back down
+            ballScale = 1 + Math.sin(pulseProgress * Math.PI) * 0.15;
+          }
+        }
+
+        drawBall(ctx, ball.x, ball.y, ballScale);
       }
     }
 
@@ -480,6 +505,7 @@ export default function IsometricHero() {
       animationStart: null,
       dropStart: null,
       isDropping: false,
+      lastInteraction: performance.now(),
     };
 
     startTimeRef.current = performance.now();
@@ -507,8 +533,8 @@ export default function IsometricHero() {
   useEffect(() => {
     const updateDimensions = () => {
       if (containerRef.current) {
-        const width = Math.min(containerRef.current.clientWidth, 800);
-        const height = 400;
+        const width = Math.min(containerRef.current.clientWidth, 900);
+        const height = 450;
         setDimensions({ width, height });
       }
     };
