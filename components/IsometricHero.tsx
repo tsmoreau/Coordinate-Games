@@ -139,10 +139,10 @@ export default function IsometricHero() {
       const center = getGridCenter();
       const dx = col - 1;
       const dy = row - 1;
-      // Subtracting half height to better center the vertical diamond
+      // Centering adjustments
       return {
         x: center.x + (dx - dy) * CONFIG.tileHalfW,
-        y: center.y + (dx + dy) * CONFIG.tileHalfH - 45,
+        y: center.y + (dx + dy) * CONFIG.tileHalfH,
       };
     },
     [getGridCenter]
@@ -359,11 +359,8 @@ export default function IsometricHero() {
         return;
 
       const rect = canvas.getBoundingClientRect();
-      const dprVal = window.devicePixelRatio || 1;
-
-      // Convert to logical coordinates
-      const x = (e.clientX - rect.left) * (canvas.width / rect.width) / dprVal;
-      const y = (e.clientY - rect.top) * (canvas.height / rect.height) / dprVal;
+      const x = (e.clientX - rect.left) * (dimensions.width / rect.width);
+      const y = (e.clientY - rect.top) * (dimensions.height / rect.height);
 
       const tile = findTileAtPoint(x, y);
       if (tile) {
@@ -376,7 +373,7 @@ export default function IsometricHero() {
         }
       }
     },
-    [findTileAtPoint, moveBallTo]
+    [findTileAtPoint, moveBallTo, dimensions]
   );
 
   // Handle mouse move for hover effect
@@ -388,13 +385,13 @@ export default function IsometricHero() {
       const rect = canvas.getBoundingClientRect();
       const dprVal = window.devicePixelRatio || 1;
       
-      const x = (e.clientX - rect.left) * (canvas.width / rect.width) / dprVal;
-      const y = (e.clientY - rect.top) * (canvas.height / rect.height) / dprVal;
+      const x = (e.clientX - rect.left) * (dimensions.width / rect.width);
+      const y = (e.clientY - rect.top) * (dimensions.height / rect.height);
 
       const tile = findTileAtPoint(x, y);
       setHoveredTile(tile);
     },
-    [findTileAtPoint]
+    [findTileAtPoint, dimensions]
   );
 
   const handlePointerLeave = useCallback(() => {
@@ -572,7 +569,7 @@ export default function IsometricHero() {
   useEffect(() => {
     const updateDimensions = () => {
       if (containerRef.current) {
-        const width = Math.min(containerRef.current.clientWidth, 1200);
+        const width = containerRef.current.clientWidth;
         const height = 600;
         setDimensions({ width, height });
       }
