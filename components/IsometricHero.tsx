@@ -7,13 +7,13 @@ import { useEffect, useRef, useCallback, useState } from "react";
 // ============================================================================
 const CONFIG = {
   // Tile geometry (matching Lua)
-  tileHalfW: 46,
-  tileHalfH: 23,
-  tileLine: 3,
+  tileHalfW: 80,
+  tileHalfH: 40,
+  tileLine: 4,
 
   // Circle (matching Lua)
-  circleR: 14,
-  circleLine: 3,
+  circleR: 24,
+  circleLine: 4,
 
   // Timing (ms) - matching Lua reference
   firstTileDelay: 300,
@@ -507,8 +507,8 @@ export default function IsometricHero() {
   useEffect(() => {
     const updateDimensions = () => {
       if (containerRef.current) {
-        const width = Math.min(containerRef.current.clientWidth, 500);
-        const height = 250;
+        const width = Math.min(containerRef.current.clientWidth, 800);
+        const height = 400;
         setDimensions({ width, height });
       }
     };

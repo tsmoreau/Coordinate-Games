@@ -39,63 +39,15 @@ export default async function HomePage() {
     <div className="min-h-screen bg-background">
       <Nav />
 
-      <section className="relative py-12 sm:py-16 overflow-hidden">
+      <section className="relative py-20 sm:py-32 overflow-hidden flex flex-col items-center justify-center min-h-[60vh]">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
-          <div className="text-center max-w-3xl mx-auto">
-            <div className="mb-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative w-full">
+          <div className="text-center w-full">
+            <div className="mb-8">
               <IsometricHero />
-              <p className="text-xs text-muted-foreground mt-2">
+              <p className="text-sm text-muted-foreground mt-6 font-medium animate-pulse">
                 Use arrow keys or tap tiles to move the ball
               </p>
-            </div>
-            <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">
-              coordinate.games
-            </h1>
-            <p className="text-lg text-muted-foreground mb-8">
-              A multi-game hub for async multiplayer and competitive leaderboard games. 
-              Register once, play everywhere.
-            </p>
-            <div className="flex flex-wrap items-center justify-center gap-3">
-              <Link href="/schema">
-                <Button size="lg" data-testid="button-view-api">
-                  <Target className="w-4 h-4 mr-2" />
-                  View API Docs
-                </Button>
-              </Link>
-              <Link href="/battles">
-                <Button variant="outline" size="lg" data-testid="button-browse-battles">
-                  <Swords className="w-4 h-4 mr-2" />
-                  Browse Battles
-                </Button>
-              </Link>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mt-12 max-w-2xl mx-auto">
-            <div className="text-center p-4">
-              <div className="text-2xl font-bold" data-testid="stat-games-count">
-                {stats.gamesCount}
-              </div>
-              <div className="text-sm text-muted-foreground">Games</div>
-            </div>
-            <div className="text-center p-4">
-              <div className="text-2xl font-bold" data-testid="stat-players-count">
-                {stats.playerCount}
-              </div>
-              <div className="text-sm text-muted-foreground">Players</div>
-            </div>
-            <div className="text-center p-4">
-              <div className="text-2xl font-bold" data-testid="stat-active-battles">
-                {stats.activeBattles}
-              </div>
-              <div className="text-sm text-muted-foreground">Active Battles</div>
-            </div>
-            <div className="text-center p-4">
-              <div className="text-2xl font-bold" data-testid="stat-completed-battles">
-                {stats.completedBattles}
-              </div>
-              <div className="text-sm text-muted-foreground">Completed</div>
             </div>
           </div>
         </div>
