@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import Nav from "@/components/Nav";
 import BattlesList from "@/components/BattlesList";
+import IsometricHero from "@/components/IsometricHero";
 import { getBattles, getHubStats } from "@/app/actions/battles";
 import { getDevices } from "@/app/actions/devices";
 import { formatRelativeTime } from "@/lib/utils";
@@ -38,12 +39,15 @@ export default async function HomePage() {
     <div className="min-h-screen bg-background">
       <Nav />
 
-      <section className="relative py-16 sm:py-24 overflow-hidden">
+      <section className="relative py-12 sm:py-16 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-accent/5" />
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
           <div className="text-center max-w-3xl mx-auto">
-            <div className="flex items-center justify-center gap-2 mb-4">
-              <Gamepad2 className="w-10 h-10 text-primary" />
+            <div className="mb-4">
+              <IsometricHero />
+              <p className="text-xs text-muted-foreground mt-2">
+                Use arrow keys or tap tiles to move the ball
+              </p>
             </div>
             <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">
               coordinate.games
