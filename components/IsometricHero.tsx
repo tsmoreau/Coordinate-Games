@@ -33,16 +33,16 @@ const CONFIG = {
   // Colors
   colors: {
     light: {
-      tileFill: "#ffffff",
-      tileStroke: "#000000",
-      ballFill: "#ffffff",
-      ballStroke: "#000000",
+      tileFill: "#fafaf9", // stone-50
+      tileStroke: "#1c1917", // stone-900
+      ballFill: "#fafaf9",
+      ballStroke: "#1c1917",
     },
     dark: {
-      tileFill: "#0a0a0a",
-      tileStroke: "#ffffff",
-      ballFill: "#0a0a0a",
-      ballStroke: "#ffffff",
+      tileFill: "#0c0a09", // stone-950
+      tileStroke: "#f5f5f4", // stone-100
+      ballFill: "#0c0a09",
+      ballStroke: "#f5f5f4",
     }
   },
   background: "transparent",
