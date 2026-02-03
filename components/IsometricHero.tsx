@@ -129,7 +129,7 @@ export default function IsometricHero() {
   const getGridCenter = useCallback(() => {
     return {
       x: dimensions.width / 2,
-      y: dimensions.height / 2 - 20,
+      y: dimensions.height / 2 - 40,
     };
   }, [dimensions]);
 
