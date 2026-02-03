@@ -39,7 +39,7 @@ export default async function HomePage() {
     <div className="min-h-screen bg-background">
       <Nav />
 
-      <section className="relative py-12 sm:py-20 overflow-hidden flex flex-col items-center justify-center min-h-[50vh]">
+      <section className="relative py-12 sm:py-20 overflow-hidden flex flex-col items-center justify-center min-h-[50vh] bg-background">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative w-full">
           <div className="text-center w-full">
             <div className="mb-8">
