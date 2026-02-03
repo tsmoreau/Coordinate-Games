@@ -7,14 +7,18 @@ import { useTheme } from "@/components/ThemeProvider";
 // CONFIG - adapted from the Lua code
 // ============================================================================
 const CONFIG = {
-  // Tile geometry (matching Lua)
-  tileHalfW: 80,
-  tileHalfH: 40,
+  // Tile geometry (Base values, will be scaled)
+  baseTileHalfW: 90,
+  baseTileHalfH: 45,
   tileLine: 4,
 
-  // Circle (matching Lua)
-  circleR: 24,
+  // Circle (Base values, will be scaled)
+  baseCircleR: 28,
   circleLine: 4,
+
+  // Scaling limits
+  minScale: 0.4,
+  maxScale: 1.0,
 
   // Timing (ms) - matching Lua reference
   firstTileDelay: 300,
@@ -111,6 +115,7 @@ export default function IsometricHero() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 400, height: 250 });
+  const [scale, setScale] = useState(1);
   const [dpr, setDpr] = useState(1);
   const animationRef = useRef<number | null>(null);
   const tilesRef = useRef<Tile[]>([]);
@@ -119,6 +124,11 @@ export default function IsometricHero() {
   const interactiveRef = useRef<boolean>(false);
   const isMovingRef = useRef<boolean>(false);
   const hoveredTileRef = useRef<{ row: number; col: number } | null>(null);
+
+  // Derived dimensions based on current scale
+  const tileHalfW = CONFIG.baseTileHalfW * scale;
+  const tileHalfH = CONFIG.baseTileHalfH * scale;
+  const circleR = CONFIG.baseCircleR * scale;
 
   // Set DPR on client side only to avoid hydration mismatch
   useEffect(() => {
@@ -129,9 +139,9 @@ export default function IsometricHero() {
   const getGridCenter = useCallback(() => {
     return {
       x: dimensions.width / 2,
-      y: dimensions.height / 2 - 40,
+      y: dimensions.height / 2 - (40 * scale),
     };
-  }, [dimensions]);
+  }, [dimensions, scale]);
 
   // Convert grid position (row, col) to screen coordinates
   const gridToScreen = useCallback(
@@ -140,11 +150,11 @@ export default function IsometricHero() {
       const dx = col - 1;
       const dy = row - 1;
       return {
-        x: center.x + (dx - dy) * CONFIG.tileHalfW,
-        y: center.y + (dx + dy) * CONFIG.tileHalfH,
+        x: center.x + (dx - dy) * tileHalfW,
+        y: center.y + (dx + dy) * tileHalfH,
       };
     },
-    [getGridCenter]
+    [getGridCenter, tileHalfW, tileHalfH]
   );
 
   // Get start position based on entry direction
@@ -156,18 +166,18 @@ export default function IsometricHero() {
     ): { x: number; y: number } => {
       switch (dir) {
         case "top":
-          return { x: targetX, y: -50 };
+          return { x: targetX, y: -100 * scale };
         case "bottom":
-          return { x: targetX, y: dimensions.height + 50 };
+          return { x: targetX, y: dimensions.height + (100 * scale) };
         case "left":
-          return { x: -80, y: targetY };
+          return { x: -100 * scale, y: targetY };
         case "right":
-          return { x: dimensions.width + 80, y: targetY };
+          return { x: dimensions.width + (100 * scale), y: targetY };
         default:
           return { x: targetX, y: targetY };
       }
     },
-    [dimensions]
+    [dimensions, scale]
   );
 
   // Build tiles based on the Lua logic
@@ -210,8 +220,8 @@ export default function IsometricHero() {
   // Draw an isometric tile
   const drawTile = useCallback(
     (ctx: CanvasRenderingContext2D, cx: number, cy: number, theme: "light" | "dark", isHovered: boolean = false) => {
-      const hw = CONFIG.tileHalfW;
-      const hh = CONFIG.tileHalfH;
+      const hw = tileHalfW;
+      const hh = tileHalfH;
       const colors = CONFIG.colors[theme];
 
       ctx.beginPath();
@@ -229,16 +239,16 @@ export default function IsometricHero() {
       ctx.lineWidth = CONFIG.tileLine;
       ctx.stroke();
     },
-    []
+    [tileHalfW, tileHalfH]
   );
 
   // Draw the ball
   const drawBall = useCallback(
-    (ctx: CanvasRenderingContext2D, x: number, y: number, theme: "light" | "dark", scale = 1) => {
-      const radius = CONFIG.circleR * scale;
+    (ctx: CanvasRenderingContext2D, x: number, y: number, theme: "light" | "dark", pulseScale = 1) => {
+      const radius = circleR * pulseScale;
       const colors = CONFIG.colors[theme];
       ctx.beginPath();
-      ctx.arc(x, y - radius - 5, radius, 0, Math.PI * 2);
+      ctx.arc(x, y - radius - (5 * scale), radius, 0, Math.PI * 2);
 
       ctx.fillStyle = colors.ballFill;
       ctx.fill();
@@ -247,7 +257,7 @@ export default function IsometricHero() {
       ctx.lineWidth = CONFIG.circleLine;
       ctx.stroke();
     },
-    []
+    [circleR, scale]
   );
 
   // Find which tile was clicked/touched
@@ -264,7 +274,7 @@ export default function IsometricHero() {
 
         // Diamond hit test: dx/halfW + dy/halfH <= 1
         if (
-          dx / CONFIG.tileHalfW + dy / CONFIG.tileHalfH <=
+          dx / tileHalfW + dy / tileHalfH <=
           1.2 // Slightly larger hit area
         ) {
           return { row: tile.row, col: tile.col };
@@ -273,7 +283,7 @@ export default function IsometricHero() {
 
       return null;
     },
-    []
+    [tileHalfW, tileHalfH]
   );
 
   // Move the ball to a specific tile (orthogonal only - no diagonals)
@@ -573,9 +583,14 @@ export default function IsometricHero() {
     const updateDimensions = () => {
       if (containerRef.current) {
         const width = containerRef.current.clientWidth;
-        // On mobile, height needs to be larger relative to width to fit the isometric diamond
-        const height = window.innerWidth < 640 ? 400 : 450;
+        const height = window.innerHeight < 600 ? 350 : 450;
+        
+        // Calculate dynamic scale based on viewport width
+        // Base design is for 900px width.
+        const targetScale = Math.min(Math.max(width / 700, CONFIG.minScale), CONFIG.maxScale);
+        
         setDimensions({ width, height });
+        setScale(targetScale);
       }
     };
 
