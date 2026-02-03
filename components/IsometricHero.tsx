@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback, useState } from "react";
+import { useTheme } from "@/components/ThemeProvider";
 
 // ============================================================================
 // CONFIG - adapted from the Lua code
@@ -30,10 +31,20 @@ const CONFIG = {
   idlePulseDuration: 800,
 
   // Colors
-  tileFill: "#ffffff",
-  tileStroke: "#000000",
-  ballFill: "#ffffff",
-  ballStroke: "#000000",
+  colors: {
+    light: {
+      tileFill: "#ffffff",
+      tileStroke: "#000000",
+      ballFill: "#ffffff",
+      ballStroke: "#000000",
+    },
+    dark: {
+      tileFill: "#0a0a0a",
+      tileStroke: "#ffffff",
+      ballFill: "#0a0a0a",
+      ballStroke: "#ffffff",
+    }
+  },
   background: "transparent",
 };
 
@@ -96,6 +107,7 @@ interface Ball {
 // COMPONENT
 // ============================================================================
 export default function IsometricHero() {
+  const { theme } = useTheme();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 400, height: 250 });
@@ -196,9 +208,10 @@ export default function IsometricHero() {
 
   // Draw an isometric tile
   const drawTile = useCallback(
-    (ctx: CanvasRenderingContext2D, cx: number, cy: number) => {
+    (ctx: CanvasRenderingContext2D, cx: number, cy: number, theme: "light" | "dark") => {
       const hw = CONFIG.tileHalfW;
       const hh = CONFIG.tileHalfH;
+      const colors = CONFIG.colors[theme];
 
       ctx.beginPath();
       ctx.moveTo(cx, cy - hh);
@@ -207,10 +220,10 @@ export default function IsometricHero() {
       ctx.lineTo(cx - hw, cy);
       ctx.closePath();
 
-      ctx.fillStyle = CONFIG.tileFill;
+      ctx.fillStyle = colors.tileFill;
       ctx.fill();
 
-      ctx.strokeStyle = CONFIG.tileStroke;
+      ctx.strokeStyle = colors.tileStroke;
       ctx.lineWidth = CONFIG.tileLine;
       ctx.stroke();
     },
@@ -219,15 +232,16 @@ export default function IsometricHero() {
 
   // Draw the ball
   const drawBall = useCallback(
-    (ctx: CanvasRenderingContext2D, x: number, y: number, scale = 1) => {
+    (ctx: CanvasRenderingContext2D, x: number, y: number, theme: "light" | "dark", scale = 1) => {
       const radius = CONFIG.circleR * scale;
+      const colors = CONFIG.colors[theme];
       ctx.beginPath();
       ctx.arc(x, y - radius - 5, radius, 0, Math.PI * 2);
 
-      ctx.fillStyle = CONFIG.ballFill;
+      ctx.fillStyle = colors.ballFill;
       ctx.fill();
 
-      ctx.strokeStyle = CONFIG.ballStroke;
+      ctx.strokeStyle = colors.ballStroke;
       ctx.lineWidth = CONFIG.circleLine;
       ctx.stroke();
     },
@@ -345,8 +359,8 @@ export default function IsometricHero() {
       const rect = canvas.getBoundingClientRect();
 
       // Convert to logical coordinates (not affected by canvas dpr scaling)
-      const x = (e.clientX - rect.left) * (canvas.width / rect.width) / (window.devicePixelRatio || 1);
-      const y = (e.clientY - rect.top) * (canvas.height / rect.height) / (window.devicePixelRatio || 1);
+      const x = (e.clientX - rect.left) * (canvas.width / rect.width) / (dpr || 1);
+      const y = (e.clientY - rect.top) * (canvas.height / rect.height) / (dpr || 1);
 
       const tile = findTileAtPoint(x, y);
       if (tile) {
@@ -381,6 +395,8 @@ export default function IsometricHero() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.scale(dpr, dpr);
 
+    if (!CONFIG.colors[theme]) return;
+
     const tiles = tilesRef.current;
     const ball = ballRef.current;
 
@@ -414,7 +430,7 @@ export default function IsometricHero() {
       }
 
       if (tile.visible) {
-        drawTile(ctx, tile.x, tile.y);
+        drawTile(ctx, tile.x, tile.y, theme);
       }
     }
 
@@ -478,12 +494,12 @@ export default function IsometricHero() {
           }
         }
 
-        drawBall(ctx, ball.x, ball.y, ballScale);
+        drawBall(ctx, ball.x, ball.y, theme, ballScale);
       }
     }
 
     animationRef.current = requestAnimationFrame(animate);
-  }, [drawTile, drawBall]);
+  }, [drawTile, drawBall, theme]);
 
   // Initialize and start animation
   useEffect(() => {

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSession, signOut } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { LogOut, Gamepad2 } from "lucide-react";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export default function Nav() {
   const { data: session, status } = useSession();
@@ -44,28 +45,31 @@ export default function Nav() {
                 Dashboard
               </Link>
             )}
-            {!isLoading && (
-              <>
-                {isAuthenticated ? (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => signOut({ callbackUrl: "/" })}
-                    className="ml-2"
-                    data-testid="button-logout"
-                  >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Logout
-                  </Button>
-                ) : (
-                  <Link href="/login" data-testid="link-login">
-                    <Button variant="ghost" size="sm">
-                      Login
+            <div className="flex items-center gap-1 ml-2">
+              <ThemeToggle />
+              {!isLoading && (
+                <>
+                  {isAuthenticated ? (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => signOut({ callbackUrl: "/" })}
+                      className="ml-1"
+                      data-testid="button-logout"
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Logout
                     </Button>
-                  </Link>
-                )}
-              </>
-            )}
+                  ) : (
+                    <Link href="/login" data-testid="link-login" className="ml-1">
+                      <Button variant="ghost" size="sm">
+                        Login
+                      </Button>
+                    </Link>
+                  )}
+                </>
+              )}
+            </div>
           </nav>
         </div>
       </div>
