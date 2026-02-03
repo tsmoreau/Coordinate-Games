@@ -139,9 +139,10 @@ export default function IsometricHero() {
       const center = getGridCenter();
       const dx = col - 1;
       const dy = row - 1;
+      // Subtracting half height to better center the vertical diamond
       return {
         x: center.x + (dx - dy) * CONFIG.tileHalfW,
-        y: center.y + (dx + dy) * CONFIG.tileHalfH,
+        y: center.y + (dx + dy) * CONFIG.tileHalfH - 45,
       };
     },
     [getGridCenter]
@@ -322,8 +323,7 @@ export default function IsometricHero() {
 
       switch (e.key) {
         case "ArrowUp":
-          // In isometric view, "up" means row-1 and col-1 (northwest)
-          // But for intuitive control, let's use: up = visual up = row-1
+          // In isometric view, "up" means visually going up-left or up-right
           newRow = ball.row - 1;
           e.preventDefault();
           break;
@@ -359,10 +359,11 @@ export default function IsometricHero() {
         return;
 
       const rect = canvas.getBoundingClientRect();
+      const dprVal = window.devicePixelRatio || 1;
 
-  // Convert to logical coordinates (not affected by canvas dpr scaling)
-  const x = (e.clientX - rect.left) * (dimensions.width / rect.width);
-  const y = (e.clientY - rect.top) * (dimensions.height / rect.height);
+      // Convert to logical coordinates
+      const x = (e.clientX - rect.left) * (canvas.width / rect.width) / dprVal;
+      const y = (e.clientY - rect.top) * (canvas.height / rect.height) / dprVal;
 
       const tile = findTileAtPoint(x, y);
       if (tile) {
@@ -385,8 +386,10 @@ export default function IsometricHero() {
       if (!canvas || !interactiveRef.current) return;
 
       const rect = canvas.getBoundingClientRect();
-      const x = (e.clientX - rect.left) * (dimensions.width / rect.width);
-      const y = (e.clientY - rect.top) * (dimensions.height / rect.height);
+      const dprVal = window.devicePixelRatio || 1;
+      
+      const x = (e.clientX - rect.left) * (canvas.width / rect.width) / dprVal;
+      const y = (e.clientY - rect.top) * (canvas.height / rect.height) / dprVal;
 
       const tile = findTileAtPoint(x, y);
       setHoveredTile(tile);
