@@ -22,7 +22,6 @@ export default function Nav() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           <Link href="/" className="flex items-center gap-2 no-underline">
-            <Gamepad2 className="w-7 h-7 text-primary" />
             <span className="font-mono text-lg font-bold uppercase tracking-tight">
               coordinate.games
             </span>
