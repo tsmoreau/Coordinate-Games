@@ -112,6 +112,7 @@ export default function IsometricHero() {
   const containerRef = useRef<HTMLDivElement>(null);
   const [dimensions, setDimensions] = useState({ width: 400, height: 250 });
   const [dpr, setDpr] = useState(1);
+  const [hoveredTile, setHoveredTile] = useState<{ row: number; col: number } | null>(null);
   const animationRef = useRef<number | null>(null);
   const tilesRef = useRef<Tile[]>([]);
   const ballRef = useRef<Ball | null>(null);
@@ -208,7 +209,7 @@ export default function IsometricHero() {
 
   // Draw an isometric tile
   const drawTile = useCallback(
-    (ctx: CanvasRenderingContext2D, cx: number, cy: number, theme: "light" | "dark") => {
+    (ctx: CanvasRenderingContext2D, cx: number, cy: number, theme: "light" | "dark", isHovered: boolean) => {
       const hw = CONFIG.tileHalfW;
       const hh = CONFIG.tileHalfH;
       const colors = CONFIG.colors[theme];
@@ -220,10 +221,11 @@ export default function IsometricHero() {
       ctx.lineTo(cx - hw, cy);
       ctx.closePath();
 
-      ctx.fillStyle = colors.tileFill;
+      // Invert colors if hovered
+      ctx.fillStyle = isHovered ? colors.tileStroke : colors.tileFill;
       ctx.fill();
 
-      ctx.strokeStyle = colors.tileStroke;
+      ctx.strokeStyle = isHovered ? colors.tileFill : colors.tileStroke;
       ctx.lineWidth = CONFIG.tileLine;
       ctx.stroke();
     },
@@ -359,8 +361,8 @@ export default function IsometricHero() {
       const rect = canvas.getBoundingClientRect();
 
       // Convert to logical coordinates (not affected by canvas dpr scaling)
-      const x = (e.clientX - rect.left) * (canvas.width / rect.width) / (dpr || 1);
-      const y = (e.clientY - rect.top) * (canvas.height / rect.height) / (dpr || 1);
+      const x = (e.clientX - rect.left) * (canvas.width / rect.width) / dpr;
+      const y = (e.clientY - rect.top) * (canvas.height / rect.height) / dpr;
 
       const tile = findTileAtPoint(x, y);
       if (tile) {
@@ -376,6 +378,26 @@ export default function IsometricHero() {
     [findTileAtPoint, moveBallTo]
   );
 
+  // Handle mouse move for hover effect
+  const handlePointerMove = useCallback(
+    (e: React.PointerEvent<HTMLCanvasElement>) => {
+      const canvas = canvasRef.current;
+      if (!canvas || !interactiveRef.current) return;
+
+      const rect = canvas.getBoundingClientRect();
+      const x = (e.clientX - rect.left) * (canvas.width / rect.width) / dpr;
+      const y = (e.clientY - rect.top) * (canvas.height / rect.height) / dpr;
+
+      const tile = findTileAtPoint(x, y);
+      setHoveredTile(tile);
+    },
+    [findTileAtPoint]
+  );
+
+  const handlePointerLeave = useCallback(() => {
+    setHoveredTile(null);
+  }, []);
+
   // Animation loop
   const animate = useCallback(() => {
     const canvas = canvasRef.current;
@@ -386,9 +408,6 @@ export default function IsometricHero() {
 
     const now = performance.now();
     const elapsed = now - startTimeRef.current;
-
-    // Handle DPI scaling
-    const dpr = window.devicePixelRatio || 1;
 
     // Clear and reset transform
     ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -430,7 +449,8 @@ export default function IsometricHero() {
       }
 
       if (tile.visible) {
-        drawTile(ctx, tile.x, tile.y, theme);
+        const isHovered = hoveredTile?.row === tile.row && hoveredTile?.col === tile.col;
+        drawTile(ctx, tile.x, tile.y, theme, isHovered);
       }
     }
 
@@ -499,7 +519,7 @@ export default function IsometricHero() {
     }
 
     animationRef.current = requestAnimationFrame(animate);
-  }, [drawTile, drawBall, theme]);
+  }, [drawTile, drawBall, theme, hoveredTile]);
 
   // Initialize and start animation
   useEffect(() => {
@@ -595,6 +615,8 @@ export default function IsometricHero() {
         width={dimensions.width * dpr}
         height={dimensions.height * dpr}
         onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerLeave={handlePointerLeave}
         className="cursor-pointer touch-none"
         style={{
           width: dimensions.width,
