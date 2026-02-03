@@ -9,6 +9,9 @@ const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 export const metadata: Metadata = {
   title: 'Bird Wars Roost - Playdate Game Server',
   description: 'Turn-based tactical strategy game server for Playdate',
+  icons: {
+    icon: '/favicon.ico',
+  },
 };
 
 export default function RootLayout({
