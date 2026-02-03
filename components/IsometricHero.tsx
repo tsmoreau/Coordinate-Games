@@ -572,8 +572,9 @@ export default function IsometricHero() {
   useEffect(() => {
     const updateDimensions = () => {
       if (containerRef.current) {
-        const width = Math.min(containerRef.current.clientWidth, 900);
-        const height = 450;
+        const width = containerRef.current.clientWidth;
+        // On mobile, height needs to be larger relative to width to fit the isometric diamond
+        const height = window.innerWidth < 640 ? 400 : 450;
         setDimensions({ width, height });
       }
     };
