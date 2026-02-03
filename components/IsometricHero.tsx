@@ -26,8 +26,8 @@ const CONFIG = {
   ballMoveDuration: 200,
 
   // Idle pulse
-  idlePulseDelay: 3000,
-  idlePulseDuration: 600,
+  idlePulseDelay: 5000,
+  idlePulseDuration: 800,
 
   // Colors
   tileFill: "#ffffff",
@@ -470,11 +470,11 @@ export default function IsometricHero() {
           ball.animationStart === null &&
           now - ball.lastInteraction > CONFIG.idlePulseDelay
         ) {
-          const idleElapsed = (now - ball.lastInteraction - CONFIG.idlePulseDelay) % 2000;
+          const idleElapsed = (now - ball.lastInteraction - CONFIG.idlePulseDelay) % 3000;
           if (idleElapsed < CONFIG.idlePulseDuration) {
             const pulseProgress = idleElapsed / CONFIG.idlePulseDuration;
             // Simple bounce/pulse: scales up slightly then back down
-            ballScale = 1 + Math.sin(pulseProgress * Math.PI) * 0.15;
+            ballScale = 1 + Math.sin(pulseProgress * Math.PI) * 0.1;
           }
         }
 
