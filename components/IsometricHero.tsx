@@ -129,7 +129,7 @@ export default function IsometricHero() {
   const getGridCenter = useCallback(() => {
     return {
       x: dimensions.width / 2,
-      y: dimensions.height / 2 - 20,
+      y: dimensions.height / 2,
     };
   }, [dimensions]);
 
@@ -360,9 +360,9 @@ export default function IsometricHero() {
 
       const rect = canvas.getBoundingClientRect();
 
-      // Convert to logical coordinates (not affected by canvas dpr scaling)
-      const x = (e.clientX - rect.left) * (canvas.width / rect.width) / dpr;
-      const y = (e.clientY - rect.top) * (canvas.height / rect.height) / dpr;
+  // Convert to logical coordinates (not affected by canvas dpr scaling)
+  const x = (e.clientX - rect.left) * (dimensions.width / rect.width);
+  const y = (e.clientY - rect.top) * (dimensions.height / rect.height);
 
       const tile = findTileAtPoint(x, y);
       if (tile) {
@@ -385,8 +385,8 @@ export default function IsometricHero() {
       if (!canvas || !interactiveRef.current) return;
 
       const rect = canvas.getBoundingClientRect();
-      const x = (e.clientX - rect.left) * (canvas.width / rect.width) / dpr;
-      const y = (e.clientY - rect.top) * (canvas.height / rect.height) / dpr;
+      const x = (e.clientX - rect.left) * (dimensions.width / rect.width);
+      const y = (e.clientY - rect.top) * (dimensions.height / rect.height);
 
       const tile = findTileAtPoint(x, y);
       setHoveredTile(tile);
@@ -569,8 +569,8 @@ export default function IsometricHero() {
   useEffect(() => {
     const updateDimensions = () => {
       if (containerRef.current) {
-        const width = Math.min(containerRef.current.clientWidth, 900);
-        const height = 450;
+        const width = Math.min(containerRef.current.clientWidth, 1200);
+        const height = 600;
         setDimensions({ width, height });
       }
     };
