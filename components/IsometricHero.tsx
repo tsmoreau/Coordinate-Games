@@ -8,12 +8,12 @@ import { useTheme } from "@/components/ThemeProvider";
 // ============================================================================
 const CONFIG = {
   // Tile geometry (matching Lua)
-  tileHalfW: 90,
-  tileHalfH: 45,
+  tileHalfW: 80,
+  tileHalfH: 40,
   tileLine: 4,
 
   // Circle (matching Lua)
-  circleR: 28,
+  circleR: 24,
   circleLine: 4,
 
   // Timing (ms) - matching Lua reference
