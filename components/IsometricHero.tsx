@@ -725,11 +725,12 @@ export default function IsometricHero() {
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerLeave={handlePointerLeave}
-        className="cursor-pointer absolute inset-0"
+        className="absolute inset-0"
         style={{
           width: "100%",
           height: "100%",
           touchAction: "pan-y", // Allow vertical scrolling, only prevent when on tiles
+          cursor: "default",
         }}
         data-testid="isometric-canvas"
       />
