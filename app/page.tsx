@@ -39,7 +39,7 @@ export default async function HomePage() {
     <div className="min-h-screen bg-background">
       <Nav />
 
-      <section className="relative min-h-[calc(100vh-64px)] bg-background">
+      <section className="relative min-h-[calc(100vh)] bg-background">
         <IsometricHero />
         <div className="absolute inset-0 flex flex-col items-center justify-end pb-8 pointer-events-none">
           <p className="text-sm text-muted-foreground font-medium animate-pulse">
