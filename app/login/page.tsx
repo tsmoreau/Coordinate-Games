@@ -15,7 +15,7 @@ export default function LoginPage() {
             className="w-16 h-16 rounded-md object-cover mx-auto mb-4"
           />
           <h1 className="font-mono text-2xl font-bold uppercase tracking-wide mb-2">
-            Bird Wars Roost
+            coordinate games
           </h1>
           <p className="text-muted-foreground text-sm">
             Sign in to access the admin dashboard
