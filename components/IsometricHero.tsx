@@ -158,26 +158,34 @@ export default function IsometricHero() {
   );
 
   // Get start position based on entry direction
+  // Canvas now fills the viewport, so starting just outside canvas = outside viewport
   const getStartPosition = useCallback(
     (
       dir: string,
       targetX: number,
       targetY: number
     ): { x: number; y: number } => {
+      // Add buffer to ensure tiles are fully off-screen
+      const tileSize = tileHalfH * 2;
+      
       switch (dir) {
         case "top":
-          return { x: targetX, y: -100 * scale };
+          // Start above the canvas/viewport
+          return { x: targetX, y: -(tileSize) };
         case "bottom":
-          return { x: targetX, y: dimensions.height + (100 * scale) };
+          // Start below the canvas/viewport
+          return { x: targetX, y: dimensions.height + tileSize };
         case "left":
-          return { x: -100 * scale, y: targetY };
+          // Start left of the canvas/viewport
+          return { x: -(tileSize), y: targetY };
         case "right":
-          return { x: dimensions.width + (100 * scale), y: targetY };
+          // Start right of the canvas/viewport
+          return { x: dimensions.width + tileSize, y: targetY };
         default:
           return { x: targetX, y: targetY };
       }
     },
-    [dimensions, scale]
+    [dimensions, tileHalfH]
   );
 
   // Build tiles based on the Lua logic
@@ -487,8 +495,8 @@ export default function IsometricHero() {
           const progress = Math.min(dropElapsed / CONFIG.circleDuration, 1);
           const eased = easeOutBounce(progress);
 
-          const startY = -30;
-          ball.y = startY + (ball.targetY - startY) * eased;
+          // Use the ball's stored startY which is calculated from viewport height
+          ball.y = ball.startY + (ball.targetY - ball.startY) * eased;
           ball.x = ball.targetX;
 
           if (progress >= 1) {
@@ -541,11 +549,13 @@ export default function IsometricHero() {
 
     // Initialize ball at center tile
     const centerPos = gridToScreen(1, 1);
+    // Ball starts above the canvas (which now fills the viewport)
+    const ballStartY = -(circleR * 2);
     ballRef.current = {
       x: centerPos.x,
-      y: -30,
+      y: ballStartY,
       startX: centerPos.x,
-      startY: -30,
+      startY: ballStartY,
       targetX: centerPos.x,
       targetY: centerPos.y,
       row: 1,
@@ -582,8 +592,9 @@ export default function IsometricHero() {
   useEffect(() => {
     const updateDimensions = () => {
       if (containerRef.current) {
+        // Use container's full dimensions (which should fill the viewport section)
         const width = containerRef.current.clientWidth;
-        const height = window.innerHeight < 600 ? 350 : 450;
+        const height = containerRef.current.clientHeight;
         
         // Calculate dynamic scale based on viewport width
         // Base design is for 900px width.
@@ -594,10 +605,17 @@ export default function IsometricHero() {
       }
     };
 
+    // Use ResizeObserver for accurate container size tracking
+    const resizeObserver = new ResizeObserver(updateDimensions);
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+
     updateDimensions();
     window.addEventListener("resize", updateDimensions);
 
     return () => {
+      resizeObserver.disconnect();
       window.removeEventListener("resize", updateDimensions);
     };
   }, []);
@@ -613,6 +631,15 @@ export default function IsometricHero() {
       ball.targetX = newPos.x;
       ball.targetY = newPos.y;
 
+      // If ball hasn't dropped yet, update its start position for the drop animation
+      if (!ball.visible) {
+        const newBallStartY = -(circleR * 2);
+        ball.y = newBallStartY;
+        ball.startY = newBallStartY;
+        ball.x = newPos.x;
+        ball.startX = newPos.x;
+      }
+
       // If not animating, snap to new position
       if (!ball.isDropping && ball.animationStart === null && ball.visible) {
         ball.x = newPos.x;
@@ -621,12 +648,12 @@ export default function IsometricHero() {
         ball.startY = newPos.y;
       }
     }
-  }, [dimensions, buildTiles, gridToScreen]);
+  }, [dimensions, buildTiles, gridToScreen, circleR]);
 
   return (
     <div
       ref={containerRef}
-      className="w-full flex items-center justify-center"
+      className="absolute inset-0 w-full h-full"
       data-testid="isometric-hero"
     >
       <canvas
@@ -636,11 +663,10 @@ export default function IsometricHero() {
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerLeave={handlePointerLeave}
-        className="cursor-pointer touch-none"
+        className="cursor-pointer touch-none absolute inset-0"
         style={{
-          width: dimensions.width,
-          height: dimensions.height,
-          maxWidth: "100%",
+          width: "100%",
+          height: "100%",
         }}
         data-testid="isometric-canvas"
       />

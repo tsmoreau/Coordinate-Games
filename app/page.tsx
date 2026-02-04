@@ -39,16 +39,12 @@ export default async function HomePage() {
     <div className="min-h-screen bg-background">
       <Nav />
 
-      <section className="relative overflow-hidden flex flex-col items-center justify-center min-h-[calc(100vh-64px)] bg-background">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative w-full flex-1 flex flex-col items-center justify-center">
-          <div className="text-center w-full">
-            <div className="mb-8">
-              <IsometricHero />
-              <p className="text-sm text-muted-foreground mt-12 font-medium animate-pulse">
-                Tap tiles to move the ball
-              </p>
-            </div>
-          </div>
+      <section className="relative min-h-[calc(100vh-64px)] bg-background">
+        <IsometricHero />
+        <div className="absolute inset-0 flex flex-col items-center justify-end pb-8 pointer-events-none">
+          <p className="text-sm text-muted-foreground font-medium animate-pulse">
+            Tap tiles to move the ball
+          </p>
         </div>
       </section>
 
