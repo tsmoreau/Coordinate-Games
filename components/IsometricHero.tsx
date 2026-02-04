@@ -105,6 +105,8 @@ interface Ball {
   dropStart: number | null;
   isDropping: boolean;
   lastInteraction: number;
+  bounceStart: number | null;
+  isBouncing: boolean;
 }
 
 // ============================================================================
@@ -268,6 +270,24 @@ export default function IsometricHero() {
     [circleR, scale]
   );
 
+  // Check if a point is on the ball
+  const isBallAtPoint = useCallback(
+    (px: number, py: number): boolean => {
+      const ball = ballRef.current;
+      if (!ball || !ball.visible) return false;
+      
+      // Ball is drawn at (ball.x, ball.y - radius - 5*scale)
+      const ballCenterY = ball.y - circleR - (5 * scale);
+      const dx = px - ball.x;
+      const dy = py - ballCenterY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      // Check if within ball radius (with slightly larger hit area)
+      return distance <= circleR * 1.3;
+    },
+    [circleR, scale]
+  );
+
   // Find which tile was clicked/touched
   const findTileAtPoint = useCallback(
     (px: number, py: number): { row: number; col: number } | null => {
@@ -293,6 +313,16 @@ export default function IsometricHero() {
     },
     [tileHalfW, tileHalfH]
   );
+
+  // Trigger a bounce animation on the ball
+  const bounceBall = useCallback(() => {
+    const ball = ballRef.current;
+    if (!ball || !interactiveRef.current || ball.isBouncing || isMovingRef.current) return;
+    
+    ball.lastInteraction = performance.now();
+    ball.isBouncing = true;
+    ball.bounceStart = performance.now();
+  }, []);
 
   // Move the ball to a specific tile (orthogonal only - no diagonals)
   const moveBallTo = useCallback(
@@ -368,7 +398,7 @@ export default function IsometricHero() {
     [moveBallTo]
   );
 
-  // Handle touch/click - only prevent default if clicking on a tile
+  // Handle touch/click - only prevent default if clicking on a tile or ball
   const handlePointerDown = useCallback(
     (e: React.PointerEvent<HTMLCanvasElement>) => {
       const canvas = canvasRef.current;
@@ -381,6 +411,13 @@ export default function IsometricHero() {
       // Convert to logical coordinates (not affected by canvas dpr scaling)
       const x = (e.clientX - rect.left) * (canvas.width / rect.width) / (dpr || 1);
       const y = (e.clientY - rect.top) * (canvas.height / rect.height) / (dpr || 1);
+
+      // Check if tapping the ball first
+      if (isBallAtPoint(x, y)) {
+        e.preventDefault();
+        bounceBall();
+        return;
+      }
 
       const tile = findTileAtPoint(x, y);
       if (tile) {
@@ -395,9 +432,9 @@ export default function IsometricHero() {
           moveBallTo(tile.row, tile.col);
         }
       }
-      // If not on a tile, allow default behavior (scrolling)
+      // If not on a tile or ball, allow default behavior (scrolling)
     },
-    [findTileAtPoint, moveBallTo]
+    [findTileAtPoint, isBallAtPoint, bounceBall, moveBallTo]
   );
 
   // Handle mouse move for hover effect
@@ -525,10 +562,28 @@ export default function IsometricHero() {
           }
         }
 
+        // Handle bounce animation
+        let bounceOffset = 0;
+        if (ball.isBouncing && ball.bounceStart !== null) {
+          const bounceElapsed = now - ball.bounceStart;
+          const bounceDuration = 400; // 400ms bounce
+          const bounceHeight = 40 * scale; // How high to bounce
+          
+          if (bounceElapsed < bounceDuration) {
+            // Use sine wave for smooth up-and-down bounce
+            const bounceProgress = bounceElapsed / bounceDuration;
+            bounceOffset = -Math.sin(bounceProgress * Math.PI) * bounceHeight;
+          } else {
+            ball.isBouncing = false;
+            ball.bounceStart = null;
+          }
+        }
+
         let ballScale = 1;
         if (
           !ball.isDropping &&
           ball.animationStart === null &&
+          !ball.isBouncing &&
           now - ball.lastInteraction > CONFIG.idlePulseDelay
         ) {
           const idleElapsed = (now - ball.lastInteraction - CONFIG.idlePulseDelay) % 3000;
@@ -539,7 +594,7 @@ export default function IsometricHero() {
           }
         }
 
-        drawBall(ctx, ball.x, ball.y, theme, ballScale);
+        drawBall(ctx, ball.x, ball.y + bounceOffset, theme, ballScale);
       }
     }
 
@@ -569,6 +624,8 @@ export default function IsometricHero() {
       dropStart: null,
       isDropping: false,
       lastInteraction: performance.now(),
+      bounceStart: null,
+      isBouncing: false,
     };
 
     startTimeRef.current = performance.now();
