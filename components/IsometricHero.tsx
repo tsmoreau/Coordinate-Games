@@ -368,7 +368,7 @@ export default function IsometricHero() {
     [moveBallTo]
   );
 
-  // Handle touch/click
+  // Handle touch/click - only prevent default if clicking on a tile
   const handlePointerDown = useCallback(
     (e: React.PointerEvent<HTMLCanvasElement>) => {
       const canvas = canvasRef.current;
@@ -384,6 +384,9 @@ export default function IsometricHero() {
 
       const tile = findTileAtPoint(x, y);
       if (tile) {
+        // Only prevent default (which blocks scrolling) when interacting with a tile
+        e.preventDefault();
+        
         // Check if adjacent (orthogonal only)
         const dRow = Math.abs(tile.row - ball.row);
         const dCol = Math.abs(tile.col - ball.col);
@@ -392,6 +395,7 @@ export default function IsometricHero() {
           moveBallTo(tile.row, tile.col);
         }
       }
+      // If not on a tile, allow default behavior (scrolling)
     },
     [findTileAtPoint, moveBallTo]
   );
@@ -663,10 +667,11 @@ export default function IsometricHero() {
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerLeave={handlePointerLeave}
-        className="cursor-pointer touch-none absolute inset-0"
+        className="cursor-pointer absolute inset-0"
         style={{
           width: "100%",
           height: "100%",
+          touchAction: "pan-y", // Allow vertical scrolling, only prevent when on tiles
         }}
         data-testid="isometric-canvas"
       />
