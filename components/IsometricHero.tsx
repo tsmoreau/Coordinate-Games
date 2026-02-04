@@ -241,11 +241,12 @@ export default function IsometricHero() {
       ctx.lineTo(cx - hw, cy);
       ctx.closePath();
 
-      // Invert colors when hovered
+      // Only fill the tile (the middle) with the inverted color when hovered
+      // The stroke (lines/sides) remains the original stroke color
       ctx.fillStyle = isHovered ? colors.tileStroke : colors.tileFill;
       ctx.fill();
 
-      ctx.strokeStyle = isHovered ? colors.tileFill : colors.tileStroke;
+      ctx.strokeStyle = colors.tileStroke;
       ctx.lineWidth = CONFIG.tileLine;
       ctx.stroke();
     },
