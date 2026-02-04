@@ -655,16 +655,20 @@ export default function IsometricHero() {
   useEffect(() => {
     const updateDimensions = () => {
       if (containerRef.current) {
-        // Use container's full dimensions (which should fill the viewport section)
         const width = containerRef.current.clientWidth;
         const height = containerRef.current.clientHeight;
         
-        // Calculate dynamic scale based on viewport width
-        // Base design is for 900px width.
+        // Use functional state updates and only set if different to avoid unnecessary resets
+        setDimensions(prev => {
+          if (prev.width === width && prev.height === height) return prev;
+          return { width, height };
+        });
+
         const targetScale = Math.min(Math.max(width / 700, CONFIG.minScale), CONFIG.maxScale);
-        
-        setDimensions({ width, height });
-        setScale(targetScale);
+        setScale(prev => {
+          if (prev === targetScale) return prev;
+          return targetScale;
+        });
       }
     };
 
