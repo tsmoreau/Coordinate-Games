@@ -689,32 +689,40 @@ export default function IsometricHero() {
 
   // Rebuild tiles when dimensions change
   useEffect(() => {
+    // Re-calculating target positions on resize, but NOT resetting visible/startX/startY
+    // so that the animation doesn't replay.
+    if (tilesRef.current.length > 0) {
+      const tiles = tilesRef.current;
+      for (const tile of tiles) {
+        const newPos = gridToScreen(tile.row, tile.col);
+        tile.targetX = newPos.x;
+        tile.targetY = newPos.y;
+        
+        // Only snap to position if not currently in its entry animation
+        const tileElapsed = performance.now() - (tile.animationStart || 0);
+        if (tile.animationStart === null || tileElapsed > CONFIG.tileDuration) {
+          tile.x = newPos.x;
+          tile.y = newPos.y;
+        }
+      }
+
+      const ball = ballRef.current;
+      if (ball) {
+        const newPos = gridToScreen(ball.row, ball.col);
+        ball.targetX = newPos.x;
+        ball.targetY = newPos.y;
+
+        // Only snap ball if it's finished its drop and isn't moving
+        if (!ball.isDropping && ball.animationStart === null && ball.visible) {
+          ball.x = newPos.x;
+          ball.y = newPos.y;
+        }
+      }
+      return;
+    }
+
     const tiles = buildTiles();
     tilesRef.current = tiles;
-
-    const ball = ballRef.current;
-    if (ball) {
-      const newPos = gridToScreen(ball.row, ball.col);
-      ball.targetX = newPos.x;
-      ball.targetY = newPos.y;
-
-      // If ball hasn't dropped yet, update its start position for the drop animation
-      if (!ball.visible) {
-        const newBallStartY = -(circleR * 2);
-        ball.y = newBallStartY;
-        ball.startY = newBallStartY;
-        ball.x = newPos.x;
-        ball.startX = newPos.x;
-      }
-
-      // If not animating, snap to new position
-      if (!ball.isDropping && ball.animationStart === null && ball.visible) {
-        ball.x = newPos.x;
-        ball.y = newPos.y;
-        ball.startX = newPos.x;
-        ball.startY = newPos.y;
-      }
-    }
   }, [dimensions, buildTiles, gridToScreen, circleR]);
 
   return (
