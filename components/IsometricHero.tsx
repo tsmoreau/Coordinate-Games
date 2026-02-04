@@ -567,13 +567,14 @@ export default function IsometricHero() {
         let bounceOffset = 0;
         if (ball.isBouncing && ball.bounceStart !== null) {
           const bounceElapsed = now - ball.bounceStart;
-          const bounceDuration = 400; // 400ms bounce
+          const bounceDuration = 800; // 800ms for two bounces (400ms each)
           const bounceHeight = 40 * scale; // How high to bounce
           
           if (bounceElapsed < bounceDuration) {
-            // Use sine wave for smooth up-and-down bounce
-            const bounceProgress = bounceElapsed / bounceDuration;
-            bounceOffset = -Math.sin(bounceProgress * Math.PI) * bounceHeight;
+            // Use absolute sine wave for two distinct bounces
+            // Multiplying by 2 inside sin and using abs creates two peaks
+            const bounceProgress = (bounceElapsed / bounceDuration) * 2;
+            bounceOffset = -Math.abs(Math.sin(bounceProgress * Math.PI)) * bounceHeight;
           } else {
             ball.isBouncing = false;
             ball.bounceStart = null;
