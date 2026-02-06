@@ -90,6 +90,7 @@ export async function GET(
         winnerId: battle.winnerId,
         endReason: battle.endReason,
         winner,
+        turns: battle.turns || [],
         createdAt: battle.createdAt,
         updatedAt: battle.updatedAt,
       },
