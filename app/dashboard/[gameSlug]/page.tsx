@@ -61,7 +61,7 @@ export default async function GameDashboardPage({ params }: Props) {
           <Link href="/dashboard">
             <Button variant="ghost" size="sm" data-testid="button-back-dashboard">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              BACK TO PLATFORM
+              BACK TO DASHBOARD
             </Button>
           </Link>
         </div>
