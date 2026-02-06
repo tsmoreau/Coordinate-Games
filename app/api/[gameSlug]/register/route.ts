@@ -1,15 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
-import { Player } from '@/models/Player';
 import { GameIdentity, VALID_AVATARS, PlayerAvatar } from '@/models/GameIdentity';
 import { validateGame, gameNotFoundResponse } from '@/lib/gameMiddleware';
-import { generateDeterministicToken, hashToken } from '@/lib/auth';
+import { generateSecureToken, hashToken } from '@/lib/auth';
 import { generatePlayerName } from '@/lib/battleNames';
 import { randomBytes } from 'crypto';
-
-function generateGlobalId(): string {
-  return randomBytes(16).toString('hex');
-}
 
 function generateDeviceId(): string {
   return randomBytes(12).toString('base64url');
@@ -30,22 +25,7 @@ export async function POST(
     await connectToDatabase();
 
     const body = await request.json();
-    const { serialNumber, displayName, avatar } = body;
-
-    if (!serialNumber || typeof serialNumber !== 'string') {
-      return NextResponse.json({
-        success: false,
-        error: 'serialNumber is required',
-      }, { status: 400 });
-    }
-
-    const trimmedSerial = serialNumber.trim();
-    if (trimmedSerial.length < 1 || trimmedSerial.length > 100) {
-      return NextResponse.json({
-        success: false,
-        error: 'serialNumber must be between 1 and 100 characters',
-      }, { status: 400 });
-    }
+    const { displayName, avatar } = body;
 
     let validatedAvatar: PlayerAvatar = 'BIRD1';
     if (avatar && VALID_AVATARS.includes(avatar)) {
@@ -59,49 +39,19 @@ export async function POST(
         validatedDisplayName = trimmed;
       }
     }
-    
+
+    const deviceId = generateDeviceId();
+
     if (!validatedDisplayName) {
-      validatedDisplayName = generatePlayerName(trimmedSerial, gameContext.game.haikunator);
+      validatedDisplayName = generatePlayerName(deviceId, gameContext.game.haikunator);
     }
 
-    let player = await Player.findOne({ serialNumber: trimmedSerial });
-    let isNewPlayer = false;
-
-    if (!player) {
-      player = await Player.create({
-        globalId: generateGlobalId(),
-        serialNumber: trimmedSerial,
-        createdAt: new Date(),
-        lastSeen: new Date(),
-      });
-      isNewPlayer = true;
-    } else {
-      player.lastSeen = new Date();
-      await player.save();
-    }
-
-    let gameIdentity = await GameIdentity.findOne({
-      globalId: player.globalId,
-      gameSlug: gameContext.slug,
-    });
-
-    if (gameIdentity) {
-      return NextResponse.json({
-        success: true,
-        registered: true,
-        deviceId: gameIdentity.deviceId,
-        displayName: gameIdentity.displayName,
-        avatar: gameIdentity.avatar,
-      });
-    }
-
-    const secretToken = generateDeterministicToken(`${gameContext.slug}:${trimmedSerial}`);
+    const secretToken = generateSecureToken();
     const tokenHash = hashToken(secretToken);
 
-    gameIdentity = await GameIdentity.create({
-      globalId: player.globalId,
+    const gameIdentity = await GameIdentity.create({
       gameSlug: gameContext.slug,
-      deviceId: generateDeviceId(),
+      deviceId,
       tokenHash,
       displayName: validatedDisplayName,
       avatar: validatedAvatar,
@@ -112,7 +62,6 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      registered: false,
       deviceId: gameIdentity.deviceId,
       secretToken,
       displayName: gameIdentity.displayName,

@@ -92,7 +92,7 @@ export default async function PlayerProfilePage({ params }: Props) {
             <CardHeader className="text-center">
               <PlayerAvatar avatar={player.avatar} />
               <CardTitle className="text-2xl" data-testid="text-player-name">
-                {player.displayName}{player.isSimulator && ' •'}
+                {player.displayName}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">

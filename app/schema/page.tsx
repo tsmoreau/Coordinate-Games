@@ -32,8 +32,7 @@ function generateMarkdownSpec(
   lines.push('');
   lines.push('## Per-Game Identity');
   lines.push('');
-  lines.push('Register per game via `/api/[gameSlug]/register`. Each game gives you a unique deviceId and token.');
-  lines.push('Your serialNumber links identities internally across games.');
+  lines.push('Register per game via `/api/[gameSlug]/register`. Each game gives you a unique deviceId and token. Identities are independent per game.');
   lines.push('');
   lines.push('## Game Capabilities');
   lines.push('');
@@ -380,15 +379,14 @@ const perGameEndpoints: EndpointSection[] = [
     id: 'post-register',
     method: 'POST',
     path: '/api/[gameSlug]/register',
-    description: 'Register for a specific game. Creates a game-scoped identity with unique deviceId and secretToken. If the same serialNumber has registered for other games, the cross-game identity is linked internally.',
+    description: 'Register for a specific game. Creates a game-scoped identity with unique deviceId and secretToken.',
     auth: false,
     requestBody: {
       fields: [
-        { name: 'serialNumber', type: 'string', required: true, description: 'Device serial number (for account recovery and cross-game linking)' },
         { name: 'displayName', type: 'string', required: false, description: 'Player display name (max 50 chars)' },
         { name: 'avatar', type: 'string', required: false, description: 'Bird avatar: BIRD1-BIRD12 (default: BIRD1)' },
       ],
-      example: { serialNumber: 'PDU1-Y12345', displayName: 'BirdMaster', avatar: 'BIRD4' },
+      example: { displayName: 'BirdMaster', avatar: 'BIRD4' },
     },
     responseBody: {
       fields: [
@@ -409,7 +407,7 @@ const perGameEndpoints: EndpointSection[] = [
       },
     },
     errors: [
-      { status: 400, description: 'Missing or invalid serialNumber' },
+      { status: 400, description: 'Invalid request body' },
       { status: 404, description: 'Game not found or missing data capability' },
     ],
   },
@@ -1123,7 +1121,7 @@ export default function SchemaPage() {
                     </h3>
                     <p className="text-sm text-muted-foreground">
                       Register per game via <code className="bg-muted px-1 rounded">/api/[gameSlug]/register</code>. 
-                      Each game gives you a unique deviceId and token. Your serialNumber links identities internally across games.
+                      Each game gives you a unique deviceId and token. Identities are independent per game.
                     </p>
                   </div>
                 </div>

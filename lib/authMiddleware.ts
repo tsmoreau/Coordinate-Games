@@ -9,7 +9,6 @@ export interface AuthenticatedRequest extends NextRequest {
 
 export interface AuthResult {
   deviceId: string;
-  globalId: string;
   displayName: string;
 }
 
@@ -50,7 +49,6 @@ export async function authenticateDevice(request: NextRequest, gameSlug?: string
 
   return {
     deviceId: gameIdentity.deviceId,
-    globalId: gameIdentity.globalId,
     displayName: gameIdentity.displayName,
   };
 }

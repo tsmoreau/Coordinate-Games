@@ -8,7 +8,6 @@ export const VALID_AVATARS = [
 export type PlayerAvatar = typeof VALID_AVATARS[number];
 
 export interface IGameIdentity {
-  globalId: string;
   gameSlug: string;
   deviceId: string;
   tokenHash: string;
@@ -22,11 +21,6 @@ export interface IGameIdentity {
 export interface IGameIdentityDocument extends IGameIdentity, Document {}
 
 const GameIdentitySchema = new Schema<IGameIdentityDocument>({
-  globalId: {
-    type: String,
-    required: true,
-    index: true
-  },
   gameSlug: {
     type: String,
     required: true,
@@ -67,7 +61,6 @@ const GameIdentitySchema = new Schema<IGameIdentityDocument>({
 
 GameIdentitySchema.index({ gameSlug: 1, deviceId: 1 }, { unique: true });
 GameIdentitySchema.index({ gameSlug: 1, tokenHash: 1 });
-GameIdentitySchema.index({ globalId: 1, gameSlug: 1 }, { unique: true });
 
 if (mongoose.models.GameIdentity) {
   delete mongoose.models.GameIdentity;

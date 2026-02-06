@@ -138,9 +138,9 @@ export default function BattlesList({
                         </h3>
                       </div>
                       <p className="text-[12px] font-bold uppercase tracking-tight text-muted-foreground flex items-center gap-2 mb-0.5">
-                        <span>{battle.player1DisplayName}{battle.player1IsSimulator && ' •'}</span>
+                        <span>{battle.player1DisplayName}</span>
                         <span className="text-[10px] opacity-40">VS</span>
-                        <span>{battle.player2DisplayName ? `${battle.player2DisplayName}${battle.player2IsSimulator ? ' •' : ''}` : 'WAITING...'}</span>
+                        <span>{battle.player2DisplayName ? battle.player2DisplayName : 'WAITING...'}</span>
                       </p>
                       <div className="flex items-center gap-4 text-[11px] text-muted-foreground uppercase font-medium">
                         <span className="flex items-center gap-1">

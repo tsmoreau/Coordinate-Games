@@ -1,7 +1,7 @@
 'use server';
 
 import { connectToDatabase } from '@/lib/mongodb';
-import { Player } from '@/models/Player';
+import { GameIdentity } from '@/models/GameIdentity';
 
 export interface DeviceWithDetails {
   deviceId: string;
@@ -17,19 +17,19 @@ export async function getDevices(options?: { limit?: number }): Promise<DeviceWi
   
   const limit = options?.limit ?? 50;
 
-  const players = await Player.find({ isActive: true })
+  const identities = await GameIdentity.find({ isActive: true })
     .sort({ lastSeen: -1 })
     .limit(limit);
 
-  return players.map(player => {
-    const playerObj = player.toObject();
+  return identities.map(identity => {
+    const obj = identity.toObject();
     return {
-      deviceId: playerObj.deviceId,
-      displayName: playerObj.displayName || 'Unnamed Player',
-      avatar: playerObj.avatar || 'BIRD1',
-      createdAt: playerObj.createdAt.toISOString(),
-      lastSeen: playerObj.lastSeen.toISOString(),
-      isActive: playerObj.isActive,
+      deviceId: obj.deviceId,
+      displayName: obj.displayName || 'Unnamed Player',
+      avatar: obj.avatar || 'BIRD1',
+      createdAt: obj.createdAt.toISOString(),
+      lastSeen: obj.lastSeen.toISOString(),
+      isActive: obj.isActive,
     };
   });
 }

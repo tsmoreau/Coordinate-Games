@@ -13,8 +13,7 @@ Authorization: Bearer <your-secret-token>
 
 ## Per-Game Identity
 
-Register per game via `/api/[gameSlug]/register`. Each game gives you a unique deviceId and token.
-Your serialNumber links identities internally across games.
+Register per game via `/api/[gameSlug]/register`. Each game gives you a unique deviceId and token. Identities are independent per game.
 
 ## Game Capabilities
 
@@ -184,7 +183,7 @@ Per-game registration and authentication flow.
 
 ### POST `/api/[gameSlug]/register`
 
-Register for a specific game. Creates a game-scoped identity with unique deviceId and secretToken. If the same serialNumber has registered for other games, the cross-game identity is linked internally.
+Register for a specific game. Creates a game-scoped identity with unique deviceId and secretToken.
 
 **Authentication:** Public
 
@@ -192,13 +191,12 @@ Register for a specific game. Creates a game-scoped identity with unique deviceI
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `serialNumber` | string | Yes | Device serial number (for account recovery and cross-game linking) |
 | `displayName` | string | No | Player display name (max 50 chars) |
 | `avatar` | string | No | Bird avatar: BIRD1-BIRD12 (default: BIRD1) |
 
 **Example:**
 ```json
-{ "serialNumber": "PDU1-Y12345", "displayName": "BirdMaster", "avatar": "BIRD4" }
+{ "displayName": "BirdMaster", "avatar": "BIRD4" }
 ```
 
 **Response:**
@@ -226,7 +224,7 @@ Register for a specific game. Creates a game-scoped identity with unique deviceI
 
 **Error Responses:**
 
-- `400` — Missing or invalid serialNumber
+- `400` — Invalid request body
 - `404` — Game not found or missing data capability
 
 ---

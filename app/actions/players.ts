@@ -1,14 +1,13 @@
 'use server';
 
 import { connectToDatabase } from '@/lib/mongodb';
-import { Player } from '@/models/Player';
+import { GameIdentity } from '@/models/GameIdentity';
 import { Battle } from '@/models/Battle';
 
 export interface PlayerProfile {
   deviceId: string;
   displayName: string;
   avatar: string;
-  isSimulator: boolean;
   createdAt: string;
   lastSeen: string;
   isActive: boolean;
@@ -43,15 +42,15 @@ export interface BattleWithOpponent {
 export async function getPlayerByDisplayName(displayName: string): Promise<PlayerProfile | null> {
   await connectToDatabase();
   
-  const player = await Player.findOne({ 
+  const identity = await GameIdentity.findOne({ 
     displayName: { $regex: new RegExp(`^${displayName}$`, 'i') }
   });
   
-  if (!player) {
+  if (!identity) {
     return null;
   }
 
-  const deviceId = player.deviceId;
+  const deviceId = identity.deviceId;
 
   const [
     totalBattles,
@@ -128,16 +127,15 @@ export async function getPlayerByDisplayName(displayName: string): Promise<Playe
     ? ((wins / completedBattles) * 100).toFixed(1) 
     : '0.0';
 
-  const playerObj = player.toObject();
+  const obj = identity.toObject();
 
   return {
-    deviceId: playerObj.deviceId,
-    displayName: playerObj.displayName || 'Unknown Player',
-    avatar: playerObj.avatar || 'BIRD1',
-    isSimulator: playerObj.isSimulator || false,
-    createdAt: playerObj.createdAt.toISOString(),
-    lastSeen: playerObj.lastSeen.toISOString(),
-    isActive: playerObj.isActive,
+    deviceId: obj.deviceId,
+    displayName: obj.displayName || 'Unknown Player',
+    avatar: obj.avatar || 'BIRD1',
+    createdAt: obj.createdAt.toISOString(),
+    lastSeen: obj.lastSeen.toISOString(),
+    isActive: obj.isActive,
     stats: {
       totalBattles,
       completedBattles,
@@ -171,7 +169,7 @@ export async function getPlayerBattles(deviceId: string, limit: number = 10): Pr
       : battleObj.player1DeviceId;
   }).filter(Boolean) as string[];
 
-  const opponents = await Player.find({
+  const opponents = await GameIdentity.find({
     deviceId: { $in: opponentDeviceIds }
   }).select('deviceId displayName');
 

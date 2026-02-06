@@ -2,12 +2,11 @@
 
 import { connectToDatabase } from '@/lib/mongodb';
 import { Battle } from '@/models/Battle';
-import { Player } from '@/models/Player';
+import { GameIdentity } from '@/models/GameIdentity';
 
 interface PlayerInfo {
   displayName: string;
   avatar: string;
-  isSimulator: boolean;
 }
 
 export interface BattleWithDetails {
@@ -18,10 +17,8 @@ export interface BattleWithDetails {
   player2DeviceId: string | null;
   player1DisplayName: string;
   player1Avatar: string;
-  player1IsSimulator: boolean;
   player2DisplayName: string | null;
   player2Avatar: string | null;
-  player2IsSimulator: boolean | null;
   status: 'pending' | 'active' | 'completed' | 'abandoned';
   currentTurn: number;
   currentPlayerIndex: number;
@@ -33,18 +30,17 @@ export interface BattleWithDetails {
   winnerId: string | null;
 }
 
-async function getPlayerInfo(deviceIds: (string | null)[]): Promise<Map<string, PlayerInfo>> {
+async function getPlayerInfo(deviceIds: (string | null)[], gameSlug: string): Promise<Map<string, PlayerInfo>> {
   const validIds = deviceIds.filter((id): id is string => id !== null);
   if (validIds.length === 0) return new Map();
   
-  const players = await Player.find({ deviceId: { $in: validIds } });
+  const identities = await GameIdentity.find({ deviceId: { $in: validIds }, gameSlug });
   const map = new Map<string, PlayerInfo>();
   
-  for (const player of players) {
-    map.set(player.deviceId, {
-      displayName: player.displayName || 'Unknown Player',
-      avatar: player.avatar || 'BIRD1',
-      isSimulator: player.isSimulator || false
+  for (const identity of identities) {
+    map.set(identity.deviceId, {
+      displayName: identity.displayName || 'Unknown Player',
+      avatar: identity.avatar || 'BIRD1',
     });
   }
   
@@ -68,11 +64,22 @@ export async function getBattles(options?: { includePrivate?: boolean; limit?: n
     .sort({ updatedAt: -1 })
     .limit(limit);
 
-  const allPlayerIds = battles.flatMap(b => [b.player1DeviceId, b.player2DeviceId]);
-  const playerInfoMap = await getPlayerInfo(allPlayerIds);
+  const battlesByGame = new Map<string, typeof battles>();
+  for (const battle of battles) {
+    const slug = battle.gameSlug;
+    if (!battlesByGame.has(slug)) battlesByGame.set(slug, []);
+    battlesByGame.get(slug)!.push(battle);
+  }
+
+  const playerInfoMaps = new Map<string, Map<string, PlayerInfo>>();
+  for (const [slug, gameBattles] of battlesByGame) {
+    const allPlayerIds = gameBattles.flatMap(b => [b.player1DeviceId, b.player2DeviceId]);
+    playerInfoMaps.set(slug, await getPlayerInfo(allPlayerIds, slug));
+  }
 
   return battles.map(battle => {
     const battleObj = battle.toObject();
+    const playerInfoMap = playerInfoMaps.get(battleObj.gameSlug) || new Map();
     const p1Info = playerInfoMap.get(battle.player1DeviceId);
     const p2Info = battle.player2DeviceId ? playerInfoMap.get(battle.player2DeviceId) : null;
     
@@ -84,10 +91,8 @@ export async function getBattles(options?: { includePrivate?: boolean; limit?: n
       player2DeviceId: battleObj.player2DeviceId,
       player1DisplayName: p1Info?.displayName || 'Unknown Player',
       player1Avatar: p1Info?.avatar || 'BIRD1',
-      player1IsSimulator: p1Info?.isSimulator || false,
       player2DisplayName: p2Info?.displayName || null,
       player2Avatar: p2Info?.avatar || null,
-      player2IsSimulator: p2Info?.isSimulator ?? null,
       status: battleObj.status,
       currentTurn: battleObj.currentTurn,
       currentPlayerIndex: battleObj.currentPlayerIndex,
@@ -108,11 +113,9 @@ export interface BattleProfile {
   player1DeviceId: string;
   player1DisplayName: string;
   player1Avatar: string;
-  player1IsSimulator: boolean;
   player2DeviceId: string | null;
   player2DisplayName: string | null;
   player2Avatar: string | null;
-  player2IsSimulator: boolean | null;
   status: 'pending' | 'active' | 'completed' | 'abandoned';
   currentTurn: number;
   currentPlayerIndex: number;
@@ -153,7 +156,7 @@ export async function getBattleByDisplayName(displayName: string): Promise<Battl
   }
 
   const battleObj = battle.toObject();
-  const playerInfoMap = await getPlayerInfo([battleObj.player1DeviceId, battleObj.player2DeviceId]);
+  const playerInfoMap = await getPlayerInfo([battleObj.player1DeviceId, battleObj.player2DeviceId], battleObj.gameSlug);
 
   const p1Info = playerInfoMap.get(battleObj.player1DeviceId);
   const p2Info = battleObj.player2DeviceId ? playerInfoMap.get(battleObj.player2DeviceId) : null;
@@ -165,11 +168,9 @@ export async function getBattleByDisplayName(displayName: string): Promise<Battl
     player1DeviceId: battleObj.player1DeviceId,
     player1DisplayName: p1Info?.displayName || 'Unknown Player',
     player1Avatar: p1Info?.avatar || 'BIRD1',
-    player1IsSimulator: p1Info?.isSimulator || false,
     player2DeviceId: battleObj.player2DeviceId,
     player2DisplayName: p2Info?.displayName || null,
     player2Avatar: p2Info?.avatar || null,
-    player2IsSimulator: p2Info?.isSimulator ?? null,
     status: battleObj.status,
     currentTurn: battleObj.currentTurn,
     currentPlayerIndex: battleObj.currentPlayerIndex,
@@ -223,7 +224,7 @@ export async function getHubStats(): Promise<HubStats> {
   
   const [games, playerCount, battleStats, topScores] = await Promise.all([
     Game.countDocuments({ active: true }),
-    Player.countDocuments({ isActive: true }),
+    GameIdentity.countDocuments({ isActive: true }),
     Battle.aggregate([
       {
         $group: {

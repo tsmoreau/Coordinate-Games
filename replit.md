@@ -15,7 +15,7 @@ The application is built using Next.js 16 with the App Router, a MongoDB databas
 - **Dynamic Routing:** API routes are structured under `/api/[gameSlug]/...` to facilitate game-specific interactions.
 - **Haikunator Name Generation:** Games can configure custom word lists for generating unique player and battle display names.
 - **Embedded Battle Turns:** Turn data for async games is embedded directly within the `Battle` document for performance and data locality.
-- **Deterministic Token System:** Authentication tokens are generated deterministically from the device serial number using HMAC-SHA256, allowing for consistent token generation and account recovery.
+- **Random Token System:** Authentication tokens are randomly generated at registration time, hashed with HMAC-SHA256, and stored per GameIdentity. There is no serial number or cross-game identity — each game registration produces an independent deviceId and token.
 - **UI/UX:** The front end includes a multi-game hub showcase with a hero section displaying platform statistics, a games grid, and top scores. An interactive isometric hero animation on the homepage demonstrates responsive design and DPI-aware canvas rendering.
 - **Admin Dashboard Architecture:** Two-level admin structure:
   - `/dashboard` — Platform-level with tabs: Overview (cross-game stats), Admin (platform settings), Games (manage registered games — API routes, capabilities, maintenance, MOTD)

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
-import { Player } from '@/models/Player';
+import { GameIdentity } from '@/models/GameIdentity';
 import { Ping } from '@/models/Ping';
 import { hashToken } from '@/lib/auth';
 import { z } from 'zod';
@@ -39,17 +39,17 @@ async function authenticateAndGetPlayer(request: NextRequest) {
   
   try {
     const tokenHash = hashToken(token);
-    const player = await Player.findOne({ 
+    const identity = await GameIdentity.findOne({ 
       tokenHash: tokenHash,
       isActive: true 
     });
     
-    if (player) {
-      player.lastSeen = new Date();
-      await player.save();
+    if (identity) {
+      identity.lastSeen = new Date();
+      await identity.save();
     }
     
-    return player;
+    return identity;
   } catch {
     return null;
   }
@@ -57,9 +57,9 @@ async function authenticateAndGetPlayer(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const player = await authenticateAndGetPlayer(request);
+    const identity = await authenticateAndGetPlayer(request);
     
-    if (!player) {
+    if (!identity) {
       return NextResponse.json({
         success: false,
         error: 'Unauthorized - invalid or missing token',
@@ -80,8 +80,8 @@ export async function POST(request: NextRequest) {
     const { message } = parsed.data;
 
     const ping = new Ping({
-      deviceId: player.deviceId,
-      displayName: player.displayName,
+      deviceId: identity.deviceId,
+      displayName: identity.displayName,
       ipAddress: getClientIp(request),
       userAgent: request.headers.get('user-agent') || undefined,
       message: message,
@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Ping received',
       pingId: ping._id.toString(),
-      displayName: player.displayName,
+      displayName: identity.displayName,
       timestamp: ping.createdAt.toISOString(),
       minClientVersion: MIN_CLIENT_VERSION,
     }, { status: 200 });
@@ -110,9 +110,9 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    const player = await authenticateAndGetPlayer(request);
+    const identity = await authenticateAndGetPlayer(request);
     
-    if (!player) {
+    if (!identity) {
       return NextResponse.json({
         success: false,
         error: 'Unauthorized - invalid or missing token',

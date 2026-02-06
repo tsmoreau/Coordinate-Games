@@ -199,7 +199,7 @@ export default async function BattleDetailPage({ params }: Props) {
                           className="font-medium"
                           data-testid="text-player1-name"
                         >
-                          {battle.player1DisplayName}{battle.player1IsSimulator && ' •'}
+                          {battle.player1DisplayName}
                         </p>
                         <Badge variant="outline" className="text-xs">
                           P1
@@ -238,7 +238,7 @@ export default async function BattleDetailPage({ params }: Props) {
                             className="font-medium"
                             data-testid="text-player2-name"
                           >
-                            {battle.player2DisplayName}{battle.player2IsSimulator && ' •'}
+                            {battle.player2DisplayName}
                           </p>
                           <Badge variant="outline" className="text-xs">
                             P2

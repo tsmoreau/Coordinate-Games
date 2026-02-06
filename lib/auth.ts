@@ -16,12 +16,6 @@ export function generateDeviceSecret(): string {
   return randomBytes(48).toString('base64url');
 }
 
-export function generateDeterministicToken(serialNumber: string): string {
-  return createHmac('sha256', getSecretKey())
-    .update(serialNumber)
-    .digest('base64url');
-}
-
 export function hashToken(token: string): string {
   return createHmac('sha256', getSecretKey())
     .update(token)
