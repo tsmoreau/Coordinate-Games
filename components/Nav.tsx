@@ -37,7 +37,7 @@ export default function Nav() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuItem asChild>
-                  <Link href="/battles" className="w-full cursor-pointer" data-testid="link-battles">
+                  <Link href="/battles" className="hidden w-full cursor-pointer" data-testid="link-battles">
                     Battles
                   </Link>
                 </DropdownMenuItem>

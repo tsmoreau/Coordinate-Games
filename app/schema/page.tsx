@@ -1074,7 +1074,7 @@ export default function SchemaPage() {
         <div className="mb-12">
           <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
             <div className="flex items-center gap-2">
-              <Gamepad2 className="w-8 h-8 text-primary" />
+              <Gamepad2 className="hidden w-8 h-8 text-primary" />
               <h1 className="text-3xl font-bold">API Reference</h1>
             </div>
             <Button 
@@ -1086,7 +1086,7 @@ export default function SchemaPage() {
               Download .md
             </Button>
           </div>
-          <p className="text-muted-foreground mb-6">
+          <p className="hidden text-muted-foreground mb-6">
             Complete documentation for the coordinate.games multi-game hub API. 
             Supports async turn-based games (like Bird Wars) and leaderboard games (like Power Pentagon).
           </p>
