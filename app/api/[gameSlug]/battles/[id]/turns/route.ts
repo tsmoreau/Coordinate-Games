@@ -152,10 +152,17 @@ export async function POST(
       }, { status: 404 });
     }
 
-    if (battle.status !== 'active') {
+    if (battle.status !== 'active' && battle.status !== 'pending') {
       return NextResponse.json({
         success: false,
         error: `Battle is not active. Current status: ${battle.status}`,
+      }, { status: 400 });
+    }
+
+    if (battle.status === 'pending' && auth.deviceId !== battle.player1DeviceId) {
+      return NextResponse.json({
+        success: false,
+        error: 'Battle is still waiting for an opponent to join',
       }, { status: 400 });
     }
 
