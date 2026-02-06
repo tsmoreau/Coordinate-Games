@@ -45,7 +45,7 @@ NEXTAUTH_SECRET = "nkYb8eVjxsZ0EJVgaZS6MiptfJDm52Pn4UrCEqW16QE="
 ADMIN_EMAILS = "terrencestasse@gmail.com"
 
 [userenv.development]
-NEXTAUTH_URL = "https://72f2c972-1a43-4125-acd4-78ff2541cb4c-00-1n8e4yxghi0q9.janeway.replit.dev"
+NEXTAUTH_URL = "https://12cfeb68-3054-41d1-b498-022ac22a306d-00-1j1olcnyzylec.janeway.replit.dev"
 
 [userenv.production]
 NEXTAUTH_URL = "https://coordinate.games"
