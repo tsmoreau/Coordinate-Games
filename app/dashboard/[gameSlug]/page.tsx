@@ -38,7 +38,7 @@ export default async function GameDashboardPage({ params }: Props) {
   
   const userEmail = session.user?.email?.toLowerCase();
   if (ADMIN_EMAILS.length > 0 && (!userEmail || !ADMIN_EMAILS.includes(userEmail))) {
-    redirect('/');
+    redirect('/dashboard');
   }
 
   const { gameSlug } = await params;
