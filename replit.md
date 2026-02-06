@@ -11,12 +11,16 @@ The application is built using Next.js 16 with the App Router, a MongoDB databas
 
 **Key Architectural Decisions:**
 - **Modular Game Capabilities:** Games define their functionalities via a `capabilities` array, enforcing endpoint access and enabling a mix-and-match approach to features.
-- **Cross-Game Player Identity:** A `Player` model provides a global identifier, linking per-game identities (`GameIdentity`) across different games using a `serialNumber` for account recovery and linking.
+- **Per-Game Player Identity:** Each game has independent player registration via `GameIdentity`. There is no global player identity — each game manages its own players independently.
 - **Dynamic Routing:** API routes are structured under `/api/[gameSlug]/...` to facilitate game-specific interactions.
 - **Haikunator Name Generation:** Games can configure custom word lists for generating unique player and battle display names.
 - **Embedded Battle Turns:** Turn data for async games is embedded directly within the `Battle` document for performance and data locality.
 - **Deterministic Token System:** Authentication tokens are generated deterministically from the device serial number using HMAC-SHA256, allowing for consistent token generation and account recovery.
 - **UI/UX:** The front end includes a multi-game hub showcase with a hero section displaying platform statistics, a games grid, and top scores. An interactive isometric hero animation on the homepage demonstrates responsive design and DPI-aware canvas rendering.
+- **Admin Dashboard Architecture:** Two-level admin structure:
+  - `/dashboard` — Platform-level with tabs: Overview (cross-game stats), Admin (platform settings), Games (manage registered games — API routes, capabilities, maintenance, MOTD)
+  - `/dashboard/[gameSlug]` — Game-level with tabs: Overview (game-specific stats + API routes), Players (player management via GameIdentity), Battles (battle management scoped to game)
+  - Admin actions in `app/actions/admin.ts` are game-scoped, using `GameIdentity` for players (not global `Player` model)
 
 **Feature Specifications:**
 - **Data Storage:** Generic key-value storage for games with the `data` capability, supporting global, player-scoped, and public scopes.

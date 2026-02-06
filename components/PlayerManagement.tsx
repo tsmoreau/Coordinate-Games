@@ -57,9 +57,10 @@ const AVATARS = [
 
 interface PlayerManagementProps {
   players: AdminPlayerDetails[];
+  gameSlug: string;
 }
 
-export default function PlayerManagement({ players }: PlayerManagementProps) {
+export default function PlayerManagement({ players, gameSlug }: PlayerManagementProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'banned'>('all');
   const [isPending, startTransition] = useTransition();
@@ -93,8 +94,8 @@ export default function PlayerManagement({ players }: PlayerManagementProps) {
     
     startTransition(async () => {
       const result = editingPlayer.isActive 
-        ? await banPlayer(editingPlayer.deviceId)
-        : await unbanPlayer(editingPlayer.deviceId);
+        ? await banPlayer(gameSlug, editingPlayer.deviceId)
+        : await unbanPlayer(gameSlug, editingPlayer.deviceId);
       
       if (!result.success) {
         toast({
@@ -123,7 +124,7 @@ export default function PlayerManagement({ players }: PlayerManagementProps) {
     if (!editingPlayer || !newName.trim()) return;
     
     startTransition(async () => {
-      const result = await forceNameChange(editingPlayer.deviceId, newName.trim());
+      const result = await forceNameChange(gameSlug, editingPlayer.deviceId, newName.trim());
       
       if (!result.success) {
         toast({
@@ -153,7 +154,7 @@ export default function PlayerManagement({ players }: PlayerManagementProps) {
     if (!editingPlayer || !newAvatar) return;
     
     startTransition(async () => {
-      const result = await changeAvatar(editingPlayer.deviceId, newAvatar);
+      const result = await changeAvatar(gameSlug, editingPlayer.deviceId, newAvatar);
       
       if (!result.success) {
         toast({
@@ -182,7 +183,7 @@ export default function PlayerManagement({ players }: PlayerManagementProps) {
     if (!editingPlayer) return;
     
     startTransition(async () => {
-      const result = await deletePlayer(editingPlayer.deviceId);
+      const result = await deletePlayer(gameSlug, editingPlayer.deviceId);
       
       if (!result.success) {
         toast({
@@ -254,7 +255,7 @@ export default function PlayerManagement({ players }: PlayerManagementProps) {
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <h3 className="font-bold uppercase tracking-tight truncate">
-                          {player.displayName}{player.isSimulator && ' •'}
+                          {player.displayName}
                         </h3>
                         {!player.isActive && (
                           <Badge variant="destructive">BANNED</Badge>
