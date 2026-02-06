@@ -6,7 +6,6 @@ import { connectToDatabase } from '@/lib/mongodb';
 import { Battle } from '@/models/Battle';
 import { GameIdentity, VALID_AVATARS, PlayerAvatar } from '@/models/GameIdentity';
 import { Game } from '@/models/Game';
-import { Player } from '@/models/Player';
 import { revalidatePath } from 'next/cache';
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
@@ -228,6 +227,7 @@ export async function toggleGameMaintenance(slug: string): Promise<{ success: bo
 
     await Game.updateOne({ slug }, { maintenance: !game.maintenance });
     revalidatePath('/dashboard');
+    revalidatePath(`/dashboard/${slug}`);
     return { success: true };
   } catch (error) {
     console.error('Error toggling maintenance:', error);
@@ -248,6 +248,7 @@ export async function updateGameMotd(slug: string, motd: string): Promise<{ succ
 
     await Game.updateOne({ slug }, { motd: motd.trim() || null });
     revalidatePath('/dashboard');
+    revalidatePath(`/dashboard/${slug}`);
     return { success: true };
   } catch (error) {
     console.error('Error updating MOTD:', error);
@@ -642,22 +643,7 @@ export async function deleteBattle(battleId: string): Promise<{ success: boolean
   }
 }
 
-export interface RecoveredAccount {
-  found: boolean;
-  serialNumber: string;
-  globalId?: string;
-  gameIdentity?: {
-    deviceId: string;
-    displayName: string;
-    avatar: string;
-    createdAt: string;
-    lastSeen: string;
-    isActive: boolean;
-  };
-  battleCount?: number;
-}
-
-export async function recoverPlayerAccount(gameSlug: string, serialNumber: string): Promise<{ success: boolean; data?: RecoveredAccount; error?: string }> {
+export async function recoverPlayerByDeviceId(gameSlug: string, deviceId: string): Promise<{ success: boolean; data?: AdminPlayerDetails; error?: string }> {
   const auth = await requireAdminAuth();
   if (!auth.success) {
     return { success: false, error: auth.error };
@@ -666,43 +652,35 @@ export async function recoverPlayerAccount(gameSlug: string, serialNumber: strin
   try {
     await connectToDatabase();
 
-    if (!serialNumber || serialNumber.trim().length === 0) {
-      return { success: false, error: 'Serial number is required' };
+    if (!deviceId || deviceId.trim().length === 0) {
+      return { success: false, error: 'Device ID is required' };
     }
 
-    const trimmedSerial = serialNumber.trim();
-    const player = await Player.findOne({ serialNumber: trimmedSerial });
-
-    if (!player) {
-      return { success: true, data: { found: false, serialNumber: trimmedSerial } };
+    const identity = await GameIdentity.findOne({ gameSlug, deviceId: deviceId.trim() });
+    if (!identity) {
+      return { success: false, error: 'No player found with that Device ID in this game' };
     }
 
-    const gameIdentity = await GameIdentity.findOne({ globalId: player.globalId, gameSlug });
-
-    if (!gameIdentity) {
-      return { success: true, data: { found: false, serialNumber: trimmedSerial, globalId: player.globalId } };
-    }
-
-    const battleCount = await Battle.countDocuments({
-      gameSlug,
-      $or: [{ player1DeviceId: gameIdentity.deviceId }, { player2DeviceId: gameIdentity.deviceId }]
-    });
+    const did = identity.deviceId;
+    const [totalBattles, wins, losses, draws, activeBattles, pendingBattles] = await Promise.all([
+      Battle.countDocuments({ gameSlug, $or: [{ player1DeviceId: did }, { player2DeviceId: did }] }),
+      Battle.countDocuments({ gameSlug, status: 'completed', winnerId: did, $or: [{ player1DeviceId: did }, { player2DeviceId: did }] }),
+      Battle.countDocuments({ gameSlug, status: 'completed', winnerId: { $nin: [did, null] }, $or: [{ player1DeviceId: did }, { player2DeviceId: did }] }),
+      Battle.countDocuments({ gameSlug, status: 'completed', winnerId: null, $or: [{ player1DeviceId: did }, { player2DeviceId: did }] }),
+      Battle.countDocuments({ gameSlug, status: 'active', $or: [{ player1DeviceId: did }, { player2DeviceId: did }] }),
+      Battle.countDocuments({ gameSlug, status: 'pending', $or: [{ player1DeviceId: did }, { player2DeviceId: did }] }),
+    ]);
 
     return {
       success: true,
       data: {
-        found: true,
-        serialNumber: trimmedSerial,
-        globalId: player.globalId,
-        gameIdentity: {
-          deviceId: gameIdentity.deviceId,
-          displayName: gameIdentity.displayName,
-          avatar: gameIdentity.avatar,
-          createdAt: gameIdentity.createdAt.toISOString(),
-          lastSeen: gameIdentity.lastSeen.toISOString(),
-          isActive: gameIdentity.isActive,
-        },
-        battleCount,
+        deviceId: identity.deviceId,
+        displayName: identity.displayName || 'Unnamed Player',
+        avatar: identity.avatar || 'BIRD1',
+        registeredAt: identity.createdAt.toISOString(),
+        lastSeen: identity.lastSeen.toISOString(),
+        isActive: identity.isActive,
+        stats: { totalBattles, wins, losses, draws, activeBattles, pendingBattles },
       }
     };
   } catch (error) {

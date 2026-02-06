@@ -14,11 +14,13 @@ import {
   Trophy,
   AlertTriangle,
   ArrowLeft,
-  Wrench
+  Wrench,
+  Settings
 } from 'lucide-react';
 import Nav from '@/components/Nav';
 import PlayerManagement from '@/components/PlayerManagement';
 import BattleManagement from '@/components/BattleManagement';
+import GameAdminPanel from '@/components/GameAdminPanel';
 import { getGameBySlug, getGameStats, getGamePlayers, getGameBattles } from '@/app/actions/admin';
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
@@ -100,6 +102,10 @@ export default async function GameDashboardPage({ params }: Props) {
             <TabsTrigger value="battles" data-testid="tab-game-battles">
               <Swords className="w-4 h-4 mr-2" />
               BATTLES
+            </TabsTrigger>
+            <TabsTrigger value="admin" data-testid="tab-game-admin">
+              <Settings className="w-4 h-4 mr-2" />
+              ADMIN
             </TabsTrigger>
           </TabsList>
 
@@ -257,6 +263,15 @@ export default async function GameDashboardPage({ params }: Props) {
 
           <TabsContent value="battles">
             <BattleManagement battles={battles} />
+          </TabsContent>
+
+          <TabsContent value="admin">
+            <GameAdminPanel 
+              gameSlug={gameSlug} 
+              gameName={game.name} 
+              maintenance={game.maintenance} 
+              motd={game.motd} 
+            />
           </TabsContent>
         </Tabs>
       </main>
