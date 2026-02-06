@@ -187,107 +187,106 @@ export default function GameManagement({ games }: GameManagementProps) {
           </Card>
         ) : (
           games.map((game) => (
-            <Card key={game.slug} data-testid={`card-game-manage-${game.slug}`}>
-              <CardContent className="p-4">
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-3 mb-2 flex-wrap">
-                      <h3 className="font-bold uppercase tracking-tight">{game.name}</h3>
-                      {game.active ? (
-                        <Badge variant="default" data-testid={`status-active-${game.slug}`}>ACTIVE</Badge>
-                      ) : (
-                        <Badge variant="destructive" data-testid={`status-active-${game.slug}`}>INACTIVE</Badge>
+            <Link key={game.slug} href={`/dashboard/${game.slug}`} className="block">
+              <Card 
+                data-testid={`card-game-manage-${game.slug}`}
+                className="hover-elevate cursor-pointer group"
+              >
+                <CardContent className="p-4">
+                  <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-3 mb-2 flex-wrap">
+                        <h3 className="font-bold uppercase tracking-tight group-hover:text-primary transition-colors">{game.name}</h3>
+                        {game.active ? (
+                          <Badge variant="default" data-testid={`status-active-${game.slug}`}>ACTIVE</Badge>
+                        ) : (
+                          <Badge variant="destructive" data-testid={`status-active-${game.slug}`}>INACTIVE</Badge>
+                        )}
+                        {game.maintenance && <Badge variant="secondary" data-testid={`status-maintenance-${game.slug}`}>MAINTENANCE</Badge>}
+                      </div>
+                      
+                      <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2 flex-wrap">
+                        <span className="font-mono text-xs">/api/{game.slug}</span>
+                        <span className="flex items-center gap-1">
+                          <Users className="w-3 h-3" />
+                          {game.playerCount} players
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Swords className="w-3 h-3" />
+                          {game.battleCount} battles
+                        </span>
+                      </div>
+
+                      <div className="flex flex-wrap gap-1">
+                        {game.capabilities.map((cap) => (
+                          <Badge key={cap} variant="outline" className="text-[10px]">
+                            {cap.toUpperCase()}
+                          </Badge>
+                        ))}
+                      </div>
+
+                      {game.motd && (
+                        <p className="text-xs text-muted-foreground mt-2 italic">
+                          MOTD: {game.motd}
+                        </p>
                       )}
-                      {game.maintenance && <Badge variant="secondary" data-testid={`status-maintenance-${game.slug}`}>MAINTENANCE</Badge>}
-                    </div>
-                    
-                    <div className="flex items-center gap-4 text-sm text-muted-foreground mb-2 flex-wrap">
-                      <span className="font-mono text-xs">/api/{game.slug}</span>
-                      <span className="flex items-center gap-1">
-                        <Users className="w-3 h-3" />
-                        {game.playerCount} players
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Swords className="w-3 h-3" />
-                        {game.battleCount} battles
-                      </span>
                     </div>
 
-                    <div className="flex flex-wrap gap-1">
-                      {game.capabilities.map((cap) => (
-                        <Badge key={cap} variant="outline" className="text-[10px]">
-                          {cap.toUpperCase()}
-                        </Badge>
-                      ))}
-                    </div>
-
-                    {game.motd && (
-                      <p className="text-xs text-muted-foreground mt-2 italic">
-                        MOTD: {game.motd}
-                      </p>
-                    )}
-                  </div>
-
-                  <div className="flex gap-2 flex-wrap">
-                    <Link href={`/dashboard/${game.slug}`}>
-                      <Button size="sm" variant="outline" data-testid={`button-manage-game-${game.slug}`} title="Open game dashboard">
-                        <ExternalLink className="w-4 h-4 mr-1" />
-                        MANAGE
+                    <div className="flex gap-2 flex-wrap" onClick={(e) => e.preventDefault()}>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() => copyApiBase(game.slug)}
+                        data-testid={`button-copy-api-${game.slug}`}
+                        title="Copy API base URL"
+                      >
+                        <Copy className="w-4 h-4" />
                       </Button>
-                    </Link>
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      onClick={() => copyApiBase(game.slug)}
-                      data-testid={`button-copy-api-${game.slug}`}
-                      title="Copy API base URL"
-                    >
-                      <Copy className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      onClick={() => handleOpenCapsDialog(game)}
-                      disabled={isPending}
-                      data-testid={`button-edit-caps-${game.slug}`}
-                      title="Edit capabilities"
-                    >
-                      <Settings className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      onClick={() => handleEditMotd(game)}
-                      disabled={isPending}
-                      data-testid={`button-motd-${game.slug}`}
-                      title="Edit message of the day"
-                    >
-                      <MessageSquare className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      onClick={() => handleToggleMaintenance(game)}
-                      disabled={isPending}
-                      data-testid={`button-maintenance-${game.slug}`}
-                      title={game.maintenance ? 'Disable maintenance mode' : 'Enable maintenance mode'}
-                    >
-                      <Wrench className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      onClick={() => handleToggleActive(game)}
-                      disabled={isPending}
-                      data-testid={`button-toggle-active-${game.slug}`}
-                      title={game.active ? 'Deactivate game' : 'Activate game'}
-                    >
-                      <Power className="w-4 h-4" />
-                    </Button>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() => handleOpenCapsDialog(game)}
+                        disabled={isPending}
+                        data-testid={`button-edit-caps-${game.slug}`}
+                        title="Edit capabilities"
+                      >
+                        <Settings className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() => handleEditMotd(game)}
+                        disabled={isPending}
+                        data-testid={`button-motd-${game.slug}`}
+                        title="Edit message of the day"
+                      >
+                        <MessageSquare className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() => handleToggleMaintenance(game)}
+                        disabled={isPending}
+                        data-testid={`button-maintenance-${game.slug}`}
+                        title={game.maintenance ? 'Disable maintenance mode' : 'Enable maintenance mode'}
+                      >
+                        <Wrench className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="outline"
+                        onClick={() => handleToggleActive(game)}
+                        disabled={isPending}
+                        data-testid={`button-toggle-active-${game.slug}`}
+                        title={game.active ? 'Deactivate game' : 'Activate game'}
+                      >
+                        <Power className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </Link>
           ))
         )}
       </div>
