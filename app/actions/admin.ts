@@ -5,6 +5,8 @@ import { authOptions } from '@/lib/auth-options';
 import { connectToDatabase } from '@/lib/mongodb';
 import { Player, VALID_AVATARS, PlayerAvatar } from '@/models/Player';
 import { Battle } from '@/models/Battle';
+import { GameIdentity } from '@/models/GameIdentity';
+import { Game, GameCapability, IHaikunatorConfig, IVersioning } from '@/models/Game';
 import { revalidatePath } from 'next/cache';
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
