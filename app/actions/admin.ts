@@ -207,7 +207,7 @@ export async function getGameBySlug(gameSlug: string) {
       active: game.active,
       maintenance: game.maintenance,
       motd: game.motd || null,
-      haikunator: game.haikunator ? { adjectives: game.haikunator.adjectives, nouns: game.haikunator.nouns } : null,
+      haikunator: game.haikunator ? { adjectives: [...game.haikunator.adjectives], nouns: [...game.haikunator.nouns] } : null,
       versioning: game.versioning ? { minVersion: game.versioning.minVersion, currentVersion: game.versioning.currentVersion, updateUrl: game.versioning.updateUrl } : null,
       createdAt: game.createdAt.toISOString()
     };
