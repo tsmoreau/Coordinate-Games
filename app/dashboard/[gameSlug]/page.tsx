@@ -15,12 +15,14 @@ import {
   AlertTriangle,
   ArrowLeft,
   Wrench,
-  Settings
+  Settings,
+  ScrollText
 } from 'lucide-react';
 import Nav from '@/components/Nav';
 import PlayerManagement from '@/components/PlayerManagement';
 import BattleManagement from '@/components/BattleManagement';
 import GameAdminPanel from '@/components/GameAdminPanel';
+import AuditLogViewer from '@/components/AuditLogViewer';
 import { getGameBySlug, getGameStats, getGamePlayers, getGameBattles } from '@/app/actions/admin';
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
@@ -101,6 +103,10 @@ export default async function GameDashboardPage({ params }: Props) {
             <TabsTrigger value="battles" data-testid="tab-game-battles">
               <Swords className="w-4 h-4 mr-2" />
               BATTLES
+            </TabsTrigger>
+            <TabsTrigger value="audit" data-testid="tab-game-audit">
+              <ScrollText className="w-4 h-4 mr-2" />
+              AUDIT LOG
             </TabsTrigger>
             <TabsTrigger value="admin" data-testid="tab-game-admin">
               <Settings className="w-4 h-4 mr-2" />
@@ -226,6 +232,10 @@ export default async function GameDashboardPage({ params }: Props) {
                       <Badge variant="outline" className="text-[10px] font-mono">GET</Badge>
                       <span>/api/{gameSlug}/ping</span>
                     </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-[10px] font-mono">POST</Badge>
+                      <span>/api/{gameSlug}/ping</span>
+                    </div>
                     {game.capabilities.includes('async') && (
                       <>
                         <div className="flex items-center gap-2">
@@ -246,7 +256,7 @@ export default async function GameDashboardPage({ params }: Props) {
                     )}
                     {game.capabilities.includes('data') && (
                       <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-[10px] font-mono">GET/PUT/DEL</Badge>
+                        <Badge variant="outline" className="text-[10px] font-mono">GET/POST/DEL</Badge>
                         <span>/api/{gameSlug}/data/[key]</span>
                       </div>
                     )}
@@ -264,13 +274,16 @@ export default async function GameDashboardPage({ params }: Props) {
             <BattleManagement battles={battles} />
           </TabsContent>
 
+          <TabsContent value="audit">
+            <AuditLogViewer gameSlug={gameSlug} gameName={game.name} />
+          </TabsContent>
+
           <TabsContent value="admin">
             <GameAdminPanel 
               gameSlug={gameSlug} 
               gameName={game.name} 
               maintenance={game.maintenance} 
-              motd={game.motd}
-              haikunator={game.haikunator ?? null}
+              motd={game.motd} 
             />
           </TabsContent>
         </Tabs>

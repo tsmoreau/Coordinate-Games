@@ -4,7 +4,6 @@ import { useState, useEffect, useTransition } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   Select,
   SelectContent,
@@ -20,26 +19,26 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { ChevronLeft, ChevronRight, Search, RefreshCw, Globe } from 'lucide-react';
+import { ChevronLeft, ChevronRight, RefreshCw, Globe } from 'lucide-react';
 import { fetchAuditLogs, AuditLogEntry } from '@/app/actions/admin';
 
 interface AuditLogViewerProps {
-  games: { slug: string; name: string }[];
+  gameSlug: string;
+  gameName: string;
 }
 
-export default function AuditLogViewer({ games }: AuditLogViewerProps) {
+export default function AuditLogViewer({ gameSlug, gameName }: AuditLogViewerProps) {
   const [isPending, startTransition] = useTransition();
   const [logs, setLogs] = useState<AuditLogEntry[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
-  const [gameFilter, setGameFilter] = useState<string>('all');
   const [actionFilter, setActionFilter] = useState<string>('all');
 
   const loadLogs = (targetPage: number = page) => {
     startTransition(async () => {
       const result = await fetchAuditLogs({
-        gameSlug: gameFilter !== 'all' ? gameFilter : undefined,
+        gameSlug,
         action: actionFilter !== 'all' ? actionFilter : undefined,
         page: targetPage,
         limit: 50,
@@ -55,7 +54,7 @@ export default function AuditLogViewer({ games }: AuditLogViewerProps) {
 
   useEffect(() => {
     loadLogs(1);
-  }, [gameFilter, actionFilter]);
+  }, [actionFilter]);
 
   const formatDate = (iso: string) => {
     const d = new Date(iso);
@@ -69,33 +68,21 @@ export default function AuditLogViewer({ games }: AuditLogViewerProps) {
     });
   };
 
-  const gameNameMap = Object.fromEntries(games.map(g => [g.slug, g.name]));
-
   return (
     <div className="space-y-4">
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between gap-4 flex-wrap">
-            <CardTitle className="uppercase text-sm">AUDIT LOG</CardTitle>
+            <CardTitle className="uppercase text-sm">AUDIT LOG &mdash; {gameName}</CardTitle>
             <div className="flex items-center gap-2 flex-wrap">
-              <Select value={gameFilter} onValueChange={setGameFilter}>
-                <SelectTrigger className="w-[160px]" data-testid="select-audit-game">
-                  <SelectValue placeholder="All games" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All games</SelectItem>
-                  {games.map((g) => (
-                    <SelectItem key={g.slug} value={g.slug}>{g.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
               <Select value={actionFilter} onValueChange={setActionFilter}>
-                <SelectTrigger className="w-[140px]" data-testid="select-audit-action">
+                <SelectTrigger className="w-[160px]" data-testid="select-audit-action">
                   <SelectValue placeholder="All actions" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All actions</SelectItem>
-                  <SelectItem value="ping">Ping</SelectItem>
+                  <SelectItem value="ping">Ping (heartbeat)</SelectItem>
+                  <SelectItem value="player_ping">Player ping</SelectItem>
                   <SelectItem value="register">Register</SelectItem>
                 </SelectContent>
               </Select>
@@ -125,7 +112,6 @@ export default function AuditLogViewer({ games }: AuditLogViewerProps) {
                   <TableHeader>
                     <TableRow>
                       <TableHead className="uppercase text-xs">TIME</TableHead>
-                      <TableHead className="uppercase text-xs">GAME</TableHead>
                       <TableHead className="uppercase text-xs">ACTION</TableHead>
                       <TableHead className="uppercase text-xs">IP</TableHead>
                       <TableHead className="uppercase text-xs">DETAILS</TableHead>
@@ -136,11 +122,6 @@ export default function AuditLogViewer({ games }: AuditLogViewerProps) {
                       <TableRow key={log.id} data-testid={`row-audit-${log.id}`}>
                         <TableCell className="text-xs whitespace-nowrap font-mono">
                           {formatDate(log.createdAt)}
-                        </TableCell>
-                        <TableCell>
-                          <Badge variant="outline" className="text-[10px]">
-                            {gameNameMap[log.gameSlug] || log.gameSlug}
-                          </Badge>
                         </TableCell>
                         <TableCell>
                           <Badge variant="secondary" className="text-[10px] uppercase">
@@ -154,7 +135,7 @@ export default function AuditLogViewer({ games }: AuditLogViewerProps) {
                           {Object.entries(log.metadata)
                             .filter(([, v]) => v != null)
                             .map(([k, v]) => `${k}=${v}`)
-                            .join(', ') || '—'}
+                            .join(', ') || '\u2014'}
                         </TableCell>
                       </TableRow>
                     ))}
