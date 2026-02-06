@@ -6,6 +6,7 @@ import { connectToDatabase } from '@/lib/mongodb';
 import { Battle } from '@/models/Battle';
 import { GameIdentity, VALID_AVATARS, PlayerAvatar } from '@/models/GameIdentity';
 import { Game } from '@/models/Game';
+import { Player } from '@/models/Player';
 import { revalidatePath } from 'next/cache';
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
@@ -638,6 +639,147 @@ export async function deleteBattle(battleId: string): Promise<{ success: boolean
   } catch (error) {
     console.error('Error deleting battle:', error);
     return { success: false, error: 'Failed to delete battle' };
+  }
+}
+
+export interface RecoveredAccount {
+  found: boolean;
+  serialNumber: string;
+  globalId?: string;
+  gameIdentity?: {
+    deviceId: string;
+    displayName: string;
+    avatar: string;
+    createdAt: string;
+    lastSeen: string;
+    isActive: boolean;
+  };
+  battleCount?: number;
+}
+
+export async function recoverPlayerAccount(gameSlug: string, serialNumber: string): Promise<{ success: boolean; data?: RecoveredAccount; error?: string }> {
+  const auth = await requireAdminAuth();
+  if (!auth.success) {
+    return { success: false, error: auth.error };
+  }
+
+  try {
+    await connectToDatabase();
+
+    if (!serialNumber || serialNumber.trim().length === 0) {
+      return { success: false, error: 'Serial number is required' };
+    }
+
+    const trimmedSerial = serialNumber.trim();
+    const player = await Player.findOne({ serialNumber: trimmedSerial });
+
+    if (!player) {
+      return { success: true, data: { found: false, serialNumber: trimmedSerial } };
+    }
+
+    const gameIdentity = await GameIdentity.findOne({ globalId: player.globalId, gameSlug });
+
+    if (!gameIdentity) {
+      return { success: true, data: { found: false, serialNumber: trimmedSerial, globalId: player.globalId } };
+    }
+
+    const battleCount = await Battle.countDocuments({
+      gameSlug,
+      $or: [{ player1DeviceId: gameIdentity.deviceId }, { player2DeviceId: gameIdentity.deviceId }]
+    });
+
+    return {
+      success: true,
+      data: {
+        found: true,
+        serialNumber: trimmedSerial,
+        globalId: player.globalId,
+        gameIdentity: {
+          deviceId: gameIdentity.deviceId,
+          displayName: gameIdentity.displayName,
+          avatar: gameIdentity.avatar,
+          createdAt: gameIdentity.createdAt.toISOString(),
+          lastSeen: gameIdentity.lastSeen.toISOString(),
+          isActive: gameIdentity.isActive,
+        },
+        battleCount,
+      }
+    };
+  } catch (error) {
+    console.error('Error recovering player account:', error);
+    return { success: false, error: 'Failed to recover player account' };
+  }
+}
+
+export async function resetAllBattles(gameSlug: string): Promise<{ success: boolean; affected?: number; error?: string }> {
+  const auth = await requireAdminAuth();
+  if (!auth.success) {
+    return { success: false, error: auth.error };
+  }
+
+  try {
+    await connectToDatabase();
+
+    const game = await Game.findOne({ slug: gameSlug });
+    if (!game) return { success: false, error: 'Game not found' };
+
+    const result = await Battle.updateMany(
+      { gameSlug, status: { $in: ['active', 'pending'] } },
+      { status: 'abandoned', endReason: 'cancelled' }
+    );
+
+    revalidatePath(`/dashboard/${gameSlug}`);
+    return { success: true, affected: result.modifiedCount };
+  } catch (error) {
+    console.error('Error resetting battles:', error);
+    return { success: false, error: 'Failed to reset battles' };
+  }
+}
+
+export async function purgeAllBattles(gameSlug: string): Promise<{ success: boolean; deleted?: number; error?: string }> {
+  const auth = await requireAdminAuth();
+  if (!auth.success) {
+    return { success: false, error: auth.error };
+  }
+
+  try {
+    await connectToDatabase();
+
+    const game = await Game.findOne({ slug: gameSlug });
+    if (!game) return { success: false, error: 'Game not found' };
+
+    const result = await Battle.deleteMany({ gameSlug });
+
+    revalidatePath(`/dashboard/${gameSlug}`);
+    return { success: true, deleted: result.deletedCount };
+  } catch (error) {
+    console.error('Error purging battles:', error);
+    return { success: false, error: 'Failed to purge battles' };
+  }
+}
+
+export async function unbanAllPlayers(gameSlug: string): Promise<{ success: boolean; affected?: number; error?: string }> {
+  const auth = await requireAdminAuth();
+  if (!auth.success) {
+    return { success: false, error: auth.error };
+  }
+
+  try {
+    await connectToDatabase();
+
+    const game = await Game.findOne({ slug: gameSlug });
+    if (!game) return { success: false, error: 'Game not found' };
+
+    const result = await GameIdentity.updateMany(
+      { gameSlug, isActive: false },
+      { isActive: true }
+    );
+
+    revalidatePath(`/dashboard/${gameSlug}`);
+    return { success: true, affected: result.modifiedCount };
+  } catch (error) {
+    console.error('Error unbanning all players:', error);
+    return { success: false, error: 'Failed to unban all players' };
   }
 }
 
