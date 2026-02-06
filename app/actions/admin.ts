@@ -214,6 +214,70 @@ export async function getGameBySlug(gameSlug: string) {
   }
 }
 
+export async function createGame(name: string, slug: string, capabilities: string[]): Promise<{ success: boolean; error?: string }> {
+  const auth = await requireAdminAuth();
+  if (!auth.success) {
+    return { success: false, error: auth.error };
+  }
+
+  try {
+    await connectToDatabase();
+
+    if (!name || !name.trim()) return { success: false, error: 'Game name is required' };
+    if (!slug || !slug.trim()) return { success: false, error: 'Game slug is required' };
+
+    const cleanSlug = slug.trim().toLowerCase().replace(/[^a-z0-9-]/g, '-').replace(/^-+|-+$/g, '');
+    if (cleanSlug.length < 2) return { success: false, error: 'Slug must be at least 2 characters' };
+
+    const validCaps = ['data', 'async', 'leaderboard'];
+    const filteredCaps = capabilities.filter(c => validCaps.includes(c));
+    if (filteredCaps.length === 0) return { success: false, error: 'At least one capability is required' };
+
+    const existing = await Game.findOne({ slug: cleanSlug });
+    if (existing) return { success: false, error: 'A game with this slug already exists' };
+
+    await Game.create({
+      name: name.trim(),
+      slug: cleanSlug,
+      capabilities: filteredCaps,
+      active: true,
+      maintenance: false,
+    });
+
+    revalidatePath('/dashboard');
+    return { success: true };
+  } catch (error) {
+    console.error('Error creating game:', error);
+    return { success: false, error: 'Failed to create game' };
+  }
+}
+
+export async function updateGameCapabilities(slug: string, capabilities: string[]): Promise<{ success: boolean; error?: string }> {
+  const auth = await requireAdminAuth();
+  if (!auth.success) {
+    return { success: false, error: auth.error };
+  }
+
+  try {
+    await connectToDatabase();
+
+    const validCaps = ['data', 'async', 'leaderboard'];
+    const filteredCaps = capabilities.filter(c => validCaps.includes(c));
+    if (filteredCaps.length === 0) return { success: false, error: 'At least one capability is required' };
+
+    const game = await Game.findOne({ slug });
+    if (!game) return { success: false, error: 'Game not found' };
+
+    await Game.updateOne({ slug }, { capabilities: filteredCaps });
+    revalidatePath('/dashboard');
+    revalidatePath(`/dashboard/${slug}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating capabilities:', error);
+    return { success: false, error: 'Failed to update capabilities' };
+  }
+}
+
 export async function toggleGameMaintenance(slug: string): Promise<{ success: boolean; error?: string }> {
   const auth = await requireAdminAuth();
   if (!auth.success) {
