@@ -302,75 +302,27 @@ const globalEndpoints: EndpointSection[] = [
     },
   },
   {
-    id: 'post-ping',
-    method: 'POST',
-    path: '/api/ping',
-    description: 'Record a player ping (heartbeat). Used for presence tracking across games.',
-    auth: true,
-    requestBody: {
-      fields: [
-        { name: 'message', type: 'string', required: false, description: 'Optional message (max 500 chars)' },
-      ],
-      example: { message: 'Hello from Playdate!' },
-    },
-    responseBody: {
-      fields: [
-        { name: 'success', type: 'boolean', description: 'Whether the ping was recorded' },
-        { name: 'message', type: 'string', description: 'Confirmation message' },
-        { name: 'pingId', type: 'string', description: 'Unique ping record ID' },
-        { name: 'displayName', type: 'string', description: 'Player display name' },
-        { name: 'timestamp', type: 'string', description: 'When the ping was recorded (ISO 8601)' },
-        { name: 'minClientVersion', type: 'string', description: 'Minimum required client version' },
-      ],
-      example: {
-        success: true,
-        message: 'Ping received',
-        pingId: 'abc123...',
-        displayName: 'BirdMaster',
-        timestamp: '2026-02-02T12:00:00.000Z',
-        minClientVersion: '0.0.1',
-      },
-    },
-    errors: [
-      { status: 400, description: 'Invalid request body' },
-      { status: 401, description: 'Unauthorized - invalid or missing token' },
-    ],
-  },
-  {
-    id: 'get-pings',
+    id: 'get-ping',
     method: 'GET',
     path: '/api/ping',
-    description: 'Get recent ping records. Used for admin/dashboard presence monitoring.',
-    auth: true,
-    requestBody: {
-      fields: [
-        { name: 'limit', type: 'number', required: false, description: 'Max results (default: 50, max: 100)' },
-        { name: 'deviceId', type: 'string', required: false, description: 'Filter by specific device ID' },
-      ],
-      example: { limit: 50 },
-    },
+    description: 'Platform health check. Returns server status, uptime, and version. No authentication required.',
+    auth: false,
     responseBody: {
       fields: [
         { name: 'success', type: 'boolean', description: 'Whether the request was successful' },
-        { name: 'pings', type: 'Ping[]', description: 'Array of ping records' },
+        { name: 'status', type: 'string', description: 'Server status ("ok")' },
+        { name: 'serverTime', type: 'string', description: 'Current server time (ISO 8601)' },
+        { name: 'uptime', type: 'number', description: 'Server uptime in seconds' },
+        { name: 'version', type: 'string', description: 'Platform version' },
       ],
       example: {
         success: true,
-        pings: [
-          {
-            id: 'abc123...',
-            deviceId: 'a0dcb007...',
-            displayName: 'BirdMaster',
-            ipAddress: '1.2.3.4',
-            message: 'Hello!',
-            createdAt: '2026-02-02T12:00:00.000Z',
-          },
-        ],
+        status: 'ok',
+        serverTime: '2026-02-02T12:00:00.000Z',
+        uptime: 3600,
+        version: '1.0.0',
       },
     },
-    errors: [
-      { status: 401, description: 'Unauthorized - invalid or missing token' },
-    ],
   },
 ];
 
@@ -448,6 +400,40 @@ const perGameEndpoints: EndpointSection[] = [
       },
     },
     errors: [
+      { status: 404, description: 'Game not found' },
+    ],
+  },
+  {
+    id: 'post-game-ping',
+    method: 'POST',
+    path: '/api/[gameSlug]/ping',
+    description: 'Record an authenticated player ping for a specific game. Used for presence tracking. The token must belong to a GameIdentity registered for this game — cross-game tokens are rejected.',
+    auth: true,
+    requestBody: {
+      fields: [
+        { name: 'message', type: 'string', required: false, description: 'Optional message (max 500 chars)' },
+      ],
+      example: { message: 'Hello from Playdate!' },
+    },
+    responseBody: {
+      fields: [
+        { name: 'success', type: 'boolean', description: 'Whether the ping was recorded' },
+        { name: 'message', type: 'string', description: 'Confirmation message' },
+        { name: 'pingId', type: 'string', description: 'Unique ping record ID' },
+        { name: 'displayName', type: 'string', description: 'Player display name' },
+        { name: 'timestamp', type: 'string', description: 'When the ping was recorded (ISO 8601)' },
+      ],
+      example: {
+        success: true,
+        message: 'Ping recorded',
+        pingId: 'abc123...',
+        displayName: 'BirdMaster',
+        timestamp: '2026-02-02T12:00:00.000Z',
+      },
+    },
+    errors: [
+      { status: 400, description: 'Invalid request body' },
+      { status: 401, description: 'Unauthorized - invalid or missing token, or token does not belong to this game' },
       { status: 404, description: 'Game not found' },
     ],
   },

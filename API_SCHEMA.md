@@ -82,98 +82,32 @@ Seed or update the games collection with default games (birdwars, powerpentagon)
 
 ---
 
-### POST `/api/ping`
-
-Record a player ping (heartbeat). Used for presence tracking across games.
-
-**Authentication:** **Auth Required**
-
-**Request Body:**
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `message` | string | No | Optional message (max 500 chars) |
-
-**Example:**
-```json
-{ "message": "Hello from Playdate!" }
-```
-
-**Response:**
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `success` | boolean | Whether the ping was recorded |
-| `message` | string | Confirmation message |
-| `pingId` | string | Unique ping record ID |
-| `displayName` | string | Player display name |
-| `timestamp` | string | When the ping was recorded (ISO 8601) |
-| `minClientVersion` | string | Minimum required client version |
-
-**Example (200 OK):**
-```json
-{
-  "success": true,
-  "message": "Ping received",
-  "pingId": "abc123...",
-  "displayName": "BirdMaster",
-  "timestamp": "2026-02-02T12:00:00.000Z",
-  "minClientVersion": "0.0.1"
-}
-```
-
-**Error Responses:**
-
-- `400` — Invalid request body
-- `401` — Unauthorized - invalid or missing token
-
----
-
 ### GET `/api/ping`
 
-Get recent ping records. Used for admin/dashboard presence monitoring.
+Platform health check. Returns server status, uptime, and version. No authentication required.
 
-**Authentication:** **Auth Required**
-
-**Query Parameters:**
-
-| Field | Type | Required | Description |
-|-------|------|----------|-------------|
-| `limit` | number | No | Max results (default: 50, max: 100) |
-| `deviceId` | string | No | Filter by specific device ID |
-
-**Example:**
-```
-/api/ping?limit=50
-```
+**Authentication:** Public
 
 **Response:**
 
 | Field | Type | Description |
 |-------|------|-------------|
 | `success` | boolean | Whether the request was successful |
-| `pings` | Ping[] | Array of ping records |
+| `status` | string | Server status ("ok") |
+| `serverTime` | string | Current server time (ISO 8601) |
+| `uptime` | number | Server uptime in seconds |
+| `version` | string | Platform version |
 
 **Example (200 OK):**
 ```json
 {
   "success": true,
-  "pings": [
-    {
-      "id": "abc123...",
-      "deviceId": "a0dcb007...",
-      "displayName": "BirdMaster",
-      "ipAddress": "1.2.3.4",
-      "message": "Hello!",
-      "createdAt": "2026-02-02T12:00:00.000Z"
-    }
-  ]
+  "status": "ok",
+  "serverTime": "2026-02-02T12:00:00.000Z",
+  "uptime": 3600,
+  "version": "1.0.0"
 }
 ```
-
-**Error Responses:**
-
-- `401` — Unauthorized - invalid or missing token
 
 ---
 
@@ -231,7 +165,7 @@ Register for a specific game. Creates a game-scoped identity with unique deviceI
 
 ### GET `/api/[gameSlug]/ping`
 
-Check server status and version compatibility for a game. Returns version info, maintenance status, and message of the day.
+Check server status and version compatibility for a game. Returns version info, maintenance status, and message of the day. No authentication required.
 
 **Authentication:** Public
 
@@ -277,6 +211,52 @@ Check server status and version compatibility for a game. Returns version info, 
 
 **Error Responses:**
 
+- `404` — Game not found
+
+---
+
+### POST `/api/[gameSlug]/ping`
+
+Record an authenticated player ping for a specific game. Used for presence tracking. The token must belong to a GameIdentity registered for this game — cross-game tokens are rejected.
+
+**Authentication:** **Auth Required**
+
+**Request Body:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `message` | string | No | Optional message (max 500 chars) |
+
+**Example:**
+```json
+{ "message": "Hello from Playdate!" }
+```
+
+**Response:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `success` | boolean | Whether the ping was recorded |
+| `message` | string | Confirmation message |
+| `pingId` | string | Unique ping record ID |
+| `displayName` | string | Player display name |
+| `timestamp` | string | When the ping was recorded (ISO 8601) |
+
+**Example (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Ping recorded",
+  "pingId": "abc123...",
+  "displayName": "BirdMaster",
+  "timestamp": "2026-02-02T12:00:00.000Z"
+}
+```
+
+**Error Responses:**
+
+- `400` — Invalid request body
+- `401` — Unauthorized - invalid or missing token, or token does not belong to this game
 - `404` — Game not found
 
 ---
