@@ -207,6 +207,7 @@ export async function getGameBySlug(gameSlug: string) {
       active: game.active,
       maintenance: game.maintenance,
       motd: game.motd || null,
+      haikunator: game.haikunator ? { adjectives: game.haikunator.adjectives, nouns: game.haikunator.nouns } : null,
       createdAt: game.createdAt.toISOString()
     };
   } catch (error) {
@@ -867,6 +868,40 @@ export async function fetchAuditLogs(options?: {
   } catch (error) {
     console.error('Error fetching audit logs:', error);
     return { success: false, error: 'Failed to fetch audit logs' };
+  }
+}
+
+export async function updateGameHaikunator(
+  gameSlug: string,
+  adjectives: string[],
+  nouns: string[]
+): Promise<{ success: boolean; error?: string }> {
+  const auth = await requireAdminAuth();
+  if (!auth.success) {
+    return { success: false, error: auth.error };
+  }
+
+  try {
+    await connectToDatabase();
+
+    const game = await Game.findOne({ slug: gameSlug });
+    if (!game) return { success: false, error: 'Game not found' };
+
+    const cleanAdj = adjectives.map(w => w.trim().toLowerCase()).filter(Boolean);
+    const cleanNouns = nouns.map(w => w.trim().toLowerCase()).filter(Boolean);
+
+    if (cleanAdj.length === 0 && cleanNouns.length === 0) {
+      game.haikunator = null;
+    } else {
+      game.haikunator = { adjectives: cleanAdj, nouns: cleanNouns };
+    }
+
+    await game.save();
+    revalidatePath(`/dashboard/${gameSlug}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating haikunator:', error);
+    return { success: false, error: 'Failed to update word lists' };
   }
 }
 

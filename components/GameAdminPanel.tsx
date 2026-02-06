@@ -12,7 +12,9 @@ import {
   Shield, 
   RotateCcw,
   Wrench,
-  UserSearch
+  UserSearch,
+  BookType,
+  Save
 } from 'lucide-react';
 import { 
   recoverPlayerByDeviceId, 
@@ -20,7 +22,8 @@ import {
   purgeAllBattles, 
   unbanAllPlayers,
   toggleGameMaintenance,
-  updateGameMotd
+  updateGameMotd,
+  updateGameHaikunator
 } from '@/app/actions/admin';
 import type { AdminPlayerDetails } from '@/app/actions/admin';
 
@@ -29,9 +32,10 @@ interface GameAdminPanelProps {
   gameName: string;
   maintenance: boolean;
   motd: string | null;
+  haikunator: { adjectives: string[]; nouns: string[] } | null;
 }
 
-export default function GameAdminPanel({ gameSlug, gameName, maintenance, motd }: GameAdminPanelProps) {
+export default function GameAdminPanel({ gameSlug, gameName, maintenance, motd, haikunator }: GameAdminPanelProps) {
   const [deviceIdSearch, setDeviceIdSearch] = useState('');
   const [recoveredPlayer, setRecoveredPlayer] = useState<AdminPlayerDetails | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -42,6 +46,9 @@ export default function GameAdminPanel({ gameSlug, gameName, maintenance, motd }
   const [confirmAction, setConfirmAction] = useState<string | null>(null);
 
   const [motdInput, setMotdInput] = useState(motd || '');
+
+  const [adjectives, setAdjectives] = useState((haikunator?.adjectives ?? []).join('\n'));
+  const [nouns, setNouns] = useState((haikunator?.nouns ?? []).join('\n'));
 
   async function handleRecoverPlayer() {
     if (!deviceIdSearch.trim()) return;
@@ -114,6 +121,19 @@ export default function GameAdminPanel({ gameSlug, gameName, maintenance, motd }
       setActionResult({ type: 'success', message: 'MOTD updated' });
     } else {
       setActionResult({ type: 'error', message: result.error || 'Failed to update MOTD' });
+    }
+    setActionLoading(null);
+  }
+
+  async function handleSaveHaikunator() {
+    setActionLoading('haikunator');
+    const adjList = adjectives.split('\n').map(w => w.trim()).filter(Boolean);
+    const nounList = nouns.split('\n').map(w => w.trim()).filter(Boolean);
+    const result = await updateGameHaikunator(gameSlug, adjList, nounList);
+    if (result.success) {
+      setActionResult({ type: 'success', message: `Word lists saved (${adjList.length} adjectives, ${nounList.length} nouns)` });
+    } else {
+      setActionResult({ type: 'error', message: result.error || 'Failed to save word lists' });
     }
     setActionLoading(null);
   }
@@ -319,6 +339,58 @@ export default function GameAdminPanel({ gameSlug, gameName, maintenance, motd }
                 {actionLoading === 'motd' ? 'SAVING...' : 'UPDATE MOTD'}
               </Button>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="uppercase flex items-center gap-2">
+            <BookType className="w-5 h-5" />
+            NAME GENERATOR
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Configure the word lists used to generate random display names for players and battles in {gameName}. Enter one word per line.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium uppercase">ADJECTIVES</label>
+              <textarea
+                className="flex min-h-[160px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 font-mono"
+                placeholder={"brave\nswift\nfierce\n..."}
+                value={adjectives}
+                onChange={(e) => setAdjectives(e.target.value)}
+                data-testid="textarea-adjectives"
+              />
+              <p className="text-xs text-muted-foreground">
+                {adjectives.split('\n').filter(w => w.trim()).length} words
+              </p>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium uppercase">NOUNS</label>
+              <textarea
+                className="flex min-h-[160px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 font-mono"
+                placeholder={"eagle\nwolf\ndragon\n..."}
+                value={nouns}
+                onChange={(e) => setNouns(e.target.value)}
+                data-testid="textarea-nouns"
+              />
+              <p className="text-xs text-muted-foreground">
+                {nouns.split('\n').filter(w => w.trim()).length} words
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={handleSaveHaikunator}
+              disabled={actionLoading === 'haikunator'}
+              data-testid="button-save-haikunator"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              {actionLoading === 'haikunator' ? 'SAVING...' : 'SAVE WORD LISTS'}
+            </Button>
           </div>
         </CardContent>
       </Card>

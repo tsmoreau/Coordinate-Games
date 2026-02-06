@@ -269,7 +269,8 @@ export default async function GameDashboardPage({ params }: Props) {
               gameSlug={gameSlug} 
               gameName={game.name} 
               maintenance={game.maintenance} 
-              motd={game.motd} 
+              motd={game.motd}
+              haikunator={game.haikunator ?? null}
             />
           </TabsContent>
         </Tabs>
