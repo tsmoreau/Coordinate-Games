@@ -208,6 +208,7 @@ export async function getGameBySlug(gameSlug: string) {
       maintenance: game.maintenance,
       motd: game.motd || null,
       haikunator: game.haikunator ? { adjectives: game.haikunator.adjectives, nouns: game.haikunator.nouns } : null,
+      versioning: game.versioning ? { minVersion: game.versioning.minVersion, currentVersion: game.versioning.currentVersion, updateUrl: game.versioning.updateUrl } : null,
       createdAt: game.createdAt.toISOString()
     };
   } catch (error) {
@@ -902,6 +903,46 @@ export async function updateGameHaikunator(
   } catch (error) {
     console.error('Error updating haikunator:', error);
     return { success: false, error: 'Failed to update word lists' };
+  }
+}
+
+export async function updateGameVersioning(
+  gameSlug: string,
+  minVersion: string,
+  currentVersion: string,
+  updateUrl: string
+): Promise<{ success: boolean; error?: string }> {
+  const auth = await requireAdminAuth();
+  if (!auth.success) {
+    return { success: false, error: auth.error };
+  }
+
+  try {
+    await connectToDatabase();
+
+    const game = await Game.findOne({ slug: gameSlug });
+    if (!game) return { success: false, error: 'Game not found' };
+
+    const min = minVersion.trim();
+    const current = currentVersion.trim();
+    const url = updateUrl.trim();
+
+    if (!min && !current && !url) {
+      game.versioning = null;
+    } else {
+      game.versioning = {
+        minVersion: min || '1.0.0',
+        currentVersion: current || '1.0.0',
+        updateUrl: url || null,
+      };
+    }
+
+    await game.save();
+    revalidatePath(`/dashboard/${gameSlug}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error updating versioning:', error);
+    return { success: false, error: 'Failed to update versioning' };
   }
 }
 

@@ -284,6 +284,7 @@ export default async function GameDashboardPage({ params }: Props) {
               gameName={game.name} 
               maintenance={game.maintenance} 
               motd={game.motd} 
+              versioning={game.versioning}
             />
           </TabsContent>
         </Tabs>

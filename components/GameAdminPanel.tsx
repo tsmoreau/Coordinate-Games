@@ -14,7 +14,8 @@ import {
   Wrench,
   UserSearch,
   BookType,
-  Save
+  Save,
+  Tag
 } from 'lucide-react';
 import { 
   recoverPlayerByDeviceId, 
@@ -23,7 +24,8 @@ import {
   unbanAllPlayers,
   toggleGameMaintenance,
   updateGameMotd,
-  updateGameHaikunator
+  updateGameHaikunator,
+  updateGameVersioning
 } from '@/app/actions/admin';
 import type { AdminPlayerDetails } from '@/app/actions/admin';
 
@@ -33,9 +35,10 @@ interface GameAdminPanelProps {
   maintenance: boolean;
   motd: string | null;
   haikunator: { adjectives: string[]; nouns: string[] } | null;
+  versioning: { minVersion: string; currentVersion: string; updateUrl: string | null } | null;
 }
 
-export default function GameAdminPanel({ gameSlug, gameName, maintenance, motd, haikunator }: GameAdminPanelProps) {
+export default function GameAdminPanel({ gameSlug, gameName, maintenance, motd, haikunator, versioning }: GameAdminPanelProps) {
   const [deviceIdSearch, setDeviceIdSearch] = useState('');
   const [recoveredPlayer, setRecoveredPlayer] = useState<AdminPlayerDetails | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -49,6 +52,10 @@ export default function GameAdminPanel({ gameSlug, gameName, maintenance, motd, 
 
   const [adjectives, setAdjectives] = useState((haikunator?.adjectives ?? []).join('\n'));
   const [nouns, setNouns] = useState((haikunator?.nouns ?? []).join('\n'));
+
+  const [minVersion, setMinVersion] = useState(versioning?.minVersion ?? '');
+  const [currentVersion, setCurrentVersion] = useState(versioning?.currentVersion ?? '');
+  const [updateUrl, setUpdateUrl] = useState(versioning?.updateUrl ?? '');
 
   async function handleRecoverPlayer() {
     if (!deviceIdSearch.trim()) return;
@@ -134,6 +141,17 @@ export default function GameAdminPanel({ gameSlug, gameName, maintenance, motd, 
       setActionResult({ type: 'success', message: `Word lists saved (${adjList.length} adjectives, ${nounList.length} nouns)` });
     } else {
       setActionResult({ type: 'error', message: result.error || 'Failed to save word lists' });
+    }
+    setActionLoading(null);
+  }
+
+  async function handleSaveVersioning() {
+    setActionLoading('versioning');
+    const result = await updateGameVersioning(gameSlug, minVersion, currentVersion, updateUrl);
+    if (result.success) {
+      setActionResult({ type: 'success', message: 'Versioning updated' });
+    } else {
+      setActionResult({ type: 'error', message: result.error || 'Failed to update versioning' });
     }
     setActionLoading(null);
   }
@@ -339,6 +357,71 @@ export default function GameAdminPanel({ gameSlug, gameName, maintenance, motd, 
                 {actionLoading === 'motd' ? 'SAVING...' : 'UPDATE MOTD'}
               </Button>
             </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="uppercase flex items-center gap-2">
+            <Tag className="w-5 h-5" />
+            VERSIONING
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Control client version requirements for {gameName}. The ping endpoint returns these values so clients can check for updates.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium uppercase">MIN VERSION</label>
+              <Input
+                placeholder="1.0.0"
+                value={minVersion}
+                onChange={(e) => setMinVersion(e.target.value)}
+                data-testid="input-min-version"
+              />
+              <p className="text-xs text-muted-foreground">
+                Oldest client version allowed to connect
+              </p>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium uppercase">CURRENT VERSION</label>
+              <Input
+                placeholder="1.0.0"
+                value={currentVersion}
+                onChange={(e) => setCurrentVersion(e.target.value)}
+                data-testid="input-current-version"
+              />
+              <p className="text-xs text-muted-foreground">
+                Latest available client version
+              </p>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium uppercase">UPDATE URL</label>
+              <Input
+                placeholder="https://..."
+                value={updateUrl}
+                onChange={(e) => setUpdateUrl(e.target.value)}
+                data-testid="input-update-url"
+              />
+              <p className="text-xs text-muted-foreground">
+                Where players can download the update
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={handleSaveVersioning}
+              disabled={actionLoading === 'versioning'}
+              data-testid="button-save-versioning"
+            >
+              <Save className="w-4 h-4 mr-2" />
+              {actionLoading === 'versioning' ? 'SAVING...' : 'SAVE VERSIONING'}
+            </Button>
+            <p className="text-xs text-muted-foreground">
+              Clear all three fields and save to remove versioning
+            </p>
           </div>
         </CardContent>
       </Card>
