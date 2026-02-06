@@ -1071,7 +1071,7 @@ export default function SchemaPage() {
       <Nav />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="mb-12 space-y-6">
+        <div className="mb-12">
           <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
             <div className="flex items-center gap-2">
               <Gamepad2 className="w-8 h-8 text-primary" />
@@ -1086,7 +1086,7 @@ export default function SchemaPage() {
               Download .md
             </Button>
           </div>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground mb-6">
             Complete documentation for the coordinate.games multi-game hub API. 
             Supports async turn-based games (like Bird Wars) and leaderboard games (like Power Pentagon).
           </p>
@@ -1146,214 +1146,212 @@ export default function SchemaPage() {
                 </div>
               </AccordionContent>
             </AccordionItem>
+
+            <AccordionItem value="global" className="border rounded-lg px-4 bg-card">
+              <AccordionTrigger className="hover:no-underline py-4">
+                <div className="flex items-center gap-2">
+                  <Globe className="w-5 h-5 text-primary" />
+                  <h2 className="text-xl font-semibold">Global Endpoints</h2>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="pt-2 pb-4">
+                <p className="text-muted-foreground mb-6">
+                  General platform-level endpoints for listing and managing games.
+                </p>
+                <Accordion type="multiple" className="space-y-3">
+                  {globalEndpoints.map((endpoint) => (
+                    <EndpointCard key={endpoint.id} endpoint={endpoint} />
+                  ))}
+                </Accordion>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="registration" className="border rounded-lg px-4 bg-card">
+              <AccordionTrigger className="hover:no-underline py-4">
+                <div className="flex items-center gap-2">
+                  <Users className="w-5 h-5 text-primary" />
+                  <h2 className="text-xl font-semibold">Registration & Identity</h2>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="pt-2 pb-4">
+                <p className="text-muted-foreground mb-6">
+                  Per-game registration and authentication flow. These endpoints handle player identity within each game's scope.
+                </p>
+                <Accordion type="multiple" className="space-y-3">
+                  {perGameEndpoints.map((endpoint) => (
+                    <EndpointCard key={endpoint.id} endpoint={endpoint} />
+                  ))}
+                </Accordion>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="async" className="border rounded-lg px-4 bg-card">
+              <AccordionTrigger className="hover:no-underline py-4">
+                <div className="flex items-center gap-2">
+                  <Swords className="w-5 h-5 text-primary" />
+                  <h2 className="text-xl font-semibold">Async Game Endpoints</h2>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="pt-2 pb-4">
+                <p className="text-muted-foreground mb-6">
+                  Endpoints for turn-based multiplayer games (type: <Badge variant="outline">async</Badge>).
+                  These routes handle battles, matchmaking, and turn submission.
+                </p>
+                <Accordion type="multiple" className="space-y-3">
+                  {asyncEndpoints.map((endpoint) => (
+                    <EndpointCard key={endpoint.id} endpoint={endpoint} />
+                  ))}
+                </Accordion>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="leaderboard" className="border rounded-lg px-4 bg-card">
+              <AccordionTrigger className="hover:no-underline py-4">
+                <div className="flex items-center gap-2">
+                  <Trophy className="w-5 h-5 text-primary" />
+                  <h2 className="text-xl font-semibold">Leaderboard Endpoints</h2>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="pt-2 pb-4">
+                <p className="text-muted-foreground mb-6">
+                  Endpoints for score-based games (type: <Badge variant="outline">leaderboard</Badge>).
+                  These routes handle score submission and retrieval.
+                </p>
+                <Accordion type="multiple" className="space-y-3">
+                  {leaderboardEndpoints.map((endpoint) => (
+                    <EndpointCard key={endpoint.id} endpoint={endpoint} />
+                  ))}
+                </Accordion>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="data" className="border rounded-lg px-4 bg-card">
+              <AccordionTrigger className="hover:no-underline py-4">
+                <div className="flex items-center gap-2">
+                  <Database className="w-5 h-5 text-primary" />
+                  <h2 className="text-xl font-semibold">Data Storage Endpoints</h2>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="pt-2 pb-4">
+                <p className="text-muted-foreground mb-6">
+                  Generic key-value storage available to all games. Supports global, player, and public scoping.
+                </p>
+                <Accordion type="multiple" className="space-y-3">
+                  {dataStorageEndpoints.map((endpoint) => (
+                    <EndpointCard key={endpoint.id} endpoint={endpoint} />
+                  ))}
+                </Accordion>
+              </AccordionContent>
+            </AccordionItem>
+
+            <AccordionItem value="models" className="border rounded-lg px-4 bg-card">
+              <AccordionTrigger className="hover:no-underline py-4">
+                <div className="flex items-center gap-2">
+                  <Database className="w-5 h-5 text-primary" />
+                  <h2 className="text-xl font-semibold">Data Types & Models</h2>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="pt-2 pb-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div>
+                    <h3 className="font-medium mb-2">Game</h3>
+                    <div className="text-sm space-y-1 text-muted-foreground">
+                      <p><code className="bg-muted px-1 rounded">slug</code> — Unique identifier (e.g., "birdwars")</p>
+                      <p><code className="bg-muted px-1 rounded">name</code> — Human-readable name</p>
+                      <p><code className="bg-muted px-1 rounded">capabilities</code> — Array of features: "async", "leaderboard", "data"</p>
+                      <p><code className="bg-muted px-1 rounded">active</code> — Whether game is available</p>
+                      <p><code className="bg-muted px-1 rounded">versioning</code> — Version info (minVersion, currentVersion, updateUrl)</p>
+                      <p><code className="bg-muted px-1 rounded">maintenance</code> — Whether game is in maintenance mode</p>
+                      <p><code className="bg-muted px-1 rounded">motd</code> — Message of the day (optional)</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="font-medium mb-2">GameIdentity <Badge variant="secondary" className="text-xs ml-2">per-game</Badge></h3>
+                    <div className="text-sm space-y-1 text-muted-foreground">
+                      <p><code className="bg-muted px-1 rounded">deviceId</code> — Game-scoped player identifier (unique per game)</p>
+                      <p><code className="bg-muted px-1 rounded">gameSlug</code> — Game this identity belongs to</p>
+                      <p><code className="bg-muted px-1 rounded">displayName</code> — Player's display name for this game</p>
+                      <p><code className="bg-muted px-1 rounded">avatar</code> — Bird avatar (BIRD1-BIRD12)</p>
+                      <p><code className="bg-muted px-1 rounded">createdAt</code> — Registration timestamp</p>
+                      <p><code className="bg-muted px-1 rounded">lastSeen</code> — Last activity timestamp</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="font-medium mb-2">Battle <Badge variant="secondary" className="text-xs ml-2">async games</Badge></h3>
+                    <div className="text-sm space-y-1 text-muted-foreground">
+                      <p><code className="bg-muted px-1 rounded">battleId</code> — Unique battle identifier</p>
+                      <p><code className="bg-muted px-1 rounded">displayName</code> — Human-readable name (e.g., "Swift-Assault-17")</p>
+                      <p><code className="bg-muted px-1 rounded">gameSlug</code> — Game this battle belongs to</p>
+                      <p><code className="bg-muted px-1 rounded">player1DeviceId</code> — Player 1 (creator)</p>
+                      <p><code className="bg-muted px-1 rounded">player2DeviceId</code> — Player 2 (null if pending)</p>
+                      <p><code className="bg-muted px-1 rounded">status</code> — "pending" | "active" | "completed" | "abandoned"</p>
+                      <p><code className="bg-muted px-1 rounded">currentTurn</code> — Current turn number</p>
+                      <p><code className="bg-muted px-1 rounded">currentPlayerIndex</code> — 0 = player1's turn, 1 = player2's turn</p>
+                      <p><code className="bg-muted px-1 rounded">mapData</code> — Game-specific map configuration</p>
+                      <p><code className="bg-muted px-1 rounded">currentState</code> — Current game state (units, tiles, etc.)</p>
+                      <p><code className="bg-muted px-1 rounded">winnerId</code> — Winner's deviceId (null if ongoing)</p>
+                      <p><code className="bg-muted px-1 rounded">endReason</code> — "victory" | "forfeit" | "draw" | "cancelled"</p>
+                      <p><code className="bg-muted px-1 rounded">isPrivate</code> — Hidden from public listings</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="font-medium mb-2">Turn <Badge variant="secondary" className="text-xs ml-2">async games</Badge></h3>
+                    <div className="text-sm space-y-1 text-muted-foreground">
+                      <p><code className="bg-muted px-1 rounded">turnId</code> — Unique turn identifier</p>
+                      <p><code className="bg-muted px-1 rounded">deviceId</code> — Player who submitted</p>
+                      <p><code className="bg-muted px-1 rounded">turnNumber</code> — Sequential number</p>
+                      <p><code className="bg-muted px-1 rounded">actions</code> — Array of actions in this turn</p>
+                      <p><code className="bg-muted px-1 rounded">gameState</code> — State snapshot after turn</p>
+                      <p><code className="bg-muted px-1 rounded">timestamp</code> — When turn was submitted</p>
+                      <p><code className="bg-muted px-1 rounded">isValid</code> — Whether turn passed validation</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="font-medium mb-2">Action <Badge variant="secondary" className="text-xs ml-2">async games</Badge></h3>
+                    <div className="text-sm space-y-1 text-muted-foreground">
+                      <p><code className="bg-muted px-1 rounded">type</code> — "move" | "attack" | "build" | "capture" | "wait" | "end_turn" | etc.</p>
+                      <p><code className="bg-muted px-1 rounded">unitId</code> — Unit performing action</p>
+                      <p><code className="bg-muted px-1 rounded">from</code> — Starting position {"{ x, y }"}</p>
+                      <p><code className="bg-muted px-1 rounded">to</code> — Target position {"{ x, y }"}</p>
+                      <p><code className="bg-muted px-1 rounded">targetId</code> — Target unit ID (for attacks)</p>
+                      <p><code className="bg-muted px-1 rounded">data</code> — Additional action data</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="font-medium mb-2">Score <Badge variant="outline" className="text-xs ml-2">leaderboard games</Badge></h3>
+                    <div className="text-sm space-y-1 text-muted-foreground">
+                      <p><code className="bg-muted px-1 rounded">gameSlug</code> — Game this score belongs to</p>
+                      <p><code className="bg-muted px-1 rounded">deviceId</code> — Player who submitted</p>
+                      <p><code className="bg-muted px-1 rounded">displayName</code> — Player's display name</p>
+                      <p><code className="bg-muted px-1 rounded">score</code> — Numeric score value</p>
+                      <p><code className="bg-muted px-1 rounded">metadata</code> — Additional data (level, combo, etc.)</p>
+                      <p><code className="bg-muted px-1 rounded">createdAt</code> — When score was submitted</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <h3 className="font-medium mb-2">Data <Badge variant="secondary" className="text-xs ml-2">all games</Badge></h3>
+                    <div className="text-sm space-y-1 text-muted-foreground">
+                      <p><code className="bg-muted px-1 rounded">gameSlug</code> — Game this data belongs to</p>
+                      <p><code className="bg-muted px-1 rounded">key</code> — Unique key within the game (prefixed with ownerId for player scope)</p>
+                      <p><code className="bg-muted px-1 rounded">value</code> — JSON object (max 100KB)</p>
+                      <p><code className="bg-muted px-1 rounded">scope</code> — "global" | "player" | "public"</p>
+                      <p><code className="bg-muted px-1 rounded">ownerId</code> — Owner's deviceId (null for global scope)</p>
+                      <p><code className="bg-muted px-1 rounded">ownerDisplayName</code> — Owner's display name</p>
+                      <p><code className="bg-muted px-1 rounded">createdAt</code> — When data was created</p>
+                      <p><code className="bg-muted px-1 rounded">updatedAt</code> — When data was last updated</p>
+                    </div>
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
           </Accordion>
         </div>
-
-        <Accordion type="single" collapsible className="space-y-4">
-          <AccordionItem value="global" className="border rounded-lg px-4 bg-card">
-            <AccordionTrigger className="hover:no-underline py-4">
-              <div className="flex items-center gap-2">
-                <Globe className="w-5 h-5 text-primary" />
-                <h2 className="text-xl font-semibold">Global Endpoints</h2>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="pt-2 pb-4">
-              <p className="text-muted-foreground mb-6">
-                General platform-level endpoints for listing and managing games.
-              </p>
-              <Accordion type="multiple" className="space-y-3">
-                {globalEndpoints.map((endpoint) => (
-                  <EndpointCard key={endpoint.id} endpoint={endpoint} />
-                ))}
-              </Accordion>
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem value="registration" className="border rounded-lg px-4 bg-card">
-            <AccordionTrigger className="hover:no-underline py-4">
-              <div className="flex items-center gap-2">
-                <Users className="w-5 h-5 text-primary" />
-                <h2 className="text-xl font-semibold">Registration & Identity</h2>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="pt-2 pb-4">
-              <p className="text-muted-foreground mb-6">
-                Per-game registration and authentication flow. These endpoints handle player identity within each game's scope.
-              </p>
-              <Accordion type="multiple" className="space-y-3">
-                {perGameEndpoints.map((endpoint) => (
-                  <EndpointCard key={endpoint.id} endpoint={endpoint} />
-                ))}
-              </Accordion>
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem value="async" className="border rounded-lg px-4 bg-card">
-            <AccordionTrigger className="hover:no-underline py-4">
-              <div className="flex items-center gap-2">
-                <Swords className="w-5 h-5 text-primary" />
-                <h2 className="text-xl font-semibold">Async Game Endpoints</h2>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="pt-2 pb-4">
-              <p className="text-muted-foreground mb-6">
-                Endpoints for turn-based multiplayer games (type: <Badge variant="outline">async</Badge>).
-                These routes handle battles, matchmaking, and turn submission.
-              </p>
-              <Accordion type="multiple" className="space-y-3">
-                {asyncEndpoints.map((endpoint) => (
-                  <EndpointCard key={endpoint.id} endpoint={endpoint} />
-                ))}
-              </Accordion>
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem value="leaderboard" className="border rounded-lg px-4 bg-card">
-            <AccordionTrigger className="hover:no-underline py-4">
-              <div className="flex items-center gap-2">
-                <Trophy className="w-5 h-5 text-primary" />
-                <h2 className="text-xl font-semibold">Leaderboard Endpoints</h2>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="pt-2 pb-4">
-              <p className="text-muted-foreground mb-6">
-                Endpoints for score-based games (type: <Badge variant="outline">leaderboard</Badge>).
-                These routes handle score submission and retrieval.
-              </p>
-              <Accordion type="multiple" className="space-y-3">
-                {leaderboardEndpoints.map((endpoint) => (
-                  <EndpointCard key={endpoint.id} endpoint={endpoint} />
-                ))}
-              </Accordion>
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem value="data" className="border rounded-lg px-4 bg-card">
-            <AccordionTrigger className="hover:no-underline py-4">
-              <div className="flex items-center gap-2">
-                <Database className="w-5 h-5 text-primary" />
-                <h2 className="text-xl font-semibold">Data Storage Endpoints</h2>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="pt-2 pb-4">
-              <p className="text-muted-foreground mb-6">
-                Generic key-value storage available to all games. Supports global, player, and public scoping.
-              </p>
-              <Accordion type="multiple" className="space-y-3">
-                {dataStorageEndpoints.map((endpoint) => (
-                  <EndpointCard key={endpoint.id} endpoint={endpoint} />
-                ))}
-              </Accordion>
-            </AccordionContent>
-          </AccordionItem>
-
-          <AccordionItem value="models" className="border rounded-lg px-4 bg-card">
-            <AccordionTrigger className="hover:no-underline py-4">
-              <div className="flex items-center gap-2">
-                <Database className="w-5 h-5 text-primary" />
-                <h2 className="text-xl font-semibold">Data Types & Models</h2>
-              </div>
-            </AccordionTrigger>
-            <AccordionContent className="pt-2 pb-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                  <h3 className="font-medium mb-2">Game</h3>
-                  <div className="text-sm space-y-1 text-muted-foreground">
-                    <p><code className="bg-muted px-1 rounded">slug</code> — Unique identifier (e.g., "birdwars")</p>
-                    <p><code className="bg-muted px-1 rounded">name</code> — Human-readable name</p>
-                    <p><code className="bg-muted px-1 rounded">capabilities</code> — Array of features: "async", "leaderboard", "data"</p>
-                    <p><code className="bg-muted px-1 rounded">active</code> — Whether game is available</p>
-                    <p><code className="bg-muted px-1 rounded">versioning</code> — Version info (minVersion, currentVersion, updateUrl)</p>
-                    <p><code className="bg-muted px-1 rounded">maintenance</code> — Whether game is in maintenance mode</p>
-                    <p><code className="bg-muted px-1 rounded">motd</code> — Message of the day (optional)</p>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="font-medium mb-2">GameIdentity <Badge variant="secondary" className="text-xs ml-2">per-game</Badge></h3>
-                  <div className="text-sm space-y-1 text-muted-foreground">
-                    <p><code className="bg-muted px-1 rounded">deviceId</code> — Game-scoped player identifier (unique per game)</p>
-                    <p><code className="bg-muted px-1 rounded">gameSlug</code> — Game this identity belongs to</p>
-                    <p><code className="bg-muted px-1 rounded">displayName</code> — Player's display name for this game</p>
-                    <p><code className="bg-muted px-1 rounded">avatar</code> — Bird avatar (BIRD1-BIRD12)</p>
-                    <p><code className="bg-muted px-1 rounded">createdAt</code> — Registration timestamp</p>
-                    <p><code className="bg-muted px-1 rounded">lastSeen</code> — Last activity timestamp</p>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="font-medium mb-2">Battle <Badge variant="secondary" className="text-xs ml-2">async games</Badge></h3>
-                  <div className="text-sm space-y-1 text-muted-foreground">
-                    <p><code className="bg-muted px-1 rounded">battleId</code> — Unique battle identifier</p>
-                    <p><code className="bg-muted px-1 rounded">displayName</code> — Human-readable name (e.g., "Swift-Assault-17")</p>
-                    <p><code className="bg-muted px-1 rounded">gameSlug</code> — Game this battle belongs to</p>
-                    <p><code className="bg-muted px-1 rounded">player1DeviceId</code> — Player 1 (creator)</p>
-                    <p><code className="bg-muted px-1 rounded">player2DeviceId</code> — Player 2 (null if pending)</p>
-                    <p><code className="bg-muted px-1 rounded">status</code> — "pending" | "active" | "completed" | "abandoned"</p>
-                    <p><code className="bg-muted px-1 rounded">currentTurn</code> — Current turn number</p>
-                    <p><code className="bg-muted px-1 rounded">currentPlayerIndex</code> — 0 = player1's turn, 1 = player2's turn</p>
-                    <p><code className="bg-muted px-1 rounded">mapData</code> — Game-specific map configuration</p>
-                    <p><code className="bg-muted px-1 rounded">currentState</code> — Current game state (units, tiles, etc.)</p>
-                    <p><code className="bg-muted px-1 rounded">winnerId</code> — Winner's deviceId (null if ongoing)</p>
-                    <p><code className="bg-muted px-1 rounded">endReason</code> — "victory" | "forfeit" | "draw" | "cancelled"</p>
-                    <p><code className="bg-muted px-1 rounded">isPrivate</code> — Hidden from public listings</p>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="font-medium mb-2">Turn <Badge variant="secondary" className="text-xs ml-2">async games</Badge></h3>
-                  <div className="text-sm space-y-1 text-muted-foreground">
-                    <p><code className="bg-muted px-1 rounded">turnId</code> — Unique turn identifier</p>
-                    <p><code className="bg-muted px-1 rounded">deviceId</code> — Player who submitted</p>
-                    <p><code className="bg-muted px-1 rounded">turnNumber</code> — Sequential number</p>
-                    <p><code className="bg-muted px-1 rounded">actions</code> — Array of actions in this turn</p>
-                    <p><code className="bg-muted px-1 rounded">gameState</code> — State snapshot after turn</p>
-                    <p><code className="bg-muted px-1 rounded">timestamp</code> — When turn was submitted</p>
-                    <p><code className="bg-muted px-1 rounded">isValid</code> — Whether turn passed validation</p>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="font-medium mb-2">Action <Badge variant="secondary" className="text-xs ml-2">async games</Badge></h3>
-                  <div className="text-sm space-y-1 text-muted-foreground">
-                    <p><code className="bg-muted px-1 rounded">type</code> — "move" | "attack" | "build" | "capture" | "wait" | "end_turn" | etc.</p>
-                    <p><code className="bg-muted px-1 rounded">unitId</code> — Unit performing action</p>
-                    <p><code className="bg-muted px-1 rounded">from</code> — Starting position {"{ x, y }"}</p>
-                    <p><code className="bg-muted px-1 rounded">to</code> — Target position {"{ x, y }"}</p>
-                    <p><code className="bg-muted px-1 rounded">targetId</code> — Target unit ID (for attacks)</p>
-                    <p><code className="bg-muted px-1 rounded">data</code> — Additional action data</p>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="font-medium mb-2">Score <Badge variant="outline" className="text-xs ml-2">leaderboard games</Badge></h3>
-                  <div className="text-sm space-y-1 text-muted-foreground">
-                    <p><code className="bg-muted px-1 rounded">gameSlug</code> — Game this score belongs to</p>
-                    <p><code className="bg-muted px-1 rounded">deviceId</code> — Player who submitted</p>
-                    <p><code className="bg-muted px-1 rounded">displayName</code> — Player's display name</p>
-                    <p><code className="bg-muted px-1 rounded">score</code> — Numeric score value</p>
-                    <p><code className="bg-muted px-1 rounded">metadata</code> — Additional data (level, combo, etc.)</p>
-                    <p><code className="bg-muted px-1 rounded">createdAt</code> — When score was submitted</p>
-                  </div>
-                </div>
-
-                <div>
-                  <h3 className="font-medium mb-2">Data <Badge variant="secondary" className="text-xs ml-2">all games</Badge></h3>
-                  <div className="text-sm space-y-1 text-muted-foreground">
-                    <p><code className="bg-muted px-1 rounded">gameSlug</code> — Game this data belongs to</p>
-                    <p><code className="bg-muted px-1 rounded">key</code> — Unique key within the game (prefixed with ownerId for player scope)</p>
-                    <p><code className="bg-muted px-1 rounded">value</code> — JSON object (max 100KB)</p>
-                    <p><code className="bg-muted px-1 rounded">scope</code> — "global" | "player" | "public"</p>
-                    <p><code className="bg-muted px-1 rounded">ownerId</code> — Owner's deviceId (null for global scope)</p>
-                    <p><code className="bg-muted px-1 rounded">ownerDisplayName</code> — Owner's display name</p>
-                    <p><code className="bg-muted px-1 rounded">createdAt</code> — When data was created</p>
-                    <p><code className="bg-muted px-1 rounded">updatedAt</code> — When data was last updated</p>
-                  </div>
-                </div>
-              </div>
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
       </main>
 
       <footer className="border-t border-border py-8 px-4 sm:px-6 lg:px-8 mt-12">
