@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface IPing {
+  gameSlug: string;
   deviceId: string;
   displayName: string;
   ipAddress?: string;
@@ -12,6 +13,11 @@ export interface IPing {
 export interface IPingDocument extends IPing, Document {}
 
 const PingSchema = new Schema<IPingDocument>({
+  gameSlug: {
+    type: String,
+    required: true,
+    index: true
+  },
   deviceId: { 
     type: String, 
     required: true,

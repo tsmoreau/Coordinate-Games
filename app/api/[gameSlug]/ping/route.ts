@@ -1,9 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateGame, gameNotFoundResponse } from '@/lib/gameMiddleware';
+import { GameIdentity } from '@/models/GameIdentity';
+import { Ping } from '@/models/Ping';
 import { AuditLog } from '@/models/AuditLog';
+import { hashToken } from '@/lib/auth';
+import { z } from 'zod';
 import semver from 'semver';
 
 type PingStatus = 'ok' | 'update_available' | 'update_required' | 'maintenance';
+
+const pingSchema = z.object({
+  message: z.string().max(500).optional(),
+});
 
 function getClientIp(request: NextRequest): string {
   const forwarded = request.headers.get('x-forwarded-for');
@@ -89,6 +97,104 @@ export async function GET(
     return NextResponse.json({
       success: false,
       error: 'Ping failed',
+    }, { status: 500 });
+  }
+}
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ gameSlug: string }> }
+) {
+  try {
+    const { gameSlug } = await params;
+    const ip = getClientIp(request);
+
+    const gameContext = await validateGame(gameSlug);
+    if (!gameContext) {
+      return gameNotFoundResponse();
+    }
+
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json({
+        success: false,
+        error: 'Unauthorized - missing or invalid token',
+      }, { status: 401 });
+    }
+
+    const token = authHeader.substring(7);
+    if (!token) {
+      return NextResponse.json({
+        success: false,
+        error: 'Unauthorized - empty token',
+      }, { status: 401 });
+    }
+
+    const tokenHash = hashToken(token);
+    const identity = await GameIdentity.findOne({
+      gameSlug: gameSlug.toLowerCase(),
+      tokenHash,
+      isActive: true,
+    });
+
+    if (!identity) {
+      return NextResponse.json({
+        success: false,
+        error: 'Unauthorized - invalid token for this game',
+      }, { status: 401 });
+    }
+
+    identity.lastSeen = new Date();
+    await identity.save();
+
+    const body = await request.json().catch(() => ({}));
+    const parsed = pingSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({
+        success: false,
+        error: 'Invalid request body',
+        details: parsed.error.issues,
+      }, { status: 400 });
+    }
+
+    const { message } = parsed.data;
+
+    const ping = new Ping({
+      gameSlug: gameSlug.toLowerCase(),
+      deviceId: identity.deviceId,
+      displayName: identity.displayName,
+      ipAddress: ip,
+      userAgent: request.headers.get('user-agent') || undefined,
+      message,
+      createdAt: new Date(),
+    });
+
+    await ping.save();
+
+    AuditLog.create({
+      gameSlug,
+      action: 'player_ping',
+      ip,
+      metadata: {
+        deviceId: identity.deviceId,
+        displayName: identity.displayName,
+        message: message ?? null,
+      },
+    }).catch((err: unknown) => console.error('Audit log error:', err));
+
+    return NextResponse.json({
+      success: true,
+      message: 'Ping recorded',
+      pingId: ping._id.toString(),
+      displayName: identity.displayName,
+      timestamp: ping.createdAt.toISOString(),
+    });
+
+  } catch (error) {
+    console.error('Game ping POST error:', error);
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to record ping',
     }, { status: 500 });
   }
 }
