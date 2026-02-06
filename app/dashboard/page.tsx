@@ -15,10 +15,12 @@ import {
   Settings,
   ExternalLink,
   Wrench,
-  Clock
+  Clock,
+  ScrollText
 } from 'lucide-react';
 import Nav from '@/components/Nav';
 import GameManagement from '@/components/GameManagement';
+import AuditLogViewer from '@/components/AuditLogViewer';
 import { getPlatformStats, getAllGames } from '@/app/actions/admin';
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
@@ -81,6 +83,10 @@ export default async function DashboardPage() {
             <TabsTrigger value="games" data-testid="tab-games">
               <Gamepad2 className="w-4 h-4 mr-2" />
               GAMES
+            </TabsTrigger>
+            <TabsTrigger value="audit" data-testid="tab-audit">
+              <ScrollText className="w-4 h-4 mr-2" />
+              AUDIT LOG
             </TabsTrigger>
           </TabsList>
 
@@ -237,6 +243,10 @@ export default async function DashboardPage() {
 
           <TabsContent value="games">
             <GameManagement games={games} />
+          </TabsContent>
+
+          <TabsContent value="audit">
+            <AuditLogViewer games={games.map(g => ({ slug: g.slug, name: g.name }))} />
           </TabsContent>
         </Tabs>
       </main>

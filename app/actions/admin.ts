@@ -6,6 +6,7 @@ import { connectToDatabase } from '@/lib/mongodb';
 import { Battle } from '@/models/Battle';
 import { GameIdentity, VALID_AVATARS, PlayerAvatar } from '@/models/GameIdentity';
 import { Game } from '@/models/Game';
+import { AuditLog } from '@/models/AuditLog';
 import { revalidatePath } from 'next/cache';
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
@@ -797,6 +798,75 @@ export async function purgeAllBattles(gameSlug: string): Promise<{ success: bool
   } catch (error) {
     console.error('Error purging battles:', error);
     return { success: false, error: 'Failed to purge battles' };
+  }
+}
+
+export interface AuditLogEntry {
+  id: string;
+  gameSlug: string;
+  action: string;
+  ip: string;
+  metadata: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface AuditLogResult {
+  success: boolean;
+  logs?: AuditLogEntry[];
+  total?: number;
+  page?: number;
+  totalPages?: number;
+  error?: string;
+}
+
+export async function fetchAuditLogs(options?: {
+  gameSlug?: string;
+  action?: string;
+  page?: number;
+  limit?: number;
+}): Promise<AuditLogResult> {
+  const auth = await requireAdminAuth();
+  if (!auth.success) {
+    return { success: false, error: auth.error };
+  }
+
+  try {
+    await connectToDatabase();
+
+    const page = options?.page ?? 1;
+    const limit = Math.min(options?.limit ?? 50, 100);
+    const skip = (page - 1) * limit;
+
+    const filter: Record<string, unknown> = {};
+    if (options?.gameSlug) filter.gameSlug = options.gameSlug;
+    if (options?.action) filter.action = options.action;
+
+    const [logs, total] = await Promise.all([
+      AuditLog.find(filter)
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      AuditLog.countDocuments(filter),
+    ]);
+
+    return {
+      success: true,
+      logs: logs.map((log) => ({
+        id: String(log._id),
+        gameSlug: log.gameSlug,
+        action: log.action,
+        ip: log.ip,
+        metadata: (log.metadata as Record<string, unknown>) ?? {},
+        createdAt: log.createdAt.toISOString(),
+      })),
+      total,
+      page,
+      totalPages: Math.max(1, Math.ceil(total / limit)),
+    };
+  } catch (error) {
+    console.error('Error fetching audit logs:', error);
+    return { success: false, error: 'Failed to fetch audit logs' };
   }
 }
 
