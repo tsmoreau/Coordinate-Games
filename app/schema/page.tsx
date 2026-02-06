@@ -789,9 +789,9 @@ const leaderboardEndpoints: EndpointSection[] = [
 const dataStorageEndpoints: EndpointSection[] = [
   {
     id: 'put-data',
-    method: 'PUT',
+    method: 'POST',
     path: '/api/[gameSlug]/data/[key]',
-    description: 'Create or update a key-value pair. Only available for games with the "data" capability. Max value size: 100KB.',
+    description: 'Create or update a key-value pair (upsert). Only available for games with the "data" capability. Max value size: 100KB.',
     auth: true,
     requestBody: {
       fields: [

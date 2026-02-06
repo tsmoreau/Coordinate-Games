@@ -714,9 +714,9 @@ Submit a score to the leaderboard. Players can submit multiple scores.
 
 Key-value storage. Requires "data" capability.
 
-### PUT `/api/[gameSlug]/data/[key]`
+### POST `/api/[gameSlug]/data/[key]`
 
-Create or update a key-value pair. Only available for games with the "data" capability. Max value size: 100KB.
+Create or update a key-value pair (upsert). Only available for games with the "data" capability. Max value size: 100KB.
 
 **Authentication:** **Auth Required**
 

@@ -19,7 +19,7 @@ function getStorageKey(key: string, scope: DataScope, ownerId: string | null): s
   return key;
 }
 
-export async function PUT(
+export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ gameSlug: string; key: string }> }
 ) {
@@ -125,7 +125,7 @@ export async function PUT(
     }, { status: existingData ? 200 : 201 });
 
   } catch (error) {
-    console.error('PUT data error:', error);
+    console.error('POST data error:', error);
     return NextResponse.json({
       success: false,
       error: 'Failed to save data',
