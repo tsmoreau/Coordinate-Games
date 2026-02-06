@@ -1090,48 +1090,60 @@ export default function SchemaPage() {
             Complete documentation for the coordinate.games multi-game hub API. 
             Supports async turn-based games (like Bird Wars) and leaderboard games (like Power Pentagon).
           </p>
-          
-          <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="p-4 rounded-lg border border-border bg-card">
-              <h3 className="font-semibold mb-2 flex items-center gap-2">
-                <Lock className="w-4 h-4" />
-                Authentication
-              </h3>
-              <p className="text-sm text-muted-foreground mb-2">
-                For endpoints marked with Auth Required, include your secret token:
-              </p>
-              <code className="text-sm bg-muted px-2 py-1 rounded font-mono block overflow-x-auto">
-                Authorization: Bearer &lt;your-secret-token&gt;
-              </code>
-            </div>
-            <div className="p-4 rounded-lg border border-border bg-card">
-              <h3 className="font-semibold mb-2 flex items-center gap-2">
-                <Users className="w-4 h-4" />
-                Per-Game Identity
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Register per game via <code className="bg-muted px-1 rounded">/api/[gameSlug]/register</code>. 
-                Each game gives you a unique deviceId and token. Your serialNumber links identities internally across games.
-              </p>
-            </div>
-          </div>
 
-          <div className="mt-4 p-4 rounded-lg border border-border bg-muted/50">
-            <h3 className="font-semibold mb-2">Game Capabilities</h3>
-            <p className="text-sm text-muted-foreground mb-2">
-              Games have capabilities that determine which endpoints are available. Accessing an endpoint without the required capability returns 404:
-            </p>
-            <div className="flex flex-wrap gap-2 text-xs">
-              <Badge variant="secondary">
-                <Swords className="w-3 h-3 mr-1" />
-                birdwars → ["data", "async"] → /battles, /data
-              </Badge>
-              <Badge variant="outline">
-                <Trophy className="w-3 h-3 mr-1" />
-                powerpentagon → ["data", "leaderboard"] → /scores, /data
-              </Badge>
-            </div>
-          </div>
+          <Accordion type="single" collapsible className="mt-6">
+            <AccordionItem value="overview" className="border rounded-lg px-4 bg-muted/30">
+              <AccordionTrigger className="hover:no-underline py-4">
+                <div className="flex items-center gap-2">
+                  <Activity className="w-5 h-5 text-primary" />
+                  <h2 className="text-xl font-semibold">Overview & Security</h2>
+                </div>
+              </AccordionTrigger>
+              <AccordionContent className="pt-2 pb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+                  <div className="p-4 rounded-lg border border-border bg-card">
+                    <h3 className="font-semibold mb-2 flex items-center gap-2">
+                      <Lock className="w-4 h-4" />
+                      Authentication
+                    </h3>
+                    <p className="text-sm text-muted-foreground mb-2">
+                      For endpoints marked with Auth Required, include your secret token:
+                    </p>
+                    <code className="text-sm bg-muted px-2 py-1 rounded font-mono block overflow-x-auto">
+                      Authorization: Bearer &lt;your-secret-token&gt;
+                    </code>
+                  </div>
+                  <div className="p-4 rounded-lg border border-border bg-card">
+                    <h3 className="font-semibold mb-2 flex items-center gap-2">
+                      <Users className="w-4 h-4" />
+                      Per-Game Identity
+                    </h3>
+                    <p className="text-sm text-muted-foreground">
+                      Register per game via <code className="bg-muted px-1 rounded">/api/[gameSlug]/register</code>. 
+                      Each game gives you a unique deviceId and token. Your serialNumber links identities internally across games.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-4 rounded-lg border border-border bg-card">
+                  <h3 className="font-semibold mb-2">Game Capabilities</h3>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Games have capabilities that determine which endpoints are available. Accessing an endpoint without the required capability returns 404:
+                  </p>
+                  <div className="flex flex-wrap gap-2 text-xs">
+                    <Badge variant="secondary">
+                      <Swords className="w-3 h-3 mr-1" />
+                      birdwars → ["data", "async"] → /battles, /data
+                    </Badge>
+                    <Badge variant="outline">
+                      <Trophy className="w-3 h-3 mr-1" />
+                      powerpentagon → ["data", "leaderboard"] → /scores, /data
+                    </Badge>
+                  </div>
+                </div>
+              </AccordionContent>
+            </AccordionItem>
+          </Accordion>
         </div>
 
         <Accordion type="single" collapsible className="space-y-4">
