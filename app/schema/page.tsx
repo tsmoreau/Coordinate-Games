@@ -1071,7 +1071,7 @@ export default function SchemaPage() {
       <Nav />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="mb-12">
+        <div className="mb-12 space-y-6">
           <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
             <div className="flex items-center gap-2">
               <Gamepad2 className="w-8 h-8 text-primary" />
@@ -1091,7 +1091,7 @@ export default function SchemaPage() {
             Supports async turn-based games (like Bird Wars) and leaderboard games (like Power Pentagon).
           </p>
 
-          <Accordion type="single" collapsible className="mt-6 space-y-4">
+          <Accordion type="single" collapsible className="space-y-4">
             <AccordionItem value="overview" className="border rounded-lg px-4 bg-card">
               <AccordionTrigger className="hover:no-underline py-4">
                 <div className="flex items-center gap-2">
