@@ -1091,15 +1091,18 @@ export default function SchemaPage() {
             Supports async turn-based games (like Bird Wars) and leaderboard games (like Power Pentagon).
           </p>
 
-          <Accordion type="single" collapsible className="mt-6">
-            <AccordionItem value="overview" className="border rounded-lg px-4 bg-muted/30">
+          <Accordion type="single" collapsible className="space-y-4">
+            <AccordionItem value="overview" className="border rounded-lg px-4 bg-card">
               <AccordionTrigger className="hover:no-underline py-4">
                 <div className="flex items-center gap-2">
                   <Activity className="w-5 h-5 text-primary" />
                   <h2 className="text-xl font-semibold">Overview & Security</h2>
                 </div>
               </AccordionTrigger>
-              <AccordionContent className="pt-2 pb-6">
+              <AccordionContent className="pt-2 pb-4">
+                <p className="text-muted-foreground mb-6">
+                  General concepts for authentication, identity, and per-game capabilities.
+                </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                   <div className="p-4 rounded-lg border border-border bg-card">
                     <h3 className="font-semibold mb-2 flex items-center gap-2">
