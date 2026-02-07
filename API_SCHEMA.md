@@ -209,7 +209,6 @@ Record an authenticated player ping for a specific game. Used for presence track
 | Field | Type | Description |
 |-------|------|-------------|
 | `success` | boolean | Whether the ping was recorded |
-| `message` | string | Confirmation message |
 | `timestamp` | string | When the ping was recorded (ISO 8601) |
 | `minVersion` | string\|null | Minimum required client version |
 | `currentVersion` | string\|null | Latest available client version |
@@ -219,7 +218,6 @@ Record an authenticated player ping for a specific game. Used for presence track
 ```json
 {
   "success": true,
-  "message": "Ping recorded",
   "timestamp": "2026-02-02T12:00:00.000Z",
   "minVersion": "1.0.0",
   "currentVersion": "1.0.0",

@@ -184,7 +184,6 @@ export async function POST(
 
     return NextResponse.json({
       success: true,
-      message: 'Ping recorded',
       timestamp: ping.createdAt.toISOString(),
       minVersion: gameContext.game.versioning?.minVersion ?? null,
       currentVersion: gameContext.game.versioning?.currentVersion ?? null,

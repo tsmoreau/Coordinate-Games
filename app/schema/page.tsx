@@ -396,7 +396,6 @@ const perGameEndpoints: EndpointSection[] = [
     responseBody: {
       fields: [
         { name: 'success', type: 'boolean', description: 'Whether the ping was recorded' },
-        { name: 'message', type: 'string', description: 'Confirmation message' },
         { name: 'timestamp', type: 'string', description: 'When the ping was recorded (ISO 8601)' },
         { name: 'minVersion', type: 'string|null', description: 'Minimum required client version' },
         { name: 'currentVersion', type: 'string|null', description: 'Latest available client version' },
@@ -404,7 +403,6 @@ const perGameEndpoints: EndpointSection[] = [
       ],
       example: {
         success: true,
-        message: 'Ping recorded',
         timestamp: '2026-02-02T12:00:00.000Z',
         minVersion: '1.0.0',
         currentVersion: '1.0.0',
