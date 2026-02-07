@@ -11,7 +11,7 @@ type PingStatus = 'ok' | 'update_available' | 'update_required' | 'maintenance';
 
 const pingSchema = z.object({
   message: z.string().max(500).optional(),
-});
+}).passthrough();
 
 function getClientIp(request: NextRequest): string {
   const forwarded = request.headers.get('x-forwarded-for');
