@@ -47,11 +47,18 @@ export default function Nav() {
                   </Link>
                 </DropdownMenuItem>
                 {isAuthenticated && (
-                  <DropdownMenuItem asChild>
-                    <Link href="/dashboard" className="w-full cursor-pointer" data-testid="link-dashboard">
-                      Dashboard
-                    </Link>
-                  </DropdownMenuItem>
+                  <>
+                    <DropdownMenuItem asChild>
+                      <Link href="/dashboard" className="w-full cursor-pointer" data-testid="link-dashboard">
+                        Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild>
+                      <Link href="/tools" className="w-full cursor-pointer" data-testid="link-tools">
+                        Tools
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
                 )}
                 {!isLoading && (
                   <>

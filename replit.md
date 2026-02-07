@@ -27,6 +27,11 @@ The application is built using Next.js 16 with the App Router, a MongoDB databas
 - **Async Turn-Based Battles:** Comprehensive API for creating, joining, playing, and managing turn-based battles for games with the `async` capability. Includes polling for turn updates.
 - **Leaderboards:** Score submission and retrieval with pagination and time filters for games with the `leaderboard` capability.
 
+## Tools Section
+- **`/tools`** — OAuth-protected page showing a card grid of available developer tools. Auth enforced via NextAuth middleware.
+- **`/tools/pdfontconv`** — Ported from [ttencate/pdfontconv](https://github.com/ttencate/pdfontconv). Client-side React tool that converts TTF/OTF/WOFF/WOFF2 fonts into Playdate `.fnt` format using Canvas API. All processing happens in-browser.
+- To add a new tool: add an entry to the `tools` array in `app/tools/page.tsx` and create a new directory under `app/tools/[slug]/`.
+
 ## External Dependencies
 - **MongoDB:** Primary database for all application data, accessed via Mongoose.
 - **Next.js:** The web framework used for the application.
