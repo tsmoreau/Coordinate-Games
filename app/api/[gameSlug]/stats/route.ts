@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
-import { Game } from '@/models/Game';
+import { validateGame, gameNotFoundResponse } from '@/lib/gameMiddleware';
 import { GameIdentity } from '@/models/GameIdentity';
 import { Battle } from '@/models/Battle';
 import { authenticateDevice, unauthorizedResponse } from '@/lib/authMiddleware';
@@ -12,30 +12,27 @@ export async function GET(
   try {
     const { gameSlug } = await params;
 
-    await connectToDatabase();
-
-    const game = await Game.findOne({ slug: gameSlug, active: true });
-    if (!game) {
-      return NextResponse.json(
-        { success: false, error: 'Game not found' },
-        { status: 404 }
-      );
+    const gameContext = await validateGame(gameSlug);
+    if (!gameContext) {
+      return gameNotFoundResponse();
     }
 
-    const auth = await authenticateDevice(request, gameSlug);
+    const auth = await authenticateDevice(request, gameContext.slug);
     if (!auth) {
       return unauthorizedResponse('Valid Bearer token required');
     }
 
+    await connectToDatabase();
+
     const { deviceId } = auth;
 
-    const identity = await GameIdentity.findOne({ gameSlug, deviceId, isActive: true });
+    const identity = await GameIdentity.findOne({ gameSlug: gameContext.slug, deviceId, isActive: true });
     if (!identity) {
       return unauthorizedResponse('Valid Bearer token required');
     }
 
     const playerFilter = {
-      gameSlug,
+      gameSlug: gameContext.slug,
       $or: [
         { player1DeviceId: deviceId },
         { player2DeviceId: deviceId },

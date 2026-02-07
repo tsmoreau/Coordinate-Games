@@ -12,7 +12,7 @@ type PingStatus = 'ok' | 'update_available' | 'update_required' | 'maintenance';
 
 const pingSchema = z.object({
   message: z.string().max(500).optional(),
-}).passthrough();
+});
 
 function getClientIp(request: NextRequest): string {
   const forwarded = request.headers.get('x-forwarded-for');
@@ -115,7 +115,7 @@ export async function POST(
       return gameNotFoundResponse();
     }
 
-    const identity = await authenticateDevice(request, gameSlug);
+    const identity = await authenticateDevice(request, gameContext.slug);
     if (!identity) {
       return unauthorizedResponse();
     }
@@ -135,7 +135,7 @@ export async function POST(
     const { message } = parsed.data;
 
     const ping = new Ping({
-      gameSlug: gameSlug.toLowerCase(),
+      gameSlug: gameContext.slug,
       deviceId: identity.deviceId,
       displayName: identity.displayName,
       ipAddress: ip,
@@ -147,7 +147,7 @@ export async function POST(
     await ping.save();
 
     AuditLog.create({
-      gameSlug,
+      gameSlug: gameContext.slug,
       action: 'player_ping',
       ip,
       metadata: {
