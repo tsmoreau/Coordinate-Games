@@ -280,28 +280,6 @@ const globalEndpoints: EndpointSection[] = [
     },
   },
   {
-    id: 'post-games-seed',
-    method: 'POST',
-    path: '/api/games/seed',
-    description: 'Seed or update the games collection with default games (birdwars, powerpentagon).',
-    auth: false,
-    responseBody: {
-      fields: [
-        { name: 'success', type: 'boolean', description: 'Whether seeding was successful' },
-        { name: 'message', type: 'string', description: 'Status message' },
-        { name: 'games', type: 'Game[]', description: 'Array of seeded games' },
-      ],
-      example: {
-        success: true,
-        message: 'Games seeded successfully',
-        games: [
-          { slug: 'birdwars', name: 'Bird Wars', capabilities: ['data', 'async'] },
-          { slug: 'powerpentagon', name: 'Power Pentagon', capabilities: ['data', 'leaderboard'] },
-        ],
-      },
-    },
-  },
-  {
     id: 'get-ping',
     method: 'GET',
     path: '/api/ping',

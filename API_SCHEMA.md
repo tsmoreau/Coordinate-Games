@@ -54,34 +54,6 @@ List all active games available on the platform.
 
 ---
 
-### POST `/api/games/seed`
-
-Seed or update the games collection with default games (birdwars, powerpentagon).
-
-**Authentication:** Public
-
-**Response:**
-
-| Field | Type | Description |
-|-------|------|-------------|
-| `success` | boolean | Whether seeding was successful |
-| `message` | string | Status message |
-| `games` | Game[] | Array of seeded games |
-
-**Example (200 OK):**
-```json
-{
-  "success": true,
-  "message": "Games seeded successfully",
-  "games": [
-    { "slug": "birdwars", "name": "Bird Wars", "capabilities": ["data", "async"] },
-    { "slug": "powerpentagon", "name": "Power Pentagon", "capabilities": ["data", "leaderboard"] }
-  ]
-}
-```
-
----
-
 ### GET `/api/ping`
 
 Platform health check. Returns server status, uptime, and version. No authentication required.
