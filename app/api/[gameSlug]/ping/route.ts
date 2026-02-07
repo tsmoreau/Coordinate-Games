@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { connectToDatabase } from '@/lib/mongodb';
 import { validateGame, gameNotFoundResponse } from '@/lib/gameMiddleware';
 import { authenticateDevice, unauthorizedResponse } from '@/lib/authMiddleware';
 import { GameIdentity } from '@/models/GameIdentity';
@@ -109,6 +110,18 @@ export async function POST(
     const { gameSlug } = await params;
     const ip = getClientIp(request);
 
+    const gameContext = await validateGame(gameSlug);
+    if (!gameContext) {
+      return gameNotFoundResponse();
+    }
+
+    const identity = await authenticateDevice(request, gameSlug);
+    if (!identity) {
+      return unauthorizedResponse();
+    }
+
+    await connectToDatabase();
+
     const body = await request.json().catch(() => ({}));
     const parsed = pingSchema.safeParse(body);
     if (!parsed.success) {
@@ -120,16 +133,6 @@ export async function POST(
     }
 
     const { message } = parsed.data;
-
-    const gameContext = await validateGame(gameSlug);
-    if (!gameContext) {
-      return gameNotFoundResponse();
-    }
-
-    const identity = await authenticateDevice(request, gameSlug);
-    if (!identity) {
-      return unauthorizedResponse();
-    }
 
     const ping = new Ping({
       gameSlug: gameSlug.toLowerCase(),
