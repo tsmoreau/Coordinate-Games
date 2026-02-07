@@ -11,7 +11,10 @@ export const metadata: Metadata = {
   title: 'Coordinate Games',
   description: 'Turn-based tactical strategy game server for Playdate',
   icons: {
-    icon: '/favicon.ico',
+    icon: [
+      { url: '/favicon.ico', sizes: 'any' },
+      { url: '/favicon.svg', type: 'image/svg+xml' },
+    ],
   },
 };
 
