@@ -7,12 +7,17 @@ export function FaviconUpdater() {
   const { theme } = useTheme();
 
   useEffect(() => {
-    const favicon = document.querySelector(
-      "link[rel='icon'][type='image/svg+xml']"
-    ) as HTMLLinkElement | null;
-    if (favicon) {
-      favicon.href = theme === "dark" ? "/favicon-dark.svg" : "/favicon-light.svg";
-    }
+    document.querySelectorAll("link[rel='icon']").forEach((el) => el.remove());
+    document
+      .querySelectorAll("link[rel='shortcut icon']")
+      .forEach((el) => el.remove());
+
+    const link = document.createElement("link");
+    link.rel = "icon";
+    link.type = "image/svg+xml";
+    link.href =
+      theme === "dark" ? "/favicon-dark.svg" : "/favicon-light.svg";
+    document.head.appendChild(link);
   }, [theme]);
 
   return null;

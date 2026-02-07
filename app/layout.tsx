@@ -13,7 +13,6 @@ export const metadata: Metadata = {
   description: 'Turn-based tactical strategy game server for Playdate',
   icons: {
     icon: [
-      { url: '/favicon.ico', sizes: 'any' },
       {
         url: '/favicon-light.svg',
         type: 'image/svg+xml',
