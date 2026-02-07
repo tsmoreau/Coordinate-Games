@@ -210,18 +210,20 @@ Record an authenticated player ping for a specific game. Used for presence track
 |-------|------|-------------|
 | `success` | boolean | Whether the ping was recorded |
 | `message` | string | Confirmation message |
-| `pingId` | string | Unique ping record ID |
-| `displayName` | string | Player display name |
 | `timestamp` | string | When the ping was recorded (ISO 8601) |
+| `minVersion` | string\|null | Minimum required client version |
+| `currentVersion` | string\|null | Latest available client version |
+| `updateUrl` | string\|null | URL to download update (if available) |
 
 **Example (200 OK):**
 ```json
 {
   "success": true,
   "message": "Ping recorded",
-  "pingId": "abc123...",
-  "displayName": "BirdMaster",
-  "timestamp": "2026-02-02T12:00:00.000Z"
+  "timestamp": "2026-02-02T12:00:00.000Z",
+  "minVersion": "1.0.0",
+  "currentVersion": "1.0.0",
+  "updateUrl": null
 }
 ```
 

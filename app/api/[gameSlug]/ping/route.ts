@@ -185,9 +185,10 @@ export async function POST(
     return NextResponse.json({
       success: true,
       message: 'Ping recorded',
-      pingId: ping._id.toString(),
-      displayName: identity.displayName,
       timestamp: ping.createdAt.toISOString(),
+      minVersion: gameContext.game.versioning?.minVersion ?? null,
+      currentVersion: gameContext.game.versioning?.currentVersion ?? null,
+      updateUrl: gameContext.game.versioning?.updateUrl ?? null,
     });
 
   } catch (error) {

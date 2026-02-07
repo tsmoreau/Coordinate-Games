@@ -397,16 +397,18 @@ const perGameEndpoints: EndpointSection[] = [
       fields: [
         { name: 'success', type: 'boolean', description: 'Whether the ping was recorded' },
         { name: 'message', type: 'string', description: 'Confirmation message' },
-        { name: 'pingId', type: 'string', description: 'Unique ping record ID' },
-        { name: 'displayName', type: 'string', description: 'Player display name' },
         { name: 'timestamp', type: 'string', description: 'When the ping was recorded (ISO 8601)' },
+        { name: 'minVersion', type: 'string|null', description: 'Minimum required client version' },
+        { name: 'currentVersion', type: 'string|null', description: 'Latest available client version' },
+        { name: 'updateUrl', type: 'string|null', description: 'URL to download update (if available)' },
       ],
       example: {
         success: true,
         message: 'Ping recorded',
-        pingId: 'abc123...',
-        displayName: 'BirdMaster',
         timestamp: '2026-02-02T12:00:00.000Z',
+        minVersion: '1.0.0',
+        currentVersion: '1.0.0',
+        updateUrl: null,
       },
     },
     errors: [
