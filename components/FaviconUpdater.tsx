@@ -16,7 +16,9 @@ export function FaviconUpdater() {
     link.rel = "icon";
     link.type = "image/svg+xml";
     link.href =
-      theme === "dark" ? "/favicon-dark.svg" : "/favicon-light.svg";
+      (theme === "dark" ? "/favicon-dark.svg" : "/favicon-light.svg") +
+      "?v=" +
+      Date.now();
     document.head.appendChild(link);
   }, [theme]);
 
