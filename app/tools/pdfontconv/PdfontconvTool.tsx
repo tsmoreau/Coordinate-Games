@@ -329,7 +329,7 @@ export default function PdfontconvTool() {
     if (fontLoaded && fontDataRef.current.charSet.length > 0) {
       renderSampleText();
     }
-  }, [fontLoaded, sampleText, displayScale, renderSampleText]);
+  }, [fontLoaded, sampleText, displayScale, fontInput.fontSize, fontInput.opacityThreshold, fontInput.charSet, renderSampleText]);
 
   const handleFontFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
