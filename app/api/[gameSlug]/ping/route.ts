@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { validateGame, gameNotFoundResponse } from '@/lib/gameMiddleware';
+import { authenticateDevice, unauthorizedResponse } from '@/lib/authMiddleware';
 import { GameIdentity } from '@/models/GameIdentity';
 import { Ping } from '@/models/Ping';
 import { AuditLog } from '@/models/AuditLog';
-import { hashToken } from '@/lib/auth';
 import { z } from 'zod';
 import semver from 'semver';
 
@@ -114,38 +114,10 @@ export async function POST(
       return gameNotFoundResponse();
     }
 
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({
-        success: false,
-        error: 'Unauthorized - missing or invalid token',
-      }, { status: 401 });
-    }
-
-    const token = authHeader.substring(7);
-    if (!token) {
-      return NextResponse.json({
-        success: false,
-        error: 'Unauthorized - empty token',
-      }, { status: 401 });
-    }
-
-    const tokenHash = hashToken(token);
-    const identity = await GameIdentity.findOne({
-      gameSlug: gameSlug.toLowerCase(),
-      tokenHash,
-      isActive: true,
-    });
-
+    const identity = await authenticateDevice(request, gameSlug);
     if (!identity) {
-      return NextResponse.json({
-        success: false,
-        error: 'Unauthorized - invalid token for this game',
-      }, { status: 401 });
+      return unauthorizedResponse();
     }
-
-    identity.lastSeen = new Date();
-    await identity.save();
 
     const body = await request.json().catch(() => ({}));
     const parsed = pingSchema.safeParse(body);
