@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
-import { validateGame, gameNotFoundResponse } from '@/lib/gameMiddleware';
+import { validateAsyncGame, isGameContext } from '@/lib/gameMiddleware';
 import { authenticateDevice, unauthorizedResponse } from '@/lib/authMiddleware';
 import { GameIdentity } from '@/models/GameIdentity';
 import { Ping } from '@/models/Ping';
@@ -36,12 +36,12 @@ export async function GET(
     const clientVersion = searchParams.get('clientVersion');
     const ip = getClientIp(request);
 
-    const gameContext = await validateGame(gameSlug);
-    if (!gameContext) {
-      return gameNotFoundResponse();
+    const gameResult = await validateAsyncGame(gameSlug);
+    if (!isGameContext(gameResult)) {
+      return gameResult;
     }
 
-    const { game } = gameContext;
+    const { game } = gameResult;
     const serverTime = new Date().toISOString();
 
     const baseResponse = {
@@ -71,7 +71,7 @@ export async function GET(
     }
 
     AuditLog.create({
-      gameSlug,
+      gameSlug: gameResult.slug,
       action: 'ping',
       ip,
       metadata: {
@@ -110,13 +110,13 @@ export async function POST(
     const { gameSlug } = await params;
     const ip = getClientIp(request);
 
-    const gameContext = await validateGame(gameSlug);
-    if (!gameContext) {
-      return gameNotFoundResponse();
+    const gameResult = await validateAsyncGame(gameSlug);
+    if (!isGameContext(gameResult)) {
+      return gameResult;
     }
 
-    const identity = await authenticateDevice(request, gameContext.slug);
-    if (!identity) {
+    const auth = await authenticateDevice(request, gameResult.slug);
+    if (!auth) {
       return unauthorizedResponse();
     }
 
@@ -135,9 +135,9 @@ export async function POST(
     const { message } = parsed.data;
 
     const ping = new Ping({
-      gameSlug: gameContext.slug,
-      deviceId: identity.deviceId,
-      displayName: identity.displayName,
+      gameSlug: gameResult.slug,
+      deviceId: auth.deviceId,
+      displayName: auth.displayName,
       ipAddress: ip,
       userAgent: request.headers.get('user-agent') || undefined,
       message,
@@ -147,12 +147,12 @@ export async function POST(
     await ping.save();
 
     AuditLog.create({
-      gameSlug: gameContext.slug,
+      gameSlug: gameResult.slug,
       action: 'player_ping',
       ip,
       metadata: {
-        deviceId: identity.deviceId,
-        displayName: identity.displayName,
+        deviceId: auth.deviceId,
+        displayName: auth.displayName,
         message: message ?? null,
       },
     }).catch((err: unknown) => console.error('Audit log error:', err));
@@ -160,9 +160,9 @@ export async function POST(
     return NextResponse.json({
       success: true,
       timestamp: ping.createdAt.toISOString(),
-      minVersion: gameContext.game.versioning?.minVersion ?? null,
-      currentVersion: gameContext.game.versioning?.currentVersion ?? null,
-      updateUrl: gameContext.game.versioning?.updateUrl ?? null,
+      minVersion: gameResult.game.versioning?.minVersion ?? null,
+      currentVersion: gameResult.game.versioning?.currentVersion ?? null,
+      updateUrl: gameResult.game.versioning?.updateUrl ?? null,
     });
 
   } catch (error) {
