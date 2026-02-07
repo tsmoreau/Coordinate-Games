@@ -267,21 +267,22 @@ Turn-based multiplayer games with battles. Requires "async" capability.
 
 ### GET `/api/[gameSlug]/battles`
 
-List public battles for an async game. Supports cursor-based pagination. Only available for games with the "async" capability.
+List battles for an async game. By default returns public, non-abandoned battles. Use `mine=true` with auth to get the caller's own battles (including private and abandoned). Supports cursor-based pagination.
 
-**Authentication:** Public
+**Authentication:** Public (or **Auth Required** when `mine=true`)
 
 **Query Parameters:**
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `cursor` | string | No | Pagination cursor (battleId to start after) |
-| `limit` | number | No | Max results (default: 20, max: 100) |
-| `status` | string | No | Filter by status: pending, active, completed |
+| `mine` | string | No | Set to "true" to filter to the authenticated caller's battles only (requires auth). Includes private and abandoned battles. |
+| `status` | string | No | Filter by status: pending, active, completed, abandoned. Only works with mine=true. |
+| `limit` | number | No | Max results per page (default: 9, max: 50). Enables cursor-based pagination. |
+| `cursor` | string | No | Pagination cursor from previous response's `pagination.nextCursor` |
 
 **Example:**
 ```
-/api/[gameSlug]/battles?limit=20&status=pending
+/api/[gameSlug]/battles?mine=true&status=active&limit=9
 ```
 
 **Response:**
@@ -289,38 +290,56 @@ List public battles for an async game. Supports cursor-based pagination. Only av
 | Field | Type | Description |
 |-------|------|-------------|
 | `success` | boolean | Whether the request was successful |
-| `battles` | Battle[] | Array of public battles |
-| `nextCursor` | string\|null | Cursor for next page (null if no more) |
+| `game` | object | Game info: { slug, name } |
+| `battles` | Battle[] | Array of battles with player info |
+| `pagination` | object | Pagination info: { hasMore, nextCursor, total, counts, limits, userCounts } |
 
 **Example (200 OK):**
 ```json
 {
   "success": true,
+  "game": { "slug": "birdwars", "name": "Bird Wars" },
   "battles": [
     {
       "battleId": "e0a5b571c0ddc493",
       "displayName": "Territorial-Retreat-54",
-      "gameSlug": "birdwars",
-      "status": "pending",
-      "currentTurn": 0,
       "player1DeviceId": "a0dcb007...",
+      "player2DeviceId": "f55c9b25...",
       "player1DisplayName": "BirdMaster",
-      "isPrivate": false
+      "player1Avatar": "BIRD3",
+      "player2DisplayName": "EagleEye",
+      "player2Avatar": "BIRD1",
+      "status": "active",
+      "currentTurn": 4,
+      "currentPlayerIndex": 0,
+      "isPrivate": false,
+      "lastTurnAt": "2026-02-07T15:30:00.000Z",
+      "mapName": "forest-clearing",
+      "winner": null
     }
   ],
-  "nextCursor": null
+  "pagination": {
+    "hasMore": false,
+    "nextCursor": null,
+    "total": 1,
+    "counts": { "active": 1 },
+    "limits": { "maxTotal": 9 },
+    "userCounts": { "total": 1 }
+  }
 }
 ```
 
 **Error Responses:**
 
+- `401` — mine=true requires valid Bearer token authentication
+- `400` — Invalid status filter
 - `404` — Game not found or missing async capability
 
 ---
 
 ### POST `/api/[gameSlug]/battles`
 
-Create a new battle. The authenticated player becomes player 1.
+Create a new battle. The authenticated player becomes player 1. Maximum 9 active/pending battles per player.
 
 **Authentication:** **Auth Required**
 
@@ -341,6 +360,7 @@ Create a new battle. The authenticated player becomes player 1.
 | Field | Type | Description |
 |-------|------|-------------|
 | `success` | boolean | Whether the battle was created |
+| `game` | object | Game info: { slug, name } |
 | `battle` | Battle | Created battle object |
 | `message` | string | Human-readable message |
 
@@ -348,20 +368,22 @@ Create a new battle. The authenticated player becomes player 1.
 ```json
 {
   "success": true,
+  "game": { "slug": "birdwars", "name": "Bird Wars" },
   "battle": {
     "battleId": "a99958640027f6bc",
     "displayName": "Swift-Assault-17",
-    "gameSlug": "birdwars",
     "status": "pending",
-    "currentTurn": 0
+    "currentTurn": 0,
+    "isPrivate": false
   },
-  "message": "Battle created successfully"
+  "message": "Battle created. Waiting for opponent to join."
 }
 ```
 
 **Error Responses:**
 
 - `401` — Authentication required
+- `403` — Maximum 9 active games allowed (limit_reached)
 - `404` — Game not found or missing async capability
 
 ---
@@ -484,7 +506,7 @@ Get all turns for a battle, ordered by turn number.
 
 ### POST `/api/[gameSlug]/battles/[id]/turns`
 
-Submit a turn with actions. Only the current active player can submit. Must include end_turn action.
+Submit a turn with actions. Only the current active player can submit. Must include end_turn action. Max 100 actions per turn.
 
 **Authentication:** **Auth Required**
 
@@ -492,8 +514,8 @@ Submit a turn with actions. Only the current active player can submit. Must incl
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `actions` | Action[] | Yes | Array of actions (must end with end_turn) |
-| `gameState` | object | No | Game state snapshot after turn (max 50KB) |
+| `actions` | Action[] | Yes | Array of actions (1-100, must include end_turn). Action types: move, attack, build, capture, wait, end_turn, take_off, land, supply, load, unload, combine |
+| `gameState` | object | No | Game state snapshot after turn (max 50KB). If gameState.winner is set, battle completes. |
 
 **Example:**
 ```json
@@ -514,16 +536,18 @@ Submit a turn with actions. Only the current active player can submit. Must incl
 | Field | Type | Description |
 |-------|------|-------------|
 | `success` | boolean | Whether the turn was submitted |
-| `turn` | Turn | Submitted turn |
-| `battle` | Battle | Updated battle state |
+| `game` | object | Game info: { slug, name } |
+| `turn` | Turn | Submitted turn: { turnId, turnNumber, isValid, validationErrors } |
+| `battle` | Battle | Updated battle state: { battleId, currentTurn, currentPlayerIndex, status, currentState } |
 | `message` | string | Human-readable message |
 
-**Example (200 OK):**
+**Example (201 Created):**
 ```json
 {
   "success": true,
-  "turn": { "turnId": "xyz789...", "turnNumber": 6, "isValid": true },
-  "battle": { "currentTurn": 6, "currentPlayerIndex": 0, "status": "active" },
+  "game": { "slug": "birdwars", "name": "Bird Wars" },
+  "turn": { "turnId": "xyz789...", "turnNumber": 6, "isValid": true, "validationErrors": [] },
+  "battle": { "battleId": "e0a5b571c0ddc493", "currentTurn": 6, "currentPlayerIndex": 0, "status": "active", "currentState": { "units": [] } },
   "message": "Turn submitted successfully"
 }
 ```
@@ -534,6 +558,8 @@ Submit a turn with actions. Only the current active player can submit. Must incl
 - `401` — Authentication required
 - `403` — Not your turn or not a participant
 - `404` — Battle or game not found
+- `409` — Turn already submitted (duplicate)
+- `413` — Request payload too large (max 100KB)
 
 ---
 
