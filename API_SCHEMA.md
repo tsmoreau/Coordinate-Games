@@ -233,6 +233,61 @@ Record an authenticated player ping for a specific game. Used for presence track
 
 ---
 
+### GET `/api/[gameSlug]/stats`
+
+Get the authenticated player's profile and battle statistics for a game. Returns identity info, battle counts by status, win/loss/draw record, win rate, and total turns submitted.
+
+**Authentication:** **Auth Required**
+
+**Response:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `success` | boolean | Whether the request was successful |
+| `stats` | object | Player stats object |
+| `stats.deviceId` | string | Player device ID |
+| `stats.displayName` | string | Player display name |
+| `stats.avatar` | string | Player avatar (e.g., BIRD1) |
+| `stats.memberSince` | string\|null | Registration date (ISO 8601) or null |
+| `stats.totalBattles` | number | Total battles across all statuses |
+| `stats.completedBattles` | number | Battles that reached completion |
+| `stats.activeBattles` | number | Currently active battles |
+| `stats.pendingBattles` | number | Battles waiting for an opponent |
+| `stats.wins` | number | Completed battles won |
+| `stats.losses` | number | Completed battles lost |
+| `stats.draws` | number | Completed battles drawn |
+| `stats.winRate` | string | Win percentage (e.g., "62.5%") |
+| `stats.totalTurnsSubmitted` | number | Total turns submitted across all battles |
+
+**Example (200 OK):**
+```json
+{
+  "success": true,
+  "stats": {
+    "deviceId": "a0dcb007051f88c0aef99bf01ffe224b",
+    "displayName": "BirdMaster",
+    "avatar": "BIRD4",
+    "memberSince": "2026-01-15T08:30:00.000Z",
+    "totalBattles": 10,
+    "completedBattles": 8,
+    "activeBattles": 1,
+    "pendingBattles": 1,
+    "wins": 5,
+    "losses": 2,
+    "draws": 1,
+    "winRate": "62.5%",
+    "totalTurnsSubmitted": 45
+  }
+}
+```
+
+**Error Responses:**
+
+- `401` — Valid Bearer token required
+- `404` — Game not found
+
+---
+
 ## Async Battle Endpoints
 
 Turn-based multiplayer games with battles. Requires "async" capability.
