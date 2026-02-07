@@ -122,7 +122,8 @@ export async function POST(
 
     await connectToDatabase();
 
-    const body = await request.json().catch(() => ({}));
+    const rawBody = await request.json().catch(() => ({}));
+    const body = (rawBody && typeof rawBody === 'object' && !Array.isArray(rawBody)) ? rawBody : {};
     const parsed = pingSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({
