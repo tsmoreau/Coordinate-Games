@@ -70,6 +70,20 @@ export async function GET(
     const { searchParams } = new URL(request.url);
     const limitParam = searchParams.get('limit');
     const cursor = searchParams.get('cursor');
+    const mine = searchParams.get('mine') === 'true';
+    const statusFilter = searchParams.get('status');
+
+    if (mine && !auth) {
+      return unauthorizedResponse('Player authentication required to view your battles');
+    }
+
+    const validStatuses = ['pending', 'active', 'completed', 'abandoned'];
+    if (statusFilter && !validStatuses.includes(statusFilter)) {
+      return NextResponse.json({
+        success: false,
+        error: `Invalid status filter. Must be one of: ${validStatuses.join(', ')}`,
+      }, { status: 400 });
+    }
 
     const isPaginated = limitParam !== null || cursor !== null;
     const limit = isPaginated 
@@ -78,9 +92,20 @@ export async function GET(
 
     const baseQuery: Record<string, unknown> = { 
       gameSlug: gameResult.slug,
-      isPrivate: { $ne: true },
-      status: { $ne: 'abandoned' }
     };
+
+    if (mine && auth) {
+      baseQuery.$or = [
+        { player1DeviceId: auth.deviceId },
+        { player2DeviceId: auth.deviceId }
+      ];
+      if (statusFilter) {
+        baseQuery.status = statusFilter;
+      }
+    } else {
+      baseQuery.isPrivate = { $ne: true };
+      baseQuery.status = { $ne: 'abandoned' };
+    }
 
     if (cursor) {
       try {
@@ -95,14 +120,14 @@ export async function GET(
       }
     }
 
-    const total = await Battle.countDocuments({ 
-      gameSlug: gameResult.slug,
-      isPrivate: { $ne: true }, 
-      status: { $ne: 'abandoned' } 
-    });
+    const countQuery = { ...baseQuery };
+    delete countQuery._id;
+    const total = await Battle.countDocuments(countQuery);
 
+    const statusCountMatch = { ...countQuery };
+    delete statusCountMatch.status;
     const statusCounts = await Battle.aggregate([
-      { $match: { gameSlug: gameResult.slug, isPrivate: { $ne: true }, status: { $ne: 'abandoned' } } },
+      { $match: statusCountMatch },
       { $group: { _id: '$status', count: { $sum: 1 } } }
     ]);
     const counts: Record<string, number> = {};
