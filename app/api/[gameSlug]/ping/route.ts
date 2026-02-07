@@ -109,16 +109,6 @@ export async function POST(
     const { gameSlug } = await params;
     const ip = getClientIp(request);
 
-    const gameContext = await validateGame(gameSlug);
-    if (!gameContext) {
-      return gameNotFoundResponse();
-    }
-
-    const identity = await authenticateDevice(request, gameSlug);
-    if (!identity) {
-      return unauthorizedResponse();
-    }
-
     const body = await request.json().catch(() => ({}));
     const parsed = pingSchema.safeParse(body);
     if (!parsed.success) {
@@ -130,6 +120,16 @@ export async function POST(
     }
 
     const { message } = parsed.data;
+
+    const gameContext = await validateGame(gameSlug);
+    if (!gameContext) {
+      return gameNotFoundResponse();
+    }
+
+    const identity = await authenticateDevice(request, gameSlug);
+    if (!identity) {
+      return unauthorizedResponse();
+    }
 
     const ping = new Ping({
       gameSlug: gameSlug.toLowerCase(),
