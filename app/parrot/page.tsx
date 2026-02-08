@@ -23,12 +23,12 @@ export default function ParrotEnginePage() {
             </div>
             <Button
               variant="outline"
-              size="icon"
               asChild
               data-testid="link-github-parrot"
             >
-              <a href="#" aria-label="GitHub repository">
-                <SiGithub className="w-4 h-4" />
+              <a href="#">
+                <SiGithub className="w-4 h-4 mr-2" />
+                GitHub
               </a>
             </Button>
           </div>
