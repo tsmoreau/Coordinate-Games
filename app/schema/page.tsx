@@ -1102,26 +1102,49 @@ export default function SchemaPage() {
     URL.revokeObjectURL(url);
   }, []);
 
+  const [isJumping, setIsJumping] = useState(false);
+
+  const handleBallClick = () => {
+    if (isJumping) return;
+    setIsJumping(true);
+    setTimeout(() => setIsJumping(false), 600);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Nav />
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="mb-12">
-          <svg width="56" height="56" viewBox="0 0 56 56" className="mb-6 text-stone-900 dark:text-stone-100" aria-hidden="true">
-            <circle
-              cx="28"
-              cy="28"
-              r="24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="4"
-            />
-          </svg>
+        <div className="mb-12 pt-36">
+          <style jsx>{`
+            @keyframes jump {
+              0%, 100% { transform: translateY(0); }
+              50% { transform: translateY(-40px); }
+            }
+            .animate-jump {
+              animation: jump 0.6s cubic-bezier(0.33, 1, 0.68, 1);
+            }
+          `}</style>
+          <div 
+            onClick={handleBallClick}
+            className={`w-14 h-14 mb-6 cursor-pointer transition-transform ${isJumping ? 'animate-jump' : 'hover:scale-105 active:scale-95'}`}
+          >
+            <svg width="56" height="56" viewBox="0 0 56 56" className="text-stone-900 dark:text-stone-100" aria-hidden="true">
+              <circle
+                cx="28"
+                cx="28"
+                cy="28"
+                r="24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="4"
+              />
+            </svg>
+          </div>
           <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
             <div className="flex items-center gap-2">
-              <h1 className="text-3xl font-bold">Coordinate API Reference</h1>
-              <Badge variant="outline" className="text-xs">v1.0.0</Badge>
+              <h1 className="text-3xl font-bold">Coordinate API</h1>
+              <Badge variant="outline" className="text-xs">v0.1.3</Badge>
             </div>
             <Button 
               onClick={handleDownloadSpec}

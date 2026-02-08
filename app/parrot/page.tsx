@@ -28,7 +28,7 @@ export default function ParrotEnginePage() {
             >
               <a href="#">
                 <SiGithub className="w-4 h-4 mr-2" />
-                GitHub
+                Source on GitHub
               </a>
             </Button>
           </div>
