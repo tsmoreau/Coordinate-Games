@@ -342,12 +342,14 @@ List battles for an async game. By default returns public, non-abandoned battles
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `mine` | string | No | Set to "true" to filter to the authenticated caller's battles only (requires auth). Includes private and abandoned battles. |
+| `myturn` | string | No | Set to "true" to filter to battles where it is the authenticated caller's turn. Requires `mine=true`. Defaults to `status=active` if no status filter is provided. Only valid with `status=active` or no status filter. |
 | `status` | string | No | Filter by status: pending, active, completed, abandoned. Only works with mine=true. |
 | `limit` | number | No | Max results per page (default: 9, max: 50). Enables cursor-based pagination. |
 | `cursor` | string | No | Pagination cursor from previous response's `pagination.nextCursor` |
 
 **Example:**
 ```
+/api/[gameSlug]/battles?mine=true&myturn=true
 /api/[gameSlug]/battles?mine=true&status=active&limit=9
 ```
 

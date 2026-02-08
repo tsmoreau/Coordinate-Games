@@ -71,10 +71,25 @@ export async function GET(
     const limitParam = searchParams.get('limit');
     const cursor = searchParams.get('cursor');
     const mine = searchParams.get('mine') === 'true';
+    const myturn = searchParams.get('myturn') === 'true';
     const statusFilter = searchParams.get('status');
 
     if (mine && !auth) {
       return unauthorizedResponse('Player authentication required to view your battles');
+    }
+
+    if (myturn && !mine) {
+      return NextResponse.json({
+        success: false,
+        error: 'myturn filter requires mine=true',
+      }, { status: 400 });
+    }
+
+    if (myturn && statusFilter && statusFilter !== 'active') {
+      return NextResponse.json({
+        success: false,
+        error: 'myturn filter only applies to active battles',
+      }, { status: 400 });
     }
 
     const validStatuses = ['pending', 'active', 'completed', 'abandoned'];
@@ -95,10 +110,20 @@ export async function GET(
     };
 
     if (mine && auth) {
-      baseQuery.$or = [
-        { player1DeviceId: auth.deviceId },
-        { player2DeviceId: auth.deviceId }
-      ];
+      if (myturn) {
+        baseQuery.$or = [
+          { player1DeviceId: auth.deviceId, currentPlayerIndex: 0 },
+          { player2DeviceId: auth.deviceId, currentPlayerIndex: 1 }
+        ];
+        if (!statusFilter) {
+          baseQuery.status = 'active';
+        }
+      } else {
+        baseQuery.$or = [
+          { player1DeviceId: auth.deviceId },
+          { player2DeviceId: auth.deviceId }
+        ];
+      }
       if (statusFilter) {
         baseQuery.status = statusFilter;
       }
