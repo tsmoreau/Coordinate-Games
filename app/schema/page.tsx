@@ -1111,7 +1111,7 @@ export default function SchemaPage() {
           <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
             <div className="flex items-center gap-2">
               <Gamepad2 className="hidden w-8 h-8 text-primary" />
-              <h1 className="text-3xl font-bold">API Reference</h1>
+              <h1 className="text-3xl font-bold">Coordinate API Reference</h1>v
             </div>
             <Button 
               onClick={handleDownloadSpec}
