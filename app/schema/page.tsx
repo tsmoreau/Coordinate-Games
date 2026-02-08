@@ -1121,6 +1121,7 @@ export default function SchemaPage() {
           <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
             <div className="flex items-center gap-2">
               <h1 className="text-3xl font-bold">Coordinate API Reference</h1>
+              <Badge variant="outline" className="text-xs">v1.0.0</Badge>
             </div>
             <Button 
               onClick={handleDownloadSpec}
