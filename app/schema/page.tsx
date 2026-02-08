@@ -1132,7 +1132,6 @@ export default function SchemaPage() {
             <svg width="56" height="56" viewBox="0 0 56 56" className="text-stone-900 dark:text-stone-100" aria-hidden="true">
               <circle
                 cx="28"
-                cx="28"
                 cy="28"
                 r="24"
                 fill="none"
