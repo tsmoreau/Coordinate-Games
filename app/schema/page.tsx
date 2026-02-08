@@ -6,7 +6,7 @@ import Nav from '@/components/Nav';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 
 function generateMarkdownSpec(
   globalEndpoints: EndpointSection[],
@@ -1103,12 +1103,45 @@ export default function SchemaPage() {
   }, []);
 
   const [isJumping, setIsJumping] = useState(false);
+  const [bounceOffset, setBounceOffset] = useState(0);
+  const bounceStartRef = useRef<number | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+
+  const animateBounce = useCallback((now: number) => {
+    if (bounceStartRef.current !== null) {
+      const bounceElapsed = now - bounceStartRef.current;
+      const bounceDuration = 800; // 800ms for two bounces (400ms each)
+      const bounceHeight = 40; // How high to bounce
+      
+      if (bounceElapsed < bounceDuration) {
+        // Use absolute sine wave for two distinct bounces
+        // Multiplying by 2 inside sin and using abs creates two peaks
+        const bounceProgress = (bounceElapsed / bounceDuration) * 2;
+        const offset = -Math.abs(Math.sin(bounceProgress * Math.PI)) * bounceHeight;
+        setBounceOffset(offset);
+        animationFrameRef.current = requestAnimationFrame(animateBounce);
+      } else {
+        setIsJumping(false);
+        setBounceOffset(0);
+        bounceStartRef.current = null;
+      }
+    }
+  }, []);
 
   const handleBallClick = () => {
     if (isJumping) return;
     setIsJumping(true);
-    setTimeout(() => setIsJumping(false), 800);
+    bounceStartRef.current = performance.now();
+    animationFrameRef.current = requestAnimationFrame(animateBounce);
   };
+
+  useEffect(() => {
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -1116,21 +1149,10 @@ export default function SchemaPage() {
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-12 pt-36">
-          <style jsx>{`
-            @keyframes double-jump {
-              0%, 100% { transform: translateY(0); }
-              25% { transform: translateY(-40px); }
-              45% { transform: translateY(0); }
-              70% { transform: translateY(-15px); }
-              85% { transform: translateY(0); }
-            }
-            .animate-double-jump {
-              animation: double-jump 0.8s ease-out;
-            }
-          `}</style>
           <div 
             onClick={handleBallClick}
-            className={`w-14 h-14 mb-6 cursor-pointer transition-transform ${isJumping ? 'animate-double-jump' : 'hover:scale-105 active:scale-95'}`}
+            className="w-14 h-14 mb-6 cursor-pointer transition-transform hover:scale-105 active:scale-95"
+            style={{ transform: `translateY(${bounceOffset}px)` }}
           >
             <svg width="56" height="56" viewBox="0 0 56 56" className="text-stone-900 dark:text-stone-100" aria-hidden="true">
               <circle
