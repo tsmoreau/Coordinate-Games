@@ -1108,14 +1108,14 @@ export default function SchemaPage() {
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-12">
-          <svg width="56" height="56" viewBox="0 0 56 56" className="mb-6" aria-hidden="true">
+          <svg width="56" height="56" viewBox="0 0 56 56" className="mb-6 text-stone-900 dark:text-stone-100" aria-hidden="true">
             <circle
               cx="28"
               cy="28"
               r="24"
               fill="none"
+              stroke="currentColor"
               strokeWidth="4"
-              className="stroke-stone-900 dark:stroke-stone-100"
             />
           </svg>
           <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
