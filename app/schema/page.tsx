@@ -11,7 +11,7 @@ import { useTheme } from '@/components/ThemeProvider';
 
 const BALL_CONFIG = {
   circleR: 28,
-  circleLine: 4,
+  circleLine: 5,
   bounceDuration: 800,
   bounceHeight: 40,
   idlePulseDelay: 5000,
@@ -1138,18 +1138,19 @@ export default function SchemaPage() {
     if (!ctx) return;
 
     const dpr = window.devicePixelRatio || 1;
-    const size = 150;
-    canvas.width = size * dpr;
-    canvas.height = size * dpr;
-    canvas.style.width = `${size}px`;
-    canvas.style.height = `${size}px`;
+    const w = 70;
+    const h = 110;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = `${w}px`;
+    canvas.style.height = `${h}px`;
 
     const now = performance.now();
     const state = ballStateRef.current;
     const colors = BALL_CONFIG.colors[theme];
     const r = BALL_CONFIG.circleR;
-    const cx = size / 2;
-    const cy = size - BALL_CONFIG.circleR - BALL_CONFIG.circleLine;
+    const cx = w / 2;
+    const cy = h - BALL_CONFIG.circleR - BALL_CONFIG.circleLine;
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -1170,19 +1171,7 @@ export default function SchemaPage() {
       }
     }
 
-    let pulseScale = 1;
-    if (
-      !state.isBouncing &&
-      now - state.lastInteraction > BALL_CONFIG.idlePulseDelay
-    ) {
-      const idleElapsed = (now - state.lastInteraction - BALL_CONFIG.idlePulseDelay) % 3000;
-      if (idleElapsed < BALL_CONFIG.idlePulseDuration) {
-        const pulseProgress = idleElapsed / BALL_CONFIG.idlePulseDuration;
-        pulseScale = 1 + Math.sin(pulseProgress * Math.PI) * 0.1;
-      }
-    }
-
-    const radius = r * pulseScale;
+    const radius = r;
 
     ctx.beginPath();
     ctx.arc(cx, cy + bounceOffset, radius, 0, Math.PI * 2);
