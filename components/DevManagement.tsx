@@ -97,6 +97,7 @@ export default function DevManagement() {
   const [showRevokeDialog, setShowRevokeDialog] = useState(false);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
+  const [showKeysDialog, setShowKeysDialog] = useState(false);
   const [inviteName, setInviteName] = useState('');
   const [generatedKey, setGeneratedKey] = useState('');
 
@@ -119,6 +120,11 @@ export default function DevManagement() {
   const handleApprove = (dev: MockDev) => {
     setSelectedDev(dev);
     setShowApproveDialog(true);
+  };
+
+  const handleShowKeys = (dev: MockDev) => {
+    setSelectedDev(dev);
+    setShowKeysDialog(true);
   };
 
   const confirmRevoke = () => {
@@ -264,16 +270,19 @@ export default function DevManagement() {
                   )}
                 </div>
 
-                <div className="flex gap-2 flex-wrap">
-                  <Button
-                    size="icon"
-                    variant="outline"
-                    onClick={() => handleView(dev)}
-                    data-testid={`button-view-dev-${dev.id}`}
-                    title="View developer details"
-                  >
-                    <Eye className="w-4 h-4" />
-                  </Button>
+                          <div className="flex items-center gap-1">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleShowKeys(dev)}
+                              data-testid={`button-keys-dev-${dev.id}`}
+                              title="View API keys"
+                            >
+                              <Key className="w-4 h-4" />
+                            </Button>
+                            <Button size="icon" variant="ghost" onClick={() => handleView(dev)} data-testid={`button-view-dev-${dev.id}`}>
+                              <Eye className="w-4 h-4" />
+                            </Button>
                   {dev.status === 'pending' ? (
                     <Button
                       size="icon"
@@ -470,6 +479,78 @@ export default function DevManagement() {
             </Button>
             <Button onClick={confirmInvite} disabled={!generatedKey} data-testid="button-invite-confirm">
               DONE
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showKeysDialog} onOpenChange={setShowKeysDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="uppercase">API KEYS & ACTIVITY</DialogTitle>
+            <DialogDescription>
+              Manage API keys and view linked game activity for {selectedDev?.name}.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedDev && (
+            <div className="space-y-6">
+              <div className="space-y-4">
+                {[
+                  { key: selectedDev.apiKey, status: 'active', created: 'Jan 12, 2026', games: selectedDev.games },
+                  { key: 'cg_live_old_key_abc123...', status: 'revoked', created: 'Dec 05, 2025', games: [] },
+                ].map((keyData, idx) => (
+                  <div key={idx} className="p-4 rounded-md border space-y-3 bg-card shadow-sm">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <Key className="w-4 h-4 text-muted-foreground shrink-0" />
+                        <code className="text-xs font-mono bg-muted px-2 py-1 rounded truncate flex-1">
+                          {keyData.key}
+                        </code>
+                        <Button size="icon" variant="ghost" onClick={() => copyApiKey(keyData.key)}>
+                          <Copy className="w-3 h-3" />
+                        </Button>
+                      </div>
+                      <Badge variant={keyData.status === 'active' ? 'default' : 'destructive'}>
+                        {keyData.status.toUpperCase()}
+                      </Badge>
+                    </div>
+                    
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <span>Created on {keyData.created}</span>
+                      {keyData.status === 'active' && (
+                        <Button variant="ghost" size="sm" className="h-7 text-destructive hover:text-destructive">
+                          REVOKE
+                        </Button>
+                      )}
+                    </div>
+
+                    {keyData.games.length > 0 && (
+                      <div className="space-y-2 pt-2 border-t">
+                        <p className="text-[10px] font-bold uppercase text-muted-foreground">Linked Activity</p>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                          {keyData.games.map((game) => (
+                            <div key={game.slug} className="flex items-center justify-between p-2 rounded bg-muted/50 text-[11px]">
+                              <div className="flex items-center gap-2">
+                                <Gamepad2 className="w-3 h-3" />
+                                <span className="font-medium uppercase">{game.name}</span>
+                              </div>
+                              <span className="text-muted-foreground">42 calls/24h</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowKeysDialog(false)} data-testid="button-keys-close">
+              CLOSE
+            </Button>
+            <Button variant="default" onClick={() => toast({ title: 'GENERATE NEW KEY', description: 'Provisioning additional API key' })}>
+              GENERATE NEW KEY
             </Button>
           </DialogFooter>
         </DialogContent>
