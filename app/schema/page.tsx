@@ -1138,7 +1138,7 @@ export default function SchemaPage() {
     if (!ctx) return;
 
     const dpr = window.devicePixelRatio || 1;
-    const size = 70;
+    const size = 150;
     canvas.width = size * dpr;
     canvas.height = size * dpr;
     canvas.style.width = `${size}px`;
@@ -1149,7 +1149,7 @@ export default function SchemaPage() {
     const colors = BALL_CONFIG.colors[theme];
     const r = BALL_CONFIG.circleR;
     const cx = size / 2;
-    const cy = size / 2;
+    const cy = size - BALL_CONFIG.circleR - BALL_CONFIG.circleLine;
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
