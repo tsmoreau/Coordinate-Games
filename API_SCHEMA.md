@@ -89,9 +89,13 @@ Per-game registration and authentication flow.
 
 ### POST `/api/[gameSlug]/register`
 
-Register for a specific game. Creates a game-scoped identity with unique deviceId and secretToken.
+Register for a specific game, or update your profile if already registered.
 
-**Authentication:** Public
+**Authentication:** Public (new registration) or **Auth Required** (profile update)
+
+#### New Registration (no auth)
+
+Creates a game-scoped identity with unique deviceId and secretToken.
 
 **Request Body:**
 
@@ -110,9 +114,8 @@ Register for a specific game. Creates a game-scoped identity with unique deviceI
 | Field | Type | Description |
 |-------|------|-------------|
 | `success` | boolean | Whether the registration was successful |
-| `registered` | boolean | True if already registered for this game, false if newly registered |
 | `deviceId` | string | Game-scoped player ID (unique per game) |
-| `secretToken` | string | Game-scoped auth token (only on NEW registration!) |
+| `secretToken` | string | Game-scoped auth token (store this securely!) |
 | `displayName` | string | Player display name for this game |
 | `avatar` | string | Selected bird avatar for this game |
 
@@ -120,7 +123,6 @@ Register for a specific game. Creates a game-scoped identity with unique deviceI
 ```json
 {
   "success": true,
-  "registered": false,
   "deviceId": "a0dcb007051f88c0aef99bf01ffe224b",
   "secretToken": "bvUKW9vBPZS8GHtCXe3k8jSm56BQDP...",
   "displayName": "BirdMaster",
@@ -128,10 +130,47 @@ Register for a specific game. Creates a game-scoped identity with unique deviceI
 }
 ```
 
+#### Profile Update (with auth)
+
+When called with a valid `Authorization: Bearer <token>` header, updates the authenticated player's profile instead of creating a new identity. Send `avatar`, `displayName`, or both — only the provided fields are updated.
+
+**Request Body:**
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `avatar` | string | No | Bird avatar: BIRD1-BIRD12 |
+| `displayName` | string | No | Player display name (max 50 chars) |
+
+At least one field must be provided.
+
+**Example:**
+```json
+{ "avatar": "BIRD3" }
+```
+
+**Response:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `success` | boolean | Whether the update was successful |
+| `deviceId` | string | Player's existing deviceId |
+| `displayName` | string | Current display name (updated if provided) |
+| `avatar` | string | Current avatar (updated if provided) |
+
+**Example (200 OK):**
+```json
+{
+  "success": true,
+  "deviceId": "a0dcb007051f88c0aef99bf01ffe224b",
+  "displayName": "BirdMaster",
+  "avatar": "BIRD3"
+}
+```
+
 **Error Responses:**
 
-- `400` — Invalid request body
-- `404` — Game not found or missing data capability
+- `400` — No valid fields to update (authenticated), or invalid request body (unauthenticated)
+- `404` — Game not found, player not found, or missing data capability
 
 ---
 

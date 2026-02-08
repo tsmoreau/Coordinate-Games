@@ -4,6 +4,7 @@ import { GameIdentity, VALID_AVATARS, PlayerAvatar } from '@/models/GameIdentity
 import { validateGame, gameNotFoundResponse } from '@/lib/gameMiddleware';
 import { generateSecureToken, hashToken } from '@/lib/auth';
 import { generatePlayerName } from '@/lib/battleNames';
+import { authenticateDevice } from '@/lib/authMiddleware';
 import { randomBytes } from 'crypto';
 
 function generateDeviceId(): string {
@@ -26,6 +27,50 @@ export async function POST(
 
     const body = await request.json();
     const { displayName, avatar } = body;
+
+    const auth = await authenticateDevice(request, gameSlug);
+
+    if (auth) {
+      const updateFields: Record<string, unknown> = {};
+
+      if (avatar && VALID_AVATARS.includes(avatar)) {
+        updateFields.avatar = avatar as PlayerAvatar;
+      }
+
+      if (displayName && typeof displayName === 'string') {
+        const trimmed = displayName.trim();
+        if (trimmed.length >= 1 && trimmed.length <= 50) {
+          updateFields.displayName = trimmed;
+        }
+      }
+
+      if (Object.keys(updateFields).length === 0) {
+        return NextResponse.json({
+          success: false,
+          error: 'No valid fields to update',
+        }, { status: 400 });
+      }
+
+      const updated = await GameIdentity.findOneAndUpdate(
+        { gameSlug: gameContext.slug, deviceId: auth.deviceId },
+        updateFields,
+        { new: true }
+      );
+
+      if (!updated) {
+        return NextResponse.json({
+          success: false,
+          error: 'Player not found',
+        }, { status: 404 });
+      }
+
+      return NextResponse.json({
+        success: true,
+        deviceId: updated.deviceId,
+        displayName: updated.displayName,
+        avatar: updated.avatar,
+      });
+    }
 
     let validatedAvatar: PlayerAvatar = 'BIRD1';
     if (avatar && VALID_AVATARS.includes(avatar)) {
