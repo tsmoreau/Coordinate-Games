@@ -1135,8 +1135,9 @@ export default function SchemaPage() {
           <p className="text-muted-foreground mb-4">
             Multi-game hub API for Playdate. Each game registers by slug and gets its own namespace for players, battles, leaderboards, and data storage. Games declare capabilities at registration (async, leaderboard, data) and only get the endpoints they need. NextJS + MongoDB backend.
           </p>
+        </div>
 
-          <Accordion type="single" collapsible className="space-y-4">
+        <Accordion type="single" collapsible className="space-y-4">
             <AccordionItem value="overview" className="border rounded-lg px-4 bg-card">
               <AccordionTrigger className="hover:no-underline py-4">
                 <div className="flex items-center gap-2">
@@ -1395,8 +1396,7 @@ export default function SchemaPage() {
                 </div>
               </AccordionContent>
             </AccordionItem>
-          </Accordion>
-        </div>
+        </Accordion>
       </main>
 
       <footer className="border-t border-border py-8 px-4 sm:px-6 lg:px-8 mt-12">
