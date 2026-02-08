@@ -97,7 +97,8 @@ export default function DevManagement() {
   const [showRevokeDialog, setShowRevokeDialog] = useState(false);
   const [showApproveDialog, setShowApproveDialog] = useState(false);
   const [showInviteDialog, setShowInviteDialog] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteName, setInviteName] = useState('');
+  const [generatedKey, setGeneratedKey] = useState('');
 
   const devs = MOCK_DEVS;
   const activeCount = devs.filter(d => d.status === 'active').length;
@@ -133,18 +134,26 @@ export default function DevManagement() {
   };
 
   const handleInvite = () => {
-    setInviteEmail('');
+    setInviteName('');
+    setGeneratedKey('');
     setShowInviteDialog(true);
   };
 
-  const confirmInvite = () => {
-    if (!inviteEmail.trim() || !inviteEmail.includes('@')) {
-      toast({ variant: 'destructive', title: 'ERROR', description: 'Please enter a valid email address' });
+  const generateNewKey = () => {
+    if (!inviteName.trim()) {
+      toast({ variant: 'destructive', title: 'ERROR', description: 'Please enter a name for the key' });
       return;
     }
-    toast({ title: 'INVITE SENT', description: `Invitation sent to ${inviteEmail}` });
+    const key = `cg_live_${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`;
+    setGeneratedKey(key);
+    toast({ title: 'KEY GENERATED', description: `Provisioning key for ${inviteName}` });
+  };
+
+  const confirmInvite = () => {
+    toast({ title: 'ACCESS GRANTED', description: `Temporary access key generated for ${inviteName}` });
     setShowInviteDialog(false);
-    setInviteEmail('');
+    setInviteName('');
+    setGeneratedKey('');
   };
 
   const copyApiKey = (key: string) => {
@@ -200,8 +209,8 @@ export default function DevManagement() {
           {devs.length} DEVELOPER{devs.length !== 1 ? 'S' : ''} REGISTERED
         </div>
         <Button onClick={handleInvite} data-testid="button-invite-dev">
-          <Mail className="w-4 h-4 mr-2" />
-          INVITE DEV
+          <Key className="w-4 h-4 mr-2" />
+          PROVISION ACCESS
         </Button>
       </div>
 
@@ -412,24 +421,55 @@ export default function DevManagement() {
       <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle className="uppercase">INVITE DEVELOPER</DialogTitle>
+            <DialogTitle className="uppercase">PROVISION DEVELOPER ACCESS</DialogTitle>
             <DialogDescription>
-              Send an invitation to join the developer portal. They will receive an email with instructions to set up their account.
+              Generate a temporary access key to provision a new developer account.
             </DialogDescription>
           </DialogHeader>
-          <Input
-            value={inviteEmail}
-            onChange={(e) => setInviteEmail(e.target.value)}
-            placeholder="developer@example.com"
-            type="email"
-            data-testid="input-invite-email"
-          />
+          <div className="space-y-4 py-2">
+            <div className="space-y-2">
+              <label className="text-sm font-medium uppercase">Developer Name / Team</label>
+              <Input
+                value={inviteName}
+                onChange={(e) => setInviteName(e.target.value)}
+                placeholder="e.g. Studio Forge"
+                data-testid="input-invite-name"
+              />
+            </div>
+            
+            {generatedKey ? (
+              <div className="space-y-2">
+                <label className="text-sm font-medium uppercase">Generated Access Key</label>
+                <div className="flex items-center gap-2">
+                  <code className="text-xs font-mono bg-muted px-2 py-2 rounded-md flex-1 break-all">
+                    {generatedKey}
+                  </code>
+                  <Button size="icon" variant="ghost" onClick={() => copyApiKey(generatedKey)} data-testid="button-copy-generated-key">
+                    <Copy className="w-4 h-4" />
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground italic">
+                  Share this key with the developer. It will allow them to claim their account.
+                </p>
+              </div>
+            ) : (
+              <Button 
+                variant="secondary" 
+                className="w-full" 
+                onClick={generateNewKey}
+                disabled={!inviteName.trim()}
+                data-testid="button-generate-key"
+              >
+                GENERATE ACCESS KEY
+              </Button>
+            )}
+          </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowInviteDialog(false)} data-testid="button-invite-cancel">
               CANCEL
             </Button>
-            <Button onClick={confirmInvite} disabled={!inviteEmail.trim()} data-testid="button-invite-confirm">
-              SEND INVITE
+            <Button onClick={confirmInvite} disabled={!generatedKey} data-testid="button-invite-confirm">
+              DONE
             </Button>
           </DialogFooter>
         </DialogContent>
