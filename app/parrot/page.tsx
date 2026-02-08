@@ -16,9 +16,21 @@ export default function ParrotEnginePage() {
         {/* Header */}
         <div className="mb-12">
           <img src="/parrot.png" alt="Parrot Engine" className="mb-6" />
-          <div className="flex items-center gap-2 mb-4">
-            <h1 className="text-3xl font-bold">Parrot Engine</h1>
-            <Badge variant="outline" className="text-xs">v0.1.0</Badge>
+          <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
+            <div className="flex items-center gap-2">
+              <h1 className="text-3xl font-bold">Parrot Engine</h1>
+              <Badge variant="outline" className="text-xs">v0.1.0</Badge>
+            </div>
+            <Button
+              variant="outline"
+              size="icon"
+              asChild
+              data-testid="link-github-parrot"
+            >
+              <a href="#" aria-label="GitHub repository">
+                <SiGithub className="w-4 h-4" />
+              </a>
+            </Button>
           </div>
           <p className="text-muted-foreground mb-4">
             Deterministic turn-based game engine for Playdate, written in Lua. 
