@@ -1,8 +1,10 @@
 'use client';
 
 import { Gamepad2, Grid3x3, Swords, Cpu, Monitor, Radio } from 'lucide-react';
+import { SiGithub } from 'react-icons/si';
 import Nav from '@/components/Nav';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 export default function ParrotEnginePage() {
