@@ -42,13 +42,13 @@ export default function Nav() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/schema" className="w-full cursor-pointer" data-testid="link-api-docs">
-                    API
+                  <Link href="/parrot" className="w-full cursor-pointer" data-testid="link-parrot">
+                    Parrot
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
-                  <Link href="/parrot" className="w-full cursor-pointer" data-testid="link-parrot">
-                    Parrot
+                  <Link href="/schema" className="w-full cursor-pointer" data-testid="link-api-docs">
+                    API
                   </Link>
                 </DropdownMenuItem>
                 {isAuthenticated && (
