@@ -7,6 +7,26 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { useState, useCallback, useRef, useEffect } from 'react';
+import { useTheme } from '@/components/ThemeProvider';
+
+const BALL_CONFIG = {
+  circleR: 28,
+  circleLine: 4,
+  bounceDuration: 800,
+  bounceHeight: 40,
+  idlePulseDelay: 5000,
+  idlePulseDuration: 800,
+  colors: {
+    light: {
+      ballFill: "#fafaf9",
+      ballStroke: "#1c1917",
+    },
+    dark: {
+      ballFill: "#0c0a09",
+      ballStroke: "#f5f5f4",
+    }
+  },
+};
 
 function generateMarkdownSpec(
   globalEndpoints: EndpointSection[],
@@ -1102,46 +1122,93 @@ export default function SchemaPage() {
     URL.revokeObjectURL(url);
   }, []);
 
-  const [isJumping, setIsJumping] = useState(false);
-  const [bounceOffset, setBounceOffset] = useState(0);
-  const bounceStartRef = useRef<number | null>(null);
-  const animationFrameRef = useRef<number | null>(null);
+  const { theme } = useTheme();
+  const ballCanvasRef = useRef<HTMLCanvasElement>(null);
+  const ballAnimRef = useRef<number | null>(null);
+  const ballStateRef = useRef({
+    isBouncing: false,
+    bounceStart: null as number | null,
+    lastInteraction: performance.now(),
+  });
 
-  const animateBounce = useCallback((now: number) => {
-    if (bounceStartRef.current !== null) {
-      const bounceElapsed = now - bounceStartRef.current;
-      const bounceDuration = 800; // 800ms for two bounces (400ms each)
-      const bounceHeight = 40; // How high to bounce
-      
+  const drawBallCanvas = useCallback(() => {
+    const canvas = ballCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const dpr = window.devicePixelRatio || 1;
+    const size = 70;
+    canvas.width = size * dpr;
+    canvas.height = size * dpr;
+    canvas.style.width = `${size}px`;
+    canvas.style.height = `${size}px`;
+
+    const now = performance.now();
+    const state = ballStateRef.current;
+    const colors = BALL_CONFIG.colors[theme];
+    const r = BALL_CONFIG.circleR;
+    const cx = size / 2;
+    const cy = size / 2;
+
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.scale(dpr, dpr);
+
+    let bounceOffset = 0;
+    if (state.isBouncing && state.bounceStart !== null) {
+      const bounceElapsed = now - state.bounceStart;
+      const bounceDuration = 800;
+      const bounceHeight = 40;
+
       if (bounceElapsed < bounceDuration) {
-        // Use absolute sine wave for two distinct bounces
-        // Multiplying by 2 inside sin and using abs creates two peaks
         const bounceProgress = (bounceElapsed / bounceDuration) * 2;
-        const offset = -Math.abs(Math.sin(bounceProgress * Math.PI)) * bounceHeight;
-        setBounceOffset(offset);
-        animationFrameRef.current = requestAnimationFrame(animateBounce);
+        bounceOffset = -Math.abs(Math.sin(bounceProgress * Math.PI)) * bounceHeight;
       } else {
-        setIsJumping(false);
-        setBounceOffset(0);
-        bounceStartRef.current = null;
+        state.isBouncing = false;
+        state.bounceStart = null;
       }
     }
-  }, []);
 
-  const handleBallClick = () => {
-    if (isJumping) return;
-    setIsJumping(true);
-    bounceStartRef.current = performance.now();
-    animationFrameRef.current = requestAnimationFrame(animateBounce);
-  };
+    let pulseScale = 1;
+    if (
+      !state.isBouncing &&
+      now - state.lastInteraction > BALL_CONFIG.idlePulseDelay
+    ) {
+      const idleElapsed = (now - state.lastInteraction - BALL_CONFIG.idlePulseDelay) % 3000;
+      if (idleElapsed < BALL_CONFIG.idlePulseDuration) {
+        const pulseProgress = idleElapsed / BALL_CONFIG.idlePulseDuration;
+        pulseScale = 1 + Math.sin(pulseProgress * Math.PI) * 0.1;
+      }
+    }
+
+    const radius = r * pulseScale;
+
+    ctx.beginPath();
+    ctx.arc(cx, cy + bounceOffset, radius, 0, Math.PI * 2);
+    ctx.fillStyle = colors.ballFill;
+    ctx.fill();
+    ctx.strokeStyle = colors.ballStroke;
+    ctx.lineWidth = BALL_CONFIG.circleLine;
+    ctx.stroke();
+
+    ballAnimRef.current = requestAnimationFrame(drawBallCanvas);
+  }, [theme]);
 
   useEffect(() => {
+    ballAnimRef.current = requestAnimationFrame(drawBallCanvas);
     return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
+      if (ballAnimRef.current) cancelAnimationFrame(ballAnimRef.current);
     };
-  }, []);
+  }, [drawBallCanvas]);
+
+  const handleBallClick = () => {
+    const state = ballStateRef.current;
+    if (state.isBouncing) return;
+    state.isBouncing = true;
+    state.bounceStart = performance.now();
+    state.lastInteraction = performance.now();
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -1149,22 +1216,12 @@ export default function SchemaPage() {
 
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="mb-12 pt-36">
-          <div 
+          <canvas
+            ref={ballCanvasRef}
             onClick={handleBallClick}
-            className="w-14 h-14 mb-6 cursor-pointer transition-transform hover:scale-105 active:scale-95"
-            style={{ transform: `translateY(${bounceOffset}px)` }}
-          >
-            <svg width="56" height="56" viewBox="0 0 56 56" className="text-stone-900 dark:text-stone-100" aria-hidden="true">
-              <circle
-                cx="28"
-                cy="28"
-                r="24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="4"
-              />
-            </svg>
-          </div>
+            className="mb-6 cursor-pointer"
+            data-testid="ball-bounce"
+          />
           <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
             <div className="flex items-center gap-2">
               <h1 className="text-3xl font-bold">Coordinate API</h1>
