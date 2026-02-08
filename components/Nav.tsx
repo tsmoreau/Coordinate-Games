@@ -46,6 +46,11 @@ export default function Nav() {
                     API
                   </Link>
                 </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <Link href="/parrot" className="w-full cursor-pointer" data-testid="link-parrot">
+                    Parrot
+                  </Link>
+                </DropdownMenuItem>
                 {isAuthenticated && (
                   <>
                     <DropdownMenuItem asChild>
