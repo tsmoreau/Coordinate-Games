@@ -14,17 +14,11 @@ import {
   Swords,
   Settings,
   ExternalLink,
-  Wrench,
-  Clock,
   Code,
-  Key,
-  Shield,
-  Eye,
-  Ban,
-  CheckCircle
 } from 'lucide-react';
 import Nav from '@/components/Nav';
 import GameManagement from '@/components/GameManagement';
+import DevManagement from '@/components/DevManagement';
 import { getPlatformStats, getAllGames } from '@/app/actions/admin';
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
@@ -250,106 +244,7 @@ export default async function DashboardPage() {
           </TabsContent>
 
           <TabsContent value="devs">
-            <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium uppercase">REGISTERED DEVS</CardTitle>
-                    <Code className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold" data-testid="stat-total-devs">4</div>
-                    <p className="text-xs text-muted-foreground">3 active, 1 pending</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium uppercase">API KEYS ISSUED</CardTitle>
-                    <Key className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold" data-testid="stat-api-keys">5</div>
-                    <p className="text-xs text-muted-foreground">4 active, 1 revoked</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium uppercase">REGISTERED GAMES</CardTitle>
-                    <Gamepad2 className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold" data-testid="stat-dev-games">3</div>
-                    <p className="text-xs text-muted-foreground">Via developer portal</p>
-                  </CardContent>
-                </Card>
-              </div>
-
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between gap-2">
-                  <CardTitle className="uppercase">DEVELOPER ACCOUNTS</CardTitle>
-                  <Button size="sm" variant="outline" data-testid="button-invite-dev">
-                    <Users className="w-4 h-4 mr-2" />
-                    INVITE DEV
-                  </Button>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {[
-                      { id: 'alex-chen', name: 'Alex Chen', email: 'alex@studioforge.dev', status: 'active', games: 2, keys: 2, joined: 'Jan 12, 2026' },
-                      { id: 'maria-santos', name: 'Maria Santos', email: 'maria@pixelbound.io', status: 'active', games: 1, keys: 2, joined: 'Jan 18, 2026' },
-                      { id: 'jordan-blake', name: 'Jordan Blake', email: 'jordan@nightowlgames.com', status: 'active', games: 0, keys: 1, joined: 'Feb 01, 2026' },
-                      { id: 'sam-patel', name: 'Sam Patel', email: 'sam@indiearcade.co', status: 'pending', games: 0, keys: 0, joined: 'Feb 06, 2026' },
-                    ].map((dev) => (
-                      <div
-                        key={dev.id}
-                        className="flex items-center justify-between gap-4 p-3 rounded-md border"
-                        data-testid={`row-dev-${dev.id}`}
-                      >
-                        <div className="flex items-center gap-3 min-w-0">
-                          <div className="flex items-center justify-center w-8 h-8 rounded-md bg-muted text-muted-foreground">
-                            <Code className="w-4 h-4" />
-                          </div>
-                          <div className="min-w-0">
-                            <p className="font-bold text-sm uppercase truncate" data-testid={`text-dev-name-${dev.id}`}>{dev.name}</p>
-                            <p className="text-xs text-muted-foreground truncate" data-testid={`text-dev-email-${dev.id}`}>{dev.email}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-4 flex-wrap">
-                          <div className="text-xs text-muted-foreground hidden sm:block" data-testid={`text-dev-joined-${dev.id}`}>
-                            Joined {dev.joined}
-                          </div>
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground" data-testid={`text-dev-games-${dev.id}`}>
-                            <Gamepad2 className="w-3 h-3" />
-                            <span>{dev.games}</span>
-                          </div>
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground" data-testid={`text-dev-keys-${dev.id}`}>
-                            <Key className="w-3 h-3" />
-                            <span>{dev.keys}</span>
-                          </div>
-                          <Badge variant={dev.status === 'active' ? 'default' : 'secondary'} data-testid={`badge-dev-status-${dev.id}`}>
-                            {dev.status.toUpperCase()}
-                          </Badge>
-                          <div className="flex items-center gap-1">
-                            <Button size="icon" variant="ghost" data-testid={`button-view-dev-${dev.id}`}>
-                              <Eye className="w-4 h-4" />
-                            </Button>
-                            {dev.status === 'pending' ? (
-                              <Button size="icon" variant="ghost" data-testid={`button-approve-dev-${dev.id}`}>
-                                <CheckCircle className="w-4 h-4" />
-                              </Button>
-                            ) : (
-                              <Button size="icon" variant="ghost" data-testid={`button-revoke-dev-${dev.id}`}>
-                                <Ban className="w-4 h-4" />
-                              </Button>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+            <DevManagement />
           </TabsContent>
 
         </Tabs>
