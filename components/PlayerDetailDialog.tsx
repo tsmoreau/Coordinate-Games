@@ -205,7 +205,7 @@ export default function PlayerDetailDialog({ player, gameSlug, open, onOpenChang
                                 </Badge>
                               </div>
                               <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 flex-wrap">
-                                <span className="font-mono">ON {battle.displayName}</span>
+                                <span className="font-mono">on {battle.displayName}</span>
                                 {battle.isPrivate && (
                                   <EyeOff className="w-3 h-3" />
                                 )}
