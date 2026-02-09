@@ -107,28 +107,28 @@ export default function PlayerDetailDialog({ player, gameSlug, open, onOpenChang
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 text-sm shrink-0">
-            <div>
-              <span className="text-muted-foreground text-xs uppercase font-medium">AVATAR</span>
-              <p className="font-bold uppercase" data-testid="text-player-avatar-name">{player.avatar}</p>
-            </div>
-            <div>
-              <span className="text-muted-foreground text-xs uppercase font-medium">STATUS</span>
-              <p className="font-bold uppercase" data-testid="text-player-status">{player.isActive ? 'ACTIVE' : 'BANNED'}</p>
-            </div>
-            <div>
-              <span className="text-muted-foreground text-xs uppercase font-medium">REGISTERED</span>
-              <p className="font-bold" data-testid="text-player-registered">{formatDate(player.registeredAt)}</p>
-            </div>
-            <div>
-              <span className="text-muted-foreground text-xs uppercase font-medium">LAST SEEN</span>
-              <p className="font-bold" data-testid="text-player-lastseen">{formatRelativeTime(player.lastSeen)}</p>
-            </div>
-          </div>
-
           <div className="flex-1 overflow-hidden flex flex-col min-h-0 -mx-1">
             <div className="h-px bg-border shrink-0 mx-1" />
             <div className="flex-1 overflow-y-auto space-y-6 px-1 pt-6">
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div>
+                  <span className="text-muted-foreground text-xs uppercase font-medium">AVATAR</span>
+                  <p className="font-bold uppercase" data-testid="text-player-avatar-name">{player.avatar}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground text-xs uppercase font-medium">STATUS</span>
+                  <p className="font-bold uppercase" data-testid="text-player-status">{player.isActive ? 'ACTIVE' : 'BANNED'}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground text-xs uppercase font-medium">REGISTERED</span>
+                  <p className="font-bold" data-testid="text-player-registered">{formatDate(player.registeredAt)}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground text-xs uppercase font-medium">LAST SEEN</span>
+                  <p className="font-bold" data-testid="text-player-lastseen">{formatRelativeTime(player.lastSeen)}</p>
+                </div>
+              </div>
+
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
                 {[
                   { label: 'WINS', value: player.stats.wins, testId: 'text-stat-wins' },
