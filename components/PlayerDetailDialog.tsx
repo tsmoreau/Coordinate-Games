@@ -80,36 +80,38 @@ export default function PlayerDetailDialog({ player, gameSlug, open, onOpenChang
           <DialogTitle className="uppercase tracking-tight">PLAYER DETAILS</DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col h-full overflow-hidden space-y-6" data-testid="dialog-player-detail-content">
-          <div className="flex items-start gap-4 shrink-0">
-            <div className="w-16 h-16 shrink-0 overflow-hidden">
-              <img
-                src={`/birb${player.avatar.replace('BIRD', '').padStart(3, '0')}.png`}
-                alt={player.avatar}
-                className="w-full h-full object-contain"
-                data-testid="img-player-avatar"
-              />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-2 flex-wrap">
-                <h2 className="text-lg font-bold uppercase tracking-tight" data-testid="text-player-name">
-                  {player.displayName}
-                </h2>
-                {player.isActive ? (
-                  <Badge variant="outline">ACTIVE</Badge>
-                ) : (
-                  <Badge variant="destructive">BANNED</Badge>
-                )}
+        <div className="flex flex-col h-full overflow-hidden" data-testid="dialog-player-detail-content">
+          <div className="space-y-6 pb-6 shrink-0">
+            <div className="flex items-start gap-4">
+              <div className="w-16 h-16 shrink-0 overflow-hidden">
+                <img
+                  src={`/birb${player.avatar.replace('BIRD', '').padStart(3, '0')}.png`}
+                  alt={player.avatar}
+                  className="w-full h-full object-contain"
+                  data-testid="img-player-avatar"
+                />
               </div>
-              <p className="text-xs text-muted-foreground font-mono mt-1" data-testid="text-player-deviceid">
-                {player.deviceId}
-              </p>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <h2 className="text-lg font-bold uppercase tracking-tight" data-testid="text-player-name">
+                    {player.displayName}
+                  </h2>
+                  {player.isActive ? (
+                    <Badge variant="outline">ACTIVE</Badge>
+                  ) : (
+                    <Badge variant="destructive">BANNED</Badge>
+                  )}
+                </div>
+                <p className="text-xs text-muted-foreground font-mono mt-1" data-testid="text-player-deviceid">
+                  {player.deviceId}
+                </p>
+              </div>
             </div>
           </div>
 
-          <div className="flex-1 overflow-hidden flex flex-col min-h-0 -mx-1">
-            <div className="h-px bg-border shrink-0 mx-1" />
-            <div className="flex-1 overflow-y-auto space-y-6 px-1 pt-6">
+          <div className="flex-1 overflow-hidden flex flex-col min-h-0 -mx-6">
+            <div className="h-px bg-border shrink-0" />
+            <div className="flex-1 overflow-y-auto space-y-6 px-6 pt-6">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-muted-foreground text-xs uppercase font-medium">AVATAR</span>
@@ -174,7 +176,7 @@ export default function PlayerDetailDialog({ player, gameSlug, open, onOpenChang
                 )}
 
                 {!isLoading && !error && battles.length > 0 && (
-                  <div className="space-y-2 pb-4">
+                  <div className="space-y-2 pb-6">
                     {battles.map((battle) => {
                       const outcomeInfo = OUTCOME_CONFIG[battle.outcome];
                       const statusInfo = STATUS_CONFIG[battle.status];
@@ -238,8 +240,8 @@ export default function PlayerDetailDialog({ player, gameSlug, open, onOpenChang
                 )}
               </div>
             </div>
+            <div className="h-px bg-border shrink-0" />
           </div>
-          <div className="h-px bg-border shrink-0 -mx-1" />
         </div>
       </DialogContent>
     </Dialog>
