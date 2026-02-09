@@ -201,13 +201,6 @@ export default function PlayerDetailDialog({ player, gameSlug, open, onOpenChang
                                     <span className="font-bold lowercase text-sm truncate">
                                       vs {battle.opponentDisplayName || 'waiting...'}
                                     </span>
-                                    <Badge
-                                      variant={outcomeInfo.variant}
-                                      className={outcomeInfo.className}
-                                    >
-                                      <OutcomeIcon className="w-3 h-3 mr-1" />
-                                      {outcomeInfo.label}
-                                    </Badge>
                                   </div>
                                   <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 flex-wrap">
                                     <span className="font-mono">on {battle.displayName}</span>
@@ -219,6 +212,13 @@ export default function PlayerDetailDialog({ player, gameSlug, open, onOpenChang
                               </div>
 
                               <div className="flex items-center gap-3 text-xs text-muted-foreground shrink-0">
+                                <Badge
+                                  variant={outcomeInfo.variant}
+                                  className={outcomeInfo.className}
+                                >
+                                  <OutcomeIcon className="w-3 h-3 mr-1" />
+                                  {outcomeInfo.label}
+                                </Badge>
                                 <Badge variant="outline" className={statusInfo.className}>
                                   {statusInfo.label}
                                 </Badge>
