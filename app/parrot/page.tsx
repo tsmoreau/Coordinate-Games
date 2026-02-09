@@ -19,7 +19,7 @@ export default function ParrotEnginePage() {
           <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
             <div className="flex items-center gap-2">
               <h1 className="text-3xl font-bold">Parrot Engine</h1>
-              <Badge variant="outline" className="text-xs">v0.1.0</Badge>
+              <Badge variant="outline" className="text-xs">v0.1.2</Badge>
             </div>
             <Button
               variant="outline"
@@ -28,7 +28,7 @@ export default function ParrotEnginePage() {
             >
               <a href="#">
                 <SiGithub className="w-4 h-4 mr-2" />
-                Source on GitHub
+                on GitHub
               </a>
             </Button>
           </div>

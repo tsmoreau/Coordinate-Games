@@ -1214,7 +1214,7 @@ export default function SchemaPage() {
           <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
             <div className="flex items-center gap-2">
               <h1 className="text-3xl font-bold">Coordinate API</h1>
-              <Badge variant="outline" className="text-xs">v0.1.3</Badge>
+              <Badge variant="outline" className="text-xs">v0.1.5</Badge>
             </div>
             <Button 
               onClick={handleDownloadSpec}
@@ -1226,7 +1226,7 @@ export default function SchemaPage() {
             </Button>
           </div>
           <p className="text-muted-foreground mb-4">
-            Multi-game hub API for Playdate. Each game registers by slug and gets its own namespace for players, battles, leaderboards, and data storage. Games declare capabilities at registration (async, leaderboard, data) and only get the endpoints they need. NextJS + MongoDB backend.
+            Multi-game hub API for Playdate. Each game registers by slug and gets its own namespace for players, battles, leaderboards, and data storage. Games declare capabilities at registration (async, leaderboard, data) and only get the endpoints they need. Built around POST/GET HTTPS calls.
           </p>
         </div>
 
