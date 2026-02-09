@@ -130,8 +130,9 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background relative">
       <div className="absolute top-8 left-8">
         <Link href="/">
-          <Button variant="ghost" size="icon" data-testid="button-back-home">
-            <ArrowLeft className="w-5 h-5" />
+          <Button variant="ghost" size="sm" className="gap-2" data-testid="button-back-home">
+            <ArrowLeft className="w-4 h-4" />
+            Back to Home
           </Button>
         </Link>
       </div>
