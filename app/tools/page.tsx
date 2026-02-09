@@ -44,26 +44,24 @@ export default async function ToolsPage() {
           <p className="text-muted-foreground">Development utilities for the Playdate platform</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {tools.map((tool) => {
             const Icon = tool.icon;
             return (
               <Link key={tool.slug} href={`/tools/${tool.slug}`}>
-                <Card className="hover-elevate cursor-pointer h-full border-muted/40" data-testid={`card-tool-${tool.slug}`}>
-                  <CardHeader className="flex flex-row items-center justify-between gap-3 space-y-0 pb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-muted/30 rounded-md">
-                        <Icon className="h-5 w-5 text-foreground/80" />
-                      </div>
-                      <CardTitle className="text-sm font-semibold uppercase tracking-wider">{tool.name}</CardTitle>
+                <Card className="hover-elevate cursor-pointer h-full" data-testid={`card-tool-${tool.slug}`}>
+                  <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+                    <div className="flex items-center gap-2">
+                      <Icon className="h-5 w-5 text-muted-foreground" />
+                      <CardTitle className="text-sm font-medium uppercase">{tool.name}</CardTitle>
                     </div>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground/50" />
+                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
-                  <CardContent className="pt-0">
-                    <p className="text-sm text-muted-foreground leading-relaxed mb-4">{tool.description}</p>
-                    <div className="flex flex-wrap gap-1.5">
+                  <CardContent>
+                    <p className="text-sm text-muted-foreground mb-3">{tool.description}</p>
+                    <div className="flex flex-wrap gap-1">
                       {tool.tags.map((tag) => (
-                        <Badge key={tag} variant="secondary" className="text-[10px] font-bold tracking-tight px-1.5 py-0">
+                        <Badge key={tag} variant="outline" className="text-[10px]">
                           {tag}
                         </Badge>
                       ))}

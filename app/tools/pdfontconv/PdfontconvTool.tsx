@@ -737,180 +737,433 @@ export default function PdfontconvTool() {
   const totalOverrides = Object.keys(kerningOverrides).length;
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-1 space-y-6">
-          <Card className="border-muted/40 shadow-sm">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-semibold uppercase tracking-wider">Font Selection</CardTitle>
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium uppercase">Font Settings</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <label className="text-xs text-muted-foreground uppercase block mb-1">Font File (TTF, OTF, WOFF, WOFF2)</label>
+              <div className="relative">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".ttf,.otf,.woff,.woff2"
+                  onChange={handleFontFile}
+                  className="block w-full text-sm file:mr-2 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-primary-foreground file:cursor-pointer cursor-pointer text-muted-foreground"
+                  data-testid="input-font-file"
+                />
+              </div>
+              {fontLoaded && (
+                <Badge variant="outline" className="mt-2 text-[10px]">
+                  {fontInput.baseName}
+                </Badge>
+              )}
+            </div>
+
+            <div>
+              <label className="text-xs text-muted-foreground uppercase block mb-1">Base Name</label>
+              <Input
+                type="text"
+                value={fontInput.baseName}
+                onChange={(e) => setFontInput(prev => ({ ...prev, baseName: e.target.value }))}
+                data-testid="input-base-name"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs text-muted-foreground uppercase block mb-1">Font Size</label>
+              <Input
+                type="number"
+                min={5}
+                value={fontInput.fontSize}
+                onChange={(e) => setFontInput(prev => ({ ...prev, fontSize: parseInt(e.target.value) || 24 }))}
+                data-testid="input-font-size"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs text-muted-foreground uppercase block mb-1">Opacity Threshold</label>
+              <Input
+                type="number"
+                min={1}
+                max={255}
+                value={fontInput.opacityThreshold}
+                onChange={(e) => setFontInput(prev => ({ ...prev, opacityThreshold: parseInt(e.target.value) || 128 }))}
+                data-testid="input-opacity-threshold"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs text-muted-foreground uppercase block mb-1">Character Set</label>
+              <textarea
+                rows={4}
+                value={fontInput.charSet.join('')}
+                onChange={(e) => handleCharSetChange(e.target.value)}
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm font-mono"
+                data-testid="input-charset"
+              />
+            </div>
+
+            <div>
+              <label className="text-xs text-muted-foreground uppercase block mb-1">Display Scale</label>
+              <Input
+                type="number"
+                min={1}
+                max={4}
+                value={displayScale}
+                onChange={(e) => setDisplayScale(parseInt(e.target.value) || 2)}
+                data-testid="input-display-scale"
+              />
+            </div>
+
+            <div className="flex flex-wrap gap-2 pt-2">
+              <Button
+                variant="ghost"
+                onClick={handleReset}
+                data-testid="button-reset"
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Reset
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="lg:col-span-3 space-y-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
+              <CardTitle className="text-sm font-medium uppercase">Output PNG</CardTitle>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={handleDownloadFnt}
+                  disabled={!fontLoaded || isConverting}
+                  data-testid="button-download-fnt"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  .fnt
+                </Button>
+                <Button
+                  onClick={handleDownloadPng}
+                  disabled={!fontLoaded || isConverting}
+                  data-testid="button-download-png"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  .png
+                </Button>
+              </div>
             </CardHeader>
-            <CardContent className="space-y-5">
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1">
-                  <Upload className="w-3 h-3" /> Upload Font
-                </label>
-                <div className="relative group">
-                  <div className="absolute inset-0 bg-primary/5 rounded-md border-2 border-dashed border-primary/20 group-hover:border-primary/40 transition-colors pointer-events-none" />
-                  <Input
-                    type="file"
-                    ref={fileInputRef}
-                    className="opacity-0 absolute inset-0 cursor-pointer z-10 h-full"
-                    accept=".ttf,.otf,.woff,.woff2"
-                    onChange={handleFontFile}
-                    data-testid="input-font-file"
-                  />
-                  <div className="py-8 flex flex-col items-center justify-center text-center">
-                    <div className="p-3 bg-primary/10 rounded-full mb-3">
-                      <Upload className="w-5 h-5 text-primary" />
-                    </div>
-                    <p className="text-xs font-medium text-foreground px-4 truncate max-w-full">
-                      {fontInput.baseName ? fontInput.baseName : "Click or drag to upload"}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground mt-1">
-                      TTF, OTF, WOFF, WOFF2
-                    </p>
+            <CardContent>
+              {!fontLoaded ? (
+                <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+                  <Upload className="w-8 h-8 mb-3" />
+                  <p className="text-sm uppercase font-medium">Upload a font file to begin</p>
+                  <p className="text-xs mt-1">Supports TTF, OTF, WOFF, and WOFF2</p>
+                </div>
+              ) : (
+                <>
+                  <div className="overflow-auto max-h-[50vh] relative rounded-md border border-border">
+                    <canvas
+                      ref={debugCanvasRef}
+                      className="absolute top-0 left-0"
+                      style={{ imageRendering: 'pixelated' }}
+                    />
+                    <canvas
+                      ref={fontCanvasRef}
+                      className="relative"
+                      style={{ imageRendering: 'pixelated' }}
+                      data-testid="canvas-font"
+                    />
                   </div>
-                </div>
-              </div>
-
-              <div className="space-y-4 pt-2">
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex justify-between">
-                    Size <span>{fontInput.fontSize}px</span>
-                  </label>
-                  <Input
-                    type="range"
-                    min="8"
-                    max="128"
-                    step="1"
-                    value={fontInput.fontSize}
-                    onChange={(e) => setFontInput(prev => ({ ...prev, fontSize: parseInt(e.target.value) }))}
-                    className="h-8 accent-primary cursor-pointer"
-                    data-testid="input-font-size"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex justify-between">
-                    Threshold <span>{fontInput.opacityThreshold}</span>
-                  </label>
-                  <Input
-                    type="range"
-                    min="0"
-                    max="255"
-                    step="1"
-                    value={fontInput.opacityThreshold}
-                    onChange={(e) => setFontInput(prev => ({ ...prev, opacityThreshold: parseInt(e.target.value) }))}
-                    className="h-8 accent-primary cursor-pointer"
-                    data-testid="input-opacity-threshold"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-2">
-                <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">Export Options</label>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={handleDownloadFnt}
-                    disabled={!fontLoaded || isConverting}
-                    className="flex-1 font-bold uppercase tracking-tight"
-                    data-testid="button-export-fnt"
-                  >
-                    <Download className="w-4 h-4 mr-2" />
-                    Export .fnt
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={handleDownloadPng}
-                    disabled={!fontLoaded || isConverting}
-                    className="hover-elevate"
-                    title="Download .png atlas"
-                    data-testid="button-download-png"
-                  >
-                    <Download className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    onClick={() => {
-                      setKerningOffset(0);
-                      setTrackingAdjust(0);
-                      setKerningOverrides({});
-                      setSelectedPairIdx(null);
-                    }}
-                    disabled={!fontLoaded}
-                    className="hover-elevate"
-                    title="Reset all adjustments"
-                  >
-                    <RotateCcw className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Background is informational only; actual output is transparent. Red: glyph bounding box. Blue: negative tracking. Green: character extent.
+                  </p>
+                </>
+              )}
             </CardContent>
           </Card>
 
+          {/* ============================================================ */}
+          {/*  KERNING & SPACING CONTROLS                                  */}
+          {/* ============================================================ */}
           {fontLoaded && (
-            <Card className="border-muted/40 shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold uppercase tracking-wider">Adjustment Info</CardTitle>
+            <Card>
+              <CardHeader>
+                <button
+                  className="flex items-center gap-2 w-full text-left"
+                  onClick={() => setKerningPanelOpen(prev => !prev)}
+                >
+                  {kerningPanelOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                  <CardTitle className="text-sm font-medium uppercase flex items-center gap-2">
+                    <Type className="w-4 h-4" />
+                    Kerning &amp; Spacing
+                    <Badge variant="outline" className="text-[10px] ml-2">
+                      {totalKernPairs} pairs{totalOverrides > 0 && ` · ${totalOverrides} overrides`}
+                    </Badge>
+                  </CardTitle>
+                </button>
               </CardHeader>
-              <CardContent className="space-y-3">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-muted-foreground">Base Tracking</span>
-                  <span className="font-mono">{fontDataRef.current.tracking}px</span>
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-muted-foreground">Adjusted Tracking</span>
-                  <span className={`font-mono font-bold ${getEffectiveTracking() !== fontDataRef.current.tracking ? 'text-primary' : ''}`}>
-                    {getEffectiveTracking()}px
-                  </span>
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-muted-foreground">Manual Overrides</span>
-                  <span className="font-mono">{Object.keys(kerningOverrides).length}</span>
-                </div>
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-muted-foreground">Cell Size</span>
-                  <span className="font-mono">{fontDataRef.current.cellSizeX}x{fontDataRef.current.cellSizeY}</span>
-                </div>
-              </CardContent>
+              {kerningPanelOpen && (
+                <CardContent className="space-y-6">
+                  {/* Global controls */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs text-muted-foreground uppercase block mb-1">
+                        Global Kerning Offset
+                        <span className="text-[10px] normal-case ml-1 opacity-60">
+                          (applied to all computed pairs)
+                        </span>
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="range"
+                          min={-10}
+                          max={10}
+                          value={kerningOffset}
+                          onChange={(e) => setKerningOffset(parseInt(e.target.value))}
+                          className="flex-1"
+                        />
+                        <Input
+                          type="number"
+                          value={kerningOffset}
+                          onChange={(e) => setKerningOffset(parseInt(e.target.value) || 0)}
+                          className="w-20"
+                        />
+                        <span className="text-xs text-muted-foreground">px</span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        Negative = tighter, Positive = looser. Shifts every detected kern pair uniformly.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="text-xs text-muted-foreground uppercase block mb-1">
+                        Tracking Adjustment
+                        <span className="text-[10px] normal-case ml-1 opacity-60">
+                          (added to computed tracking: {fontDataRef.current.tracking})
+                        </span>
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="range"
+                          min={-10}
+                          max={10}
+                          value={trackingAdjust}
+                          onChange={(e) => setTrackingAdjust(parseInt(e.target.value))}
+                          className="flex-1"
+                        />
+                        <Input
+                          type="number"
+                          value={trackingAdjust}
+                          onChange={(e) => setTrackingAdjust(parseInt(e.target.value) || 0)}
+                          className="w-20"
+                        />
+                        <span className="text-xs text-muted-foreground">px</span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground mt-1">
+                        Effective tracking: {getEffectiveTracking()}px. Affects uniform spacing between all characters.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Quick reset */}
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => { setKerningOffset(0); setTrackingAdjust(0); }}
+                      disabled={kerningOffset === 0 && trackingAdjust === 0}
+                    >
+                      Reset Global Adjustments
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setKerningOverrides({})}
+                      disabled={totalOverrides === 0}
+                    >
+                      Clear All Overrides ({totalOverrides})
+                    </Button>
+                  </div>
+
+                  {/* Add custom kern pair */}
+                  <div>
+                    <label className="text-xs text-muted-foreground uppercase block mb-2">Add / Override Kern Pair</label>
+                    <div className="flex items-end gap-2">
+                      <div>
+                        <label className="text-[10px] text-muted-foreground block mb-0.5">Left</label>
+                        <Input
+                          type="text"
+                          maxLength={1}
+                          value={newPairLeft}
+                          onChange={(e) => setNewPairLeft(e.target.value)}
+                          placeholder="A"
+                          className="w-14 text-center font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-muted-foreground block mb-0.5">Right</label>
+                        <Input
+                          type="text"
+                          maxLength={1}
+                          value={newPairRight}
+                          onChange={(e) => setNewPairRight(e.target.value)}
+                          placeholder="V"
+                          className="w-14 text-center font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-muted-foreground block mb-0.5">Value (px)</label>
+                        <Input
+                          type="number"
+                          value={newPairValue}
+                          onChange={(e) => setNewPairValue(parseInt(e.target.value) || 0)}
+                          className="w-20"
+                        />
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={handleAddKernPair}
+                        disabled={newPairLeft.length !== 1 || newPairRight.length !== 1}
+                      >
+                        <Plus className="w-3 h-3 mr-1" />
+                        Add
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Kerning pairs table */}
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="text-xs text-muted-foreground uppercase">
+                        Kern Pairs ({allKernPairs.length})
+                      </label>
+                      <Input
+                        type="text"
+                        placeholder="Filter pairs..."
+                        value={kernFilterText}
+                        onChange={(e) => setKernFilterText(e.target.value)}
+                        className="w-40 h-7 text-xs"
+                      />
+                    </div>
+                    <div className="max-h-[300px] overflow-auto rounded-md border border-border">
+                      <table className="w-full text-xs">
+                        <thead className="sticky top-0 bg-muted">
+                          <tr>
+                            <th className="text-left px-3 py-1.5 font-medium">Pair</th>
+                            <th className="text-right px-3 py-1.5 font-medium">Computed</th>
+                            <th className="text-right px-3 py-1.5 font-medium">+ Offset</th>
+                            <th className="text-right px-3 py-1.5 font-medium">Effective</th>
+                            <th className="text-center px-3 py-1.5 font-medium">Override</th>
+                            <th className="text-center px-3 py-1.5 font-medium w-8"></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {allKernPairs.length === 0 ? (
+                            <tr>
+                              <td colSpan={6} className="text-center py-4 text-muted-foreground">
+                                No kerning pairs detected. The browser may not report kerning for this font/size.
+                              </td>
+                            </tr>
+                          ) : (
+                            allKernPairs.map(({ pair, baseVal, hasOverride, overrideVal, effectiveVal }) => (
+                              <tr
+                                key={pair}
+                                className={`border-t border-border ${hasOverride ? 'bg-amber-500/5' : ''}`}
+                              >
+                                <td className="px-3 py-1 font-mono font-bold">
+                                  <span className="inline-flex gap-0.5">
+                                    <span className="text-muted-foreground">{pair[0] === ' ' ? '⎵' : pair[0]}</span>
+                                    <span className="text-muted-foreground">{pair[1] === ' ' ? '⎵' : pair[1]}</span>
+                                  </span>
+                                </td>
+                                <td className="px-3 py-1 text-right text-muted-foreground">{baseVal}</td>
+                                <td className="px-3 py-1 text-right text-muted-foreground">
+                                  {kerningOffset !== 0 && !hasOverride && (
+                                    <span className={kerningOffset > 0 ? 'text-green-600' : 'text-red-600'}>
+                                      {kerningOffset > 0 ? '+' : ''}{kerningOffset}
+                                    </span>
+                                  )}
+                                </td>
+                                <td className={`px-3 py-1 text-right font-mono font-medium ${hasOverride ? 'text-amber-600' : ''}`}>
+                                  {effectiveVal}
+                                </td>
+                                <td className="px-3 py-1 text-center">
+                                  <Input
+                                    type="number"
+                                    value={hasOverride ? overrideVal : ''}
+                                    placeholder={String(baseVal + kerningOffset)}
+                                    onChange={(e) => {
+                                      const v = e.target.value;
+                                      if (v === '') {
+                                        handleRemoveOverride(pair);
+                                      } else {
+                                        handleOverrideValueChange(pair, parseInt(v) || 0);
+                                      }
+                                    }}
+                                    className="w-16 h-6 text-xs text-center mx-auto"
+                                  />
+                                </td>
+                                <td className="px-1 py-1 text-center">
+                                  {hasOverride && (
+                                    <button
+                                      onClick={() => handleRemoveOverride(pair)}
+                                      className="text-muted-foreground hover:text-destructive transition-colors p-0.5"
+                                      title="Remove override"
+                                    >
+                                      <Trash2 className="w-3 h-3" />
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                            ))
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-1">
+                      Overrides (highlighted) replace the computed+offset value entirely. Clear the override field to revert to auto.
+                    </p>
+                  </div>
+                </CardContent>
+              )}
             </Card>
           )}
-        </div>
 
-        <div className="md:col-span-2 space-y-6">
           {fontLoaded && (
-            <Card className="border-muted/40 shadow-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-semibold uppercase tracking-wider">Preview & Refining</CardTitle>
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-sm font-medium uppercase">Sample Text</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Sample Text</label>
-                  <Input
-                    type="text"
-                    value={sampleText}
-                    onChange={(e) => { setSampleText(e.target.value); setSelectedPairIdx(null); }}
-                    className="h-10 text-base"
-                    data-testid="input-sample-text"
-                  />
-                </div>
-
-                <div className="space-y-4">
-                  <div className="space-y-1.5">
-                    <div className="flex justify-between items-end">
-                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">
-                        Playdate Rendering
-                      </label>
-                      <span className="text-[10px] text-muted-foreground opacity-70 italic mb-0.5">
-                        Click between characters to adjust kerning
+              <CardContent className="space-y-4">
+                <Input
+                  type="text"
+                  value={sampleText}
+                  onChange={(e) => { setSampleText(e.target.value); setSelectedPairIdx(null); }}
+                  data-testid="input-sample-text"
+                />
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase mb-1">Browser Rendering</p>
+                    <div className="bg-muted p-3 rounded-md overflow-auto">
+                      <span
+                        className="whitespace-nowrap text-foreground"
+                        style={{ fontFamily: getFontFamily(), fontSize: `${fontInput.fontSize}px` }}
+                        data-testid="text-sample-browser"
+                      >
+                        {sampleText}
                       </span>
                     </div>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase mb-1">Playdate Rendering <span className="normal-case opacity-60">— click between characters to select a pair</span></p>
                     <div
-                      className="bg-muted/30 p-8 rounded-md border border-muted/40 overflow-auto flex justify-center items-center min-h-[140px] relative no-default-hover-elevate"
+                      className="bg-muted p-3 rounded-md overflow-auto"
                       tabIndex={0}
                       onKeyDown={(e) => {
+                        // prevent scroll on arrow keys when focused
                         if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
                           e.preventDefault();
                         }
@@ -931,138 +1184,45 @@ export default function PdfontconvTool() {
                         />
                       </div>
                     </div>
-                  </div>
-
-                  {selectedPairIdx !== null && charPositionsRef.current.length > selectedPairIdx + 1 && (
-                    <div className="bg-primary/5 border border-primary/20 rounded-md p-4 flex flex-wrap items-center gap-6 shadow-sm">
-                      <div className="flex items-center gap-3">
-                        <span className="text-[10px] font-bold text-primary uppercase tracking-wider">Selected Pair</span>
-                        <span className="font-mono font-bold text-xl bg-background border border-primary/20 px-3 py-1 rounded shadow-sm">
-                          {charPositionsRef.current[selectedPairIdx].char === ' ' ? '⎵' : charPositionsRef.current[selectedPairIdx].char}
-                          {charPositionsRef.current[selectedPairIdx + 1].char === ' ' ? '⎵' : charPositionsRef.current[selectedPairIdx + 1].char}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <span className="text-[10px] font-bold text-primary uppercase tracking-wider">Current Kern</span>
-                        <span className="font-mono font-bold text-xl text-primary">
-                          {(() => {
-                            const pair = charPositionsRef.current[selectedPairIdx].char + charPositionsRef.current[selectedPairIdx + 1].char;
-                            const fd = fontDataRef.current;
-                            const baseVal = (fd.kerning[pair] ?? 0) + kerningOffset;
-                            return pair in kerningOverrides ? kerningOverrides[pair] : baseVal;
-                          })()}px
-                        </span>
-                      </div>
-                      <div className="flex-1 min-w-[200px] flex items-center gap-3 justify-end">
-                        <div className="flex items-center gap-2 text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">
-                          <kbd className="px-2 py-1 rounded bg-background border border-border shadow-sm font-mono text-xs text-foreground">←→</kbd>
+                    {selectedPairIdx !== null && charPositionsRef.current.length > selectedPairIdx + 1 && (
+                      <div className="mt-2 flex items-center gap-3 px-1">
+                        <div className="flex items-center gap-1.5 text-xs">
+                          <span className="text-muted-foreground">Selected:</span>
+                          <span className="font-mono font-bold text-sm bg-muted px-1.5 py-0.5 rounded">
+                            {charPositionsRef.current[selectedPairIdx].char === ' ' ? '⎵' : charPositionsRef.current[selectedPairIdx].char}
+                            {charPositionsRef.current[selectedPairIdx + 1].char === ' ' ? '⎵' : charPositionsRef.current[selectedPairIdx + 1].char}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs">
+                          <span className="text-muted-foreground">Kern:</span>
+                          <span className="font-mono font-bold">
+                            {(() => {
+                              const pair = charPositionsRef.current[selectedPairIdx].char + charPositionsRef.current[selectedPairIdx + 1].char;
+                              const fd = fontDataRef.current;
+                              const baseVal = (fd.kerning[pair] ?? 0) + kerningOffset;
+                              return pair in kerningOverrides ? kerningOverrides[pair] : baseVal;
+                            })()}px
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground ml-auto">
+                          <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono">←→</kbd>
                           <span>±1px</span>
-                          <kbd className="px-2 py-1 rounded bg-background border border-border shadow-sm font-mono text-xs text-foreground ml-2">⇧←→</kbd>
+                          <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono ml-1">⇧←→</kbd>
                           <span>±5px</span>
+                          <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono ml-1">↑↓</kbd>
+                          <span>nav pairs</span>
+                          <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono ml-1">Esc</kbd>
+                          <span>deselect</span>
                         </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-4 pt-2">
-                  <div className="flex items-center justify-between border-b border-muted/40 pb-2">
-                    <div className="flex items-center gap-2">
-                      <Type className="w-4 h-4 text-primary" />
-                      <h3 className="text-xs font-bold uppercase tracking-wider">Global Adjustments</h3>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex justify-between">
-                        Kerning Offset <span>{kerningOffset > 0 ? '+' : ''}{kerningOffset}px</span>
-                      </label>
-                      <Input
-                        type="range"
-                        min="-20"
-                        max="20"
-                        step="1"
-                        value={kerningOffset}
-                        onChange={(e) => setKerningOffset(parseInt(e.target.value))}
-                        className="h-8 accent-primary cursor-pointer"
-                      />
-                      <p className="text-[10px] text-muted-foreground leading-relaxed">
-                        Applied to all detected pairs. Folded into tracking in the .fnt file.
-                      </p>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider flex justify-between">
-                        Extra Tracking <span>{trackingAdjust > 0 ? '+' : ''}{trackingAdjust}px</span>
-                      </label>
-                      <Input
-                        type="range"
-                        min="-20"
-                        max="20"
-                        step="1"
-                        value={trackingAdjust}
-                        onChange={(e) => setTrackingAdjust(parseInt(e.target.value))}
-                        className="h-8 accent-primary cursor-pointer"
-                      />
-                      <p className="text-[10px] text-muted-foreground leading-relaxed">
-                        Additional spacing applied between every character.
-                      </p>
-                    </div>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Due to negative tracking, there may be blank space at the start/end of rendered text.
+                    </p>
                   </div>
                 </div>
               </CardContent>
             </Card>
-          )}
-
-          {!fontLoaded && (
-            <div className="h-full flex flex-col items-center justify-center border-2 border-dashed border-muted/20 rounded-xl bg-muted/5 p-12 text-center shadow-inner">
-              <div className="p-6 bg-muted/20 rounded-full mb-6">
-                <Type className="w-16 h-16 text-muted-foreground/20" />
-              </div>
-              <h3 className="text-xl font-bold uppercase tracking-tight mb-3">No Font Loaded</h3>
-              <p className="text-sm text-muted-foreground max-w-sm mx-auto leading-relaxed">
-                Upload a font file to start generating Playdate compatible font assets with pixel-perfect kerning controls.
-              </p>
-              <Button
-                onClick={() => fileInputRef.current?.click()}
-                variant="outline"
-                className="mt-8 px-8 font-bold uppercase tracking-tight hover-elevate shadow-sm"
-              >
-                <Upload className="w-4 h-4 mr-2" />
-                Select Font File
-              </Button>
-            </div>
-          )}
-
-          {fontLoaded && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card className="border-muted/40 shadow-sm overflow-hidden">
-                <CardHeader className="bg-muted/30 border-b border-muted/40 py-2">
-                  <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Atlas Preview</CardTitle>
-                </CardHeader>
-                <CardContent className="p-4 bg-black/95">
-                  <div className="overflow-auto flex justify-center py-4">
-                    <canvas
-                      ref={fontCanvasRef}
-                      style={{ imageRendering: 'pixelated' }}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card className="border-muted/40 shadow-sm overflow-hidden">
-                <CardHeader className="bg-muted/30 border-b border-muted/40 py-2">
-                  <CardTitle className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Debug Overlay</CardTitle>
-                </CardHeader>
-                <CardContent className="p-4">
-                  <div className="overflow-auto flex justify-center py-4">
-                    <canvas
-                      ref={debugCanvasRef}
-                      style={{ imageRendering: 'pixelated' }}
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
           )}
         </div>
       </div>
