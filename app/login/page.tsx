@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useState, useCallback, useRef, useEffect } from 'react';
 import { useTheme } from '@/components/ThemeProvider';
+import { ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
 
 
@@ -125,7 +127,14 @@ export default function LoginPage() {
 
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
+    <div className="min-h-screen flex items-center justify-center bg-background relative">
+      <div className="absolute top-8 left-8">
+        <Link href="/">
+          <Button variant="ghost" size="icon" data-testid="button-back-home">
+            <ArrowLeft className="w-5 h-5" />
+          </Button>
+        </Link>
+      </div>
       <Card className="p-8 max-w-md w-full mx-4">
         <div className="flex flex-col items-center text-center mb-8 mt-4">
           
