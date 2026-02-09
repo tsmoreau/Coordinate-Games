@@ -57,6 +57,8 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
+import PlayerDetailDialog from '@/components/PlayerDetailDialog';
+
 const AVATARS = [
   'BIRD1', 'BIRD2', 'BIRD3', 'BIRD4', 'BIRD5', 'BIRD6',
   'BIRD7', 'BIRD8', 'BIRD9', 'BIRD10', 'BIRD11', 'BIRD12'
@@ -79,6 +81,8 @@ export default function PlayerManagement({ players, gameSlug }: PlayerManagement
   const [showAvatarDialog, setShowAvatarDialog] = useState(false);
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showBanDialog, setShowBanDialog] = useState(false);
+  const [showDetailDialog, setShowDetailDialog] = useState(false);
+  const [detailPlayer, setDetailPlayer] = useState<AdminPlayerDetails | null>(null);
 
   const filteredPlayers = players.filter((player) => {
     const matchesSearch = player.displayName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -248,7 +252,12 @@ export default function PlayerManagement({ players, gameSlug }: PlayerManagement
           </Card>
         ) : (
           filteredPlayers.map((player) => (
-            <Card key={player.deviceId} data-testid={`card-player-${player.deviceId}`}>
+            <Card
+              key={player.deviceId}
+              data-testid={`card-player-${player.deviceId}`}
+              className="cursor-pointer hover-elevate transition-colors"
+              onClick={() => { setDetailPlayer(player); setShowDetailDialog(true); }}
+            >
               <CardContent className="p-4">
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                   <div className="flex items-start gap-4">
@@ -294,7 +303,7 @@ export default function PlayerManagement({ players, gameSlug }: PlayerManagement
                       </div>
                     </div>
 
-                    <div className="flex gap-2">
+                    <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -479,6 +488,13 @@ export default function PlayerManagement({ players, gameSlug }: PlayerManagement
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <PlayerDetailDialog
+        player={detailPlayer}
+        gameSlug={gameSlug}
+        open={showDetailDialog}
+        onOpenChange={setShowDetailDialog}
+      />
     </div>
   );
 }

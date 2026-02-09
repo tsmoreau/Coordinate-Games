@@ -49,6 +49,22 @@ export interface AdminBattleDetails {
   lastTurnAt: string | null;
 }
 
+export interface PlayerBattleHistoryEntry {
+  battleId: string;
+  displayName: string;
+  opponentDeviceId: string | null;
+  opponentDisplayName: string | null;
+  opponentAvatar: string | null;
+  status: 'pending' | 'active' | 'completed' | 'abandoned';
+  outcome: 'win' | 'loss' | 'draw' | 'in_progress' | 'pending' | 'abandoned';
+  currentTurn: number;
+  endReason: string | null;
+  isPrivate: boolean;
+  createdAt: string;
+  updatedAt: string;
+  lastTurnAt: string | null;
+}
+
 export interface AdminGameDetails {
   slug: string;
   name: string;
@@ -968,6 +984,77 @@ export async function unbanAllPlayers(gameSlug: string): Promise<{ success: bool
   } catch (error) {
     console.error('Error unbanning all players:', error);
     return { success: false, error: 'Failed to unban all players' };
+  }
+}
+
+export async function getPlayerBattleHistory(
+  gameSlug: string,
+  deviceId: string
+): Promise<PlayerBattleHistoryEntry[]> {
+  const auth = await requireAdminAuth();
+  if (!auth.success) {
+    throw new Error(auth.error);
+  }
+
+  try {
+    await connectToDatabase();
+
+    const battles = await Battle.find({
+      gameSlug,
+      $or: [{ player1DeviceId: deviceId }, { player2DeviceId: deviceId }]
+    }).sort({ createdAt: -1 }).lean();
+
+    const opponentDeviceIds = new Set<string>();
+    battles.forEach(b => {
+      const opponentId = b.player1DeviceId === deviceId ? b.player2DeviceId : b.player1DeviceId;
+      if (opponentId) opponentDeviceIds.add(opponentId);
+    });
+
+    const opponents = await GameIdentity.find({
+      gameSlug,
+      deviceId: { $in: Array.from(opponentDeviceIds) }
+    }).lean();
+
+    const opponentMap = new Map(opponents.map(o => [o.deviceId, o]));
+
+    return battles.map(battle => {
+      const opponentId = battle.player1DeviceId === deviceId
+        ? battle.player2DeviceId
+        : battle.player1DeviceId;
+      const opponent = opponentId ? opponentMap.get(opponentId) : null;
+
+      let outcome: PlayerBattleHistoryEntry['outcome'];
+      if (battle.status === 'completed') {
+        if (battle.winnerId === deviceId) outcome = 'win';
+        else if (battle.winnerId === null) outcome = 'draw';
+        else outcome = 'loss';
+      } else if (battle.status === 'abandoned') {
+        outcome = 'abandoned';
+      } else if (battle.status === 'pending') {
+        outcome = 'pending';
+      } else {
+        outcome = 'in_progress';
+      }
+
+      return {
+        battleId: battle.battleId,
+        displayName: battle.displayName || battle.battleId,
+        opponentDeviceId: opponentId,
+        opponentDisplayName: opponent?.displayName || null,
+        opponentAvatar: opponent?.avatar || null,
+        status: battle.status as PlayerBattleHistoryEntry['status'],
+        outcome,
+        currentTurn: battle.currentTurn,
+        endReason: battle.endReason,
+        isPrivate: battle.isPrivate,
+        createdAt: battle.createdAt.toISOString(),
+        updatedAt: battle.updatedAt.toISOString(),
+        lastTurnAt: battle.lastTurnAt?.toISOString() || null,
+      };
+    });
+  } catch (error) {
+    console.error('Error fetching player battle history:', error);
+    throw new Error('Failed to fetch battle history');
   }
 }
 
