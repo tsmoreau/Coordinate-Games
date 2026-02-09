@@ -811,13 +811,24 @@ export default function PdfontconvTool() {
                 <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider block mb-1.5">Export Options</label>
                 <div className="flex gap-2">
                   <Button
-                    onClick={exportFnt}
+                    onClick={handleDownloadFnt}
                     disabled={!fontLoaded || isConverting}
                     className="flex-1 font-bold uppercase tracking-tight"
                     data-testid="button-export-fnt"
                   >
                     <Download className="w-4 h-4 mr-2" />
                     Export .fnt
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    onClick={handleDownloadPng}
+                    disabled={!fontLoaded || isConverting}
+                    className="hover-elevate"
+                    title="Download .png atlas"
+                    data-testid="button-download-png"
+                  >
+                    <Download className="w-4 h-4" />
                   </Button>
                   <Button
                     variant="outline"
