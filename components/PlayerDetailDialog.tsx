@@ -193,8 +193,8 @@ export default function PlayerDetailDialog({ player, gameSlug, open, onOpenChang
                             )}
                             <div className="min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
-                                <span className="font-bold uppercase text-sm truncate">
-                                  vs {battle.opponentDisplayName || 'WAITING...'}
+                                <span className="font-bold lowercase text-sm truncate">
+                                  vs {battle.opponentDisplayName || 'waiting...'}
                                 </span>
                                 <Badge
                                   variant={outcomeInfo.variant}
