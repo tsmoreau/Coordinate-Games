@@ -59,8 +59,7 @@ export default function LoginPage() {
     const colors = BALL_CONFIG.colors[theme];
     const r = BALL_CONFIG.circleR;
     const cx = w / 2;
-    // Lowered it down by adding 15px to cy
-    const cy = h - BALL_CONFIG.circleR - BALL_CONFIG.circleLine + 15;
+    const cy = h - BALL_CONFIG.circleR - BALL_CONFIG.circleLine;
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -128,7 +127,7 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <Card className="p-8 max-w-md w-full mx-4">
-        <div className="flex flex-col items-center text-center mb-8">
+        <div className="flex flex-col items-center text-center mb-8 mt-4">
           
           <canvas
             ref={ballCanvasRef}
