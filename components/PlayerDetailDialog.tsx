@@ -212,9 +212,18 @@ export default function PlayerDetailDialog({ player, gameSlug, open, onOpenChang
                               </div>
 
                               <div className="flex items-center gap-3 text-xs text-muted-foreground shrink-0">
-                                <Badge variant="outline" className={statusInfo.className}>
-                                  {statusInfo.label}
+                              {(battle.status === 'completed' || battle.status === 'abandoned') && (
+                                <Badge
+                                  variant={outcomeInfo.variant}
+                                  className={outcomeInfo.className}
+                                >
+                                  <OutcomeIcon className="w-3 h-3 mr-1" />
+                                  {outcomeInfo.label}
                                 </Badge>
+                              )}
+                              <Badge variant="outline" className={statusInfo.className}>
+                                {statusInfo.label}
+                              </Badge>
                                 <span>T{battle.currentTurn}</span>
                                 {battle.endReason && (
                                   <span className="uppercase">{battle.endReason}</span>
