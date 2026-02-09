@@ -111,7 +111,7 @@ export default function PlayerDetailDialog({ player, gameSlug, open, onOpenChang
 
           <div className="flex-1 overflow-hidden flex flex-col min-h-0 -mx-6">
             <div className="h-px bg-border shrink-0" />
-            <div className="flex-1 overflow-y-auto space-y-6 px-6 pt-6">
+            <div className="flex-1 overflow-y-auto space-y-6 px-6 py-6">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="text-muted-foreground text-xs uppercase font-medium">AVATAR</span>
@@ -176,7 +176,7 @@ export default function PlayerDetailDialog({ player, gameSlug, open, onOpenChang
                 )}
 
                 {!isLoading && !error && battles.length > 0 && (
-                  <div className="space-y-2 pb-6">
+                  <div className="space-y-2">
                     {battles.map((battle) => {
                       const outcomeInfo = OUTCOME_CONFIG[battle.outcome];
                       const statusInfo = STATUS_CONFIG[battle.status];
