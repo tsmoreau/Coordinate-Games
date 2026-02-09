@@ -35,19 +35,19 @@ interface PlayerDetailDialogProps {
 }
 
 const OUTCOME_CONFIG = {
-  win: { label: 'WIN', variant: 'default' as const, icon: Trophy, className: 'bg-emerald-600 text-white border-emerald-700' },
+  win: { label: 'WIN', variant: 'default' as const, icon: Trophy, className: '' },
   loss: { label: 'LOSS', variant: 'destructive' as const, icon: XCircle, className: '' },
   draw: { label: 'DRAW', variant: 'secondary' as const, icon: Minus, className: '' },
   in_progress: { label: 'IN PROGRESS', variant: 'outline' as const, icon: Swords, className: '' },
   pending: { label: 'PENDING', variant: 'outline' as const, icon: Clock, className: '' },
-  abandoned: { label: 'ABANDONED', variant: 'secondary' as const, icon: Shield, className: 'bg-muted text-muted-foreground' },
+  abandoned: { label: 'ABANDONED', variant: 'secondary' as const, icon: Shield, className: '' },
 };
 
 const STATUS_CONFIG = {
-  pending: { label: 'PENDING', className: 'bg-yellow-600 text-white border-yellow-700' },
-  active: { label: 'ACTIVE', className: 'bg-blue-600 text-white border-blue-700' },
-  completed: { label: 'COMPLETED', className: 'bg-emerald-600 text-white border-emerald-700' },
-  abandoned: { label: 'ABANDONED', className: 'bg-muted text-muted-foreground' },
+  pending: { label: 'PENDING', className: '' },
+  active: { label: 'ACTIVE', className: '' },
+  completed: { label: 'COMPLETED', className: '' },
+  abandoned: { label: 'ABANDONED', className: '' },
 };
 
 export default function PlayerDetailDialog({ player, gameSlug, open, onOpenChange }: PlayerDetailDialogProps) {
