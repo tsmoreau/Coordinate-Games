@@ -338,8 +338,8 @@ export default function PdfontconvTool() {
     const chars = Array.from(sampleText);
 
     // First pass: compute positions
-    // Tracking in Playdate is a per-glyph draw offset. Widths are computed relative to base tracking.
-    // trackingAdjust changes the per-glyph offset, so each character accumulates the delta.
+    // Playdate advances cursor by (width + tracking) per glyph, with kerning added between pairs.
+    // We must replicate that here for accurate preview.
     const positions: { x: number; drawX: number; width: number; char: string }[] = [];
     let totalWidth = 0;
     {
@@ -365,10 +365,10 @@ export default function PdfontconvTool() {
         }
         x += kern;
         const w = fd.widths[idx];
-        // Each character's draw position uses base tracking plus the cumulative tracking adjustment
-        const drawX = x + fd.tracking + (trackingAdjust * charCount);
+        const drawX = x;
         positions.push({ x, drawX, width: w, char: chars[i] });
-        x += w;
+        // Playdate advances by width + tracking per glyph
+        x += w + fd.tracking + trackingAdjust;
         prevChar = chars[i];
         charCount++;
       }
@@ -647,6 +647,19 @@ export default function PdfontconvTool() {
     const lines: string[] = [];
     lines.push('-- Generated using pdfontconv: https://pdfontconv.frozenfractal.com');
     lines.push(`tracking=${effectiveTracking}`);
+
+    // Embed PNG data so .fnt is self-contained (no separate .png needed)
+    const canvas = fontCanvasRef.current;
+    if (canvas) {
+      const pngDataUrl = canvas.toDataURL('image/png');
+      const pngBase64 = pngDataUrl.replace(/^data:image\/png;base64,/, '');
+      lines.push(`datalen=${pngBase64.length}`);
+      lines.push(`data=${pngBase64}`);
+      lines.push(`width=${fd.cellSizeX}`);
+      lines.push(`height=${fd.cellSizeY}`);
+      lines.push('');  // blank line separator between header and glyph data
+    }
+
     for (let i = 0; i < fd.charSet.length; i++) {
       let char = fd.charSet[i];
       if (char === ' ') char = 'space';
@@ -660,7 +673,7 @@ export default function PdfontconvTool() {
 
   const handleDownloadFnt = () => {
     const data = generateFnt();
-    downloadFile(`${fontInput.baseName}-table-${fontInput.fontSize}-${fontInput.opacityThreshold}.fnt`, 'application/octet-stream', data);
+    downloadFile(`${fontInput.baseName}-${fontInput.fontSize}.fnt`, 'application/octet-stream', data);
   };
 
   const handleDownloadPng = () => {
@@ -833,57 +846,119 @@ export default function PdfontconvTool() {
         </Card>
 
         <div className="lg:col-span-3 space-y-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
-              <CardTitle className="text-sm font-medium uppercase">Output PNG</CardTitle>
-              <div className="flex items-center gap-2">
-                <Button
-                  onClick={handleDownloadFnt}
-                  disabled={!fontLoaded || isConverting}
-                  data-testid="button-download-fnt"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  .fnt
-                </Button>
-                <Button
-                  onClick={handleDownloadPng}
-                  disabled={!fontLoaded || isConverting}
-                  data-testid="button-download-png"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  .png
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {!fontLoaded ? (
-                <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-                  <Upload className="w-8 h-8 mb-3" />
-                  <p className="text-sm uppercase font-medium">Upload a font file to begin</p>
-                  <p className="text-xs mt-1">Supports TTF, OTF, WOFF, and WOFF2</p>
+
+
+          {fontLoaded && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
+                <CardTitle className="text-sm font-medium uppercase">Sample Text</CardTitle>
+                <div className="flex items-center gap-2">
+                  <Button
+                    onClick={handleDownloadFnt}
+                    disabled={!fontLoaded || isConverting}
+                    data-testid="button-download-fnt"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    .fnt
+                  </Button>
+                  <Button
+                    onClick={handleDownloadPng}
+                    disabled={!fontLoaded || isConverting}
+                    variant="outline"
+                    data-testid="button-download-png"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    .png
+                  </Button>
                 </div>
-              ) : (
-                <>
-                  <div className="overflow-auto max-h-[50vh] relative rounded-md border border-border">
-                    <canvas
-                      ref={debugCanvasRef}
-                      className="absolute top-0 left-0"
-                      style={{ imageRendering: 'pixelated' }}
-                    />
-                    <canvas
-                      ref={fontCanvasRef}
-                      className="relative"
-                      style={{ imageRendering: 'pixelated' }}
-                      data-testid="canvas-font"
-                    />
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Input
+                  type="text"
+                  value={sampleText}
+                  onChange={(e) => { setSampleText(e.target.value); setSelectedPairIdx(null); }}
+                  data-testid="input-sample-text"
+                />
+                <div className="grid grid-cols-1 gap-4">
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase mb-1">Browser Rendering</p>
+                    <div className="bg-muted p-3 rounded-md overflow-auto">
+                      <span
+                        className="whitespace-nowrap text-foreground"
+                        style={{ fontFamily: getFontFamily(), fontSize: `${fontInput.fontSize}px` }}
+                        data-testid="text-sample-browser"
+                      >
+                        {sampleText}
+                      </span>
+                    </div>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Background is informational only; actual output is transparent. Red: glyph bounding box. Blue: negative tracking. Green: character extent.
-                  </p>
-                </>
-              )}
-            </CardContent>
-          </Card>
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase mb-1">Playdate Rendering <span className="normal-case opacity-60">— click between characters to select a pair</span></p>
+                    <div
+                      className="bg-muted p-3 rounded-md overflow-auto"
+                      tabIndex={0}
+                      onKeyDown={(e) => {
+                        // prevent scroll on arrow keys when focused
+                        if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
+                          e.preventDefault();
+                        }
+                      }}
+                    >
+                      <div className="relative inline-block" style={{ cursor: 'crosshair' }}>
+                        <canvas
+                          ref={sampleTextCanvasRef}
+                          className="block"
+                          style={{ imageRendering: 'pixelated' }}
+                          data-testid="canvas-sample-playdate"
+                        />
+                        <canvas
+                          ref={sampleOverlayCanvasRef}
+                          className="absolute top-0 left-0 block pointer-events-auto"
+                          style={{ imageRendering: 'pixelated', cursor: 'crosshair' }}
+                          onClick={handleSampleCanvasClick}
+                        />
+                      </div>
+                    </div>
+                    {selectedPairIdx !== null && charPositionsRef.current.length > selectedPairIdx + 1 && (
+                      <div className="mt-2 flex items-center gap-3 px-1">
+                        <div className="flex items-center gap-1.5 text-xs">
+                          <span className="text-muted-foreground">Selected:</span>
+                          <span className="font-mono font-bold text-sm bg-muted px-1.5 py-0.5 rounded">
+                            {charPositionsRef.current[selectedPairIdx].char === ' ' ? '⎵' : charPositionsRef.current[selectedPairIdx].char}
+                            {charPositionsRef.current[selectedPairIdx + 1].char === ' ' ? '⎵' : charPositionsRef.current[selectedPairIdx + 1].char}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 text-xs">
+                          <span className="text-muted-foreground">Kern:</span>
+                          <span className="font-mono font-bold">
+                            {(() => {
+                              const pair = charPositionsRef.current[selectedPairIdx].char + charPositionsRef.current[selectedPairIdx + 1].char;
+                              const fd = fontDataRef.current;
+                              const baseVal = (fd.kerning[pair] ?? 0) + kerningOffset;
+                              return pair in kerningOverrides ? kerningOverrides[pair] : baseVal;
+                            })()}px
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground ml-auto">
+                          <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono">←→</kbd>
+                          <span>±1px</span>
+                          <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono ml-1">⇧←→</kbd>
+                          <span>±5px</span>
+                          <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono ml-1">↑↓</kbd>
+                          <span>nav pairs</span>
+                          <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono ml-1">Esc</kbd>
+                          <span>deselect</span>
+                        </div>
+                      </div>
+                    )}
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Due to negative tracking, there may be blank space at the start/end of rendered text.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* ============================================================ */}
           {/*  KERNING & SPACING CONTROLS                                  */}
@@ -1132,98 +1207,57 @@ export default function PdfontconvTool() {
             </Card>
           )}
 
-          {fontLoaded && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm font-medium uppercase">Sample Text</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Input
-                  type="text"
-                  value={sampleText}
-                  onChange={(e) => { setSampleText(e.target.value); setSelectedPairIdx(null); }}
-                  data-testid="input-sample-text"
-                />
-                <div className="grid grid-cols-1 gap-4">
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase mb-1">Browser Rendering</p>
-                    <div className="bg-muted p-3 rounded-md overflow-auto">
-                      <span
-                        className="whitespace-nowrap text-foreground"
-                        style={{ fontFamily: getFontFamily(), fontSize: `${fontInput.fontSize}px` }}
-                        data-testid="text-sample-browser"
-                      >
-                        {sampleText}
-                      </span>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground uppercase mb-1">Playdate Rendering <span className="normal-case opacity-60">— click between characters to select a pair</span></p>
-                    <div
-                      className="bg-muted p-3 rounded-md overflow-auto"
-                      tabIndex={0}
-                      onKeyDown={(e) => {
-                        // prevent scroll on arrow keys when focused
-                        if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) {
-                          e.preventDefault();
-                        }
-                      }}
-                    >
-                      <div className="relative inline-block" style={{ cursor: 'crosshair' }}>
-                        <canvas
-                          ref={sampleTextCanvasRef}
-                          className="block"
-                          style={{ imageRendering: 'pixelated' }}
-                          data-testid="canvas-sample-playdate"
-                        />
-                        <canvas
-                          ref={sampleOverlayCanvasRef}
-                          className="absolute top-0 left-0 block pointer-events-auto"
-                          style={{ imageRendering: 'pixelated', cursor: 'crosshair' }}
-                          onClick={handleSampleCanvasClick}
-                        />
-                      </div>
-                    </div>
-                    {selectedPairIdx !== null && charPositionsRef.current.length > selectedPairIdx + 1 && (
-                      <div className="mt-2 flex items-center gap-3 px-1">
-                        <div className="flex items-center gap-1.5 text-xs">
-                          <span className="text-muted-foreground">Selected:</span>
-                          <span className="font-mono font-bold text-sm bg-muted px-1.5 py-0.5 rounded">
-                            {charPositionsRef.current[selectedPairIdx].char === ' ' ? '⎵' : charPositionsRef.current[selectedPairIdx].char}
-                            {charPositionsRef.current[selectedPairIdx + 1].char === ' ' ? '⎵' : charPositionsRef.current[selectedPairIdx + 1].char}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 text-xs">
-                          <span className="text-muted-foreground">Kern:</span>
-                          <span className="font-mono font-bold">
-                            {(() => {
-                              const pair = charPositionsRef.current[selectedPairIdx].char + charPositionsRef.current[selectedPairIdx + 1].char;
-                              const fd = fontDataRef.current;
-                              const baseVal = (fd.kerning[pair] ?? 0) + kerningOffset;
-                              return pair in kerningOverrides ? kerningOverrides[pair] : baseVal;
-                            })()}px
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1 text-[10px] text-muted-foreground ml-auto">
-                          <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono">←→</kbd>
-                          <span>±1px</span>
-                          <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono ml-1">⇧←→</kbd>
-                          <span>±5px</span>
-                          <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono ml-1">↑↓</kbd>
-                          <span>nav pairs</span>
-                          <kbd className="px-1 py-0.5 rounded bg-muted border border-border font-mono ml-1">Esc</kbd>
-                          <span>deselect</span>
-                        </div>
-                      </div>
-                    )}
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Due to negative tracking, there may be blank space at the start/end of rendered text.
-                    </p>
-                  </div>
+          <Card className="hidden">
+            <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0">
+              <CardTitle className="text-sm font-medium uppercase">Output PNG</CardTitle>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={handleDownloadFnt}
+                  disabled={!fontLoaded || isConverting}
+                  data-testid="button-download-fnt"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  .fnt
+                </Button>
+                <Button
+                  onClick={handleDownloadPng}
+                  disabled={!fontLoaded || isConverting}
+                  data-testid="button-download-png"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  .png
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {!fontLoaded ? (
+                <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+                  <Upload className="w-8 h-8 mb-3" />
+                  <p className="text-sm uppercase font-medium">Upload a font file to begin</p>
+                  <p className="text-xs mt-1">Supports TTF, OTF, WOFF, and WOFF2</p>
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              ) : (
+                <>
+                  <div className="overflow-auto max-h-[50vh] relative rounded-md border border-border">
+                    <canvas
+                      ref={debugCanvasRef}
+                      className="absolute top-0 left-0"
+                      style={{ imageRendering: 'pixelated' }}
+                    />
+                    <canvas
+                      ref={fontCanvasRef}
+                      className="relative"
+                      style={{ imageRendering: 'pixelated' }}
+                      data-testid="canvas-font"
+                    />
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Background is informational only; actual output is transparent. Red: glyph bounding box. Blue: negative tracking. Green: character extent.
+                  </p>
+                </>
+              )}
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
