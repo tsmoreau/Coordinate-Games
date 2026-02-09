@@ -135,7 +135,7 @@ export default function PlayerDetailDialog({ player, gameSlug, open, onOpenChang
               { label: 'ACTIVE', value: player.stats.activeBattles, testId: 'text-stat-active' },
               { label: 'WIN RATE', value: `${winRate}%`, testId: 'text-stat-winrate' },
             ].map(stat => (
-              <div key={stat.label} className="flex flex-col items-center justify-center p-1 rounded-lg border bg-card aspect-square">
+              <div key={stat.label} className="flex flex-col items-center justify-center p-0.5 rounded-lg border bg-muted/30 aspect-square">
                 <div className="text-lg font-bold" data-testid={stat.testId}>{stat.value}</div>
                 <div className="text-[10px] text-muted-foreground uppercase font-medium">{stat.label}</div>
               </div>
