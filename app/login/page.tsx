@@ -59,7 +59,8 @@ export default function LoginPage() {
     const colors = BALL_CONFIG.colors[theme];
     const r = BALL_CONFIG.circleR;
     const cx = w / 2;
-    const cy = h - BALL_CONFIG.circleR - BALL_CONFIG.circleLine;
+    // Lowered it down by adding 15px to cy
+    const cy = h - BALL_CONFIG.circleR - BALL_CONFIG.circleLine + 15;
 
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -82,8 +83,23 @@ export default function LoginPage() {
 
     const radius = r;
 
+    // Apply idle pulse animation
+    let pulseScale = 1;
+    if (
+      !state.isBouncing &&
+      now - state.lastInteraction > BALL_CONFIG.idlePulseDelay
+    ) {
+      const idleElapsed = (now - state.lastInteraction - BALL_CONFIG.idlePulseDelay) % 3000;
+      if (idleElapsed < BALL_CONFIG.idlePulseDuration) {
+        const pulseProgress = idleElapsed / BALL_CONFIG.idlePulseDuration;
+        pulseScale = 1 + Math.sin(pulseProgress * Math.PI) * 0.1;
+      }
+    }
+
+    const finalRadius = radius * pulseScale;
+
     ctx.beginPath();
-    ctx.arc(cx, cy + bounceOffset, radius, 0, Math.PI * 2);
+    ctx.arc(cx, cy + bounceOffset, finalRadius, 0, Math.PI * 2);
     ctx.fillStyle = colors.ballFill;
     ctx.fill();
     ctx.strokeStyle = colors.ballStroke;
