@@ -239,6 +239,7 @@ export default function PlayerDetailDialog({ player, gameSlug, open, onOpenChang
               </div>
             </div>
           </div>
+          <div className="h-px bg-border shrink-0 -mx-1" />
         </div>
       </DialogContent>
     </Dialog>
