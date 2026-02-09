@@ -28,6 +28,12 @@ import {
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   toggleGameMaintenance,
   toggleGameActive,
   updateGameMotd,
@@ -233,55 +239,91 @@ export default function GameManagement({ games }: GameManagementProps) {
                     </div>
 
                     <div className="flex gap-2 flex-wrap" onClick={(e) => e.preventDefault()}>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        onClick={() => copyApiBase(game.slug)}
-                        data-testid={`button-copy-api-${game.slug}`}
-                        title="Copy API base URL"
-                      >
-                        <Copy className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        onClick={() => handleOpenCapsDialog(game)}
-                        disabled={isPending}
-                        data-testid={`button-edit-caps-${game.slug}`}
-                        title="Edit capabilities"
-                      >
-                        <Settings className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        onClick={() => handleEditMotd(game)}
-                        disabled={isPending}
-                        data-testid={`button-motd-${game.slug}`}
-                        title="Edit message of the day"
-                      >
-                        <MessageSquare className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        onClick={() => handleToggleMaintenance(game)}
-                        disabled={isPending}
-                        data-testid={`button-maintenance-${game.slug}`}
-                        title={game.maintenance ? 'Disable maintenance mode' : 'Enable maintenance mode'}
-                      >
-                        <Wrench className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        variant="outline"
-                        onClick={() => handleToggleActive(game)}
-                        disabled={isPending}
-                        data-testid={`button-toggle-active-${game.slug}`}
-                        title={game.active ? 'Deactivate game' : 'Activate game'}
-                      >
-                        <Power className="w-4 h-4" />
-                      </Button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              onClick={() => copyApiBase(game.slug)}
+                              data-testid={`button-copy-api-${game.slug}`}
+                            >
+                              <Copy className="w-4 h-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Copy API base URL</p>
+                          </TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              onClick={() => handleOpenCapsDialog(game)}
+                              disabled={isPending}
+                              data-testid={`button-edit-caps-${game.slug}`}
+                            >
+                              <Settings className="w-4 h-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Edit capabilities</p>
+                          </TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              onClick={() => handleEditMotd(game)}
+                              disabled={isPending}
+                              data-testid={`button-motd-${game.slug}`}
+                            >
+                              <MessageSquare className="w-4 h-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Edit message of the day</p>
+                          </TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              onClick={() => handleToggleMaintenance(game)}
+                              disabled={isPending}
+                              data-testid={`button-maintenance-${game.slug}`}
+                            >
+                              <Wrench className="w-4 h-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{game.maintenance ? 'Disable maintenance mode' : 'Enable maintenance mode'}</p>
+                          </TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="outline"
+                              onClick={() => handleToggleActive(game)}
+                              disabled={isPending}
+                              data-testid={`button-toggle-active-${game.slug}`}
+                            >
+                              <Power className="w-4 h-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{game.active ? 'Deactivate game' : 'Activate game'}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                   </div>
                 </CardContent>

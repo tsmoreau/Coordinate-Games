@@ -25,6 +25,12 @@ import {
   Calendar,
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface MockGame {
   name: string;
@@ -271,38 +277,63 @@ export default function DevManagement() {
                 </div>
 
                           <div className="flex items-center gap-1">
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => handleShowKeys(dev)}
-                              data-testid={`button-keys-dev-${dev.id}`}
-                              title="View API keys"
-                            >
-                              <Key className="w-4 h-4" />
-                            </Button>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    size="icon"
+                                    variant="ghost"
+                                    onClick={() => handleShowKeys(dev)}
+                                    data-testid={`button-keys-dev-${dev.id}`}
+                                  >
+                                    <Key className="w-4 h-4" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>View API keys</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+
                             <Button size="icon" variant="ghost" onClick={() => handleView(dev)} data-testid={`button-view-dev-${dev.id}`}>
                               <Eye className="w-4 h-4" />
                             </Button>
                   {dev.status === 'pending' ? (
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      onClick={() => handleApprove(dev)}
-                      data-testid={`button-approve-dev-${dev.id}`}
-                      title="Approve developer"
-                    >
-                      <CheckCircle className="w-4 h-4" />
-                    </Button>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            onClick={() => handleApprove(dev)}
+                            data-testid={`button-approve-dev-${dev.id}`}
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Approve developer</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   ) : dev.status === 'active' ? (
-                    <Button
-                      size="icon"
-                      variant="outline"
-                      onClick={() => handleRevoke(dev)}
-                      data-testid={`button-revoke-dev-${dev.id}`}
-                      title="Revoke developer access"
-                    >
-                      <Ban className="w-4 h-4" />
-                    </Button>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="icon"
+                            variant="outline"
+                            onClick={() => handleRevoke(dev)}
+                            data-testid={`button-revoke-dev-${dev.id}`}
+                          >
+                            <Ban className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Revoke developer access</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   ) : null}
                 </div>
               </div>

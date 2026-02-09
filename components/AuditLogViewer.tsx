@@ -21,6 +21,12 @@ import {
 } from '@/components/ui/table';
 import { ChevronLeft, ChevronRight, RefreshCw, Globe } from 'lucide-react';
 import { fetchAuditLogs, AuditLogEntry } from '@/app/actions/admin';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface AuditLogViewerProps {
   gameSlug: string;
@@ -86,16 +92,24 @@ export default function AuditLogViewer({ gameSlug, gameName }: AuditLogViewerPro
                   <SelectItem value="register">Register</SelectItem>
                 </SelectContent>
               </Select>
-              <Button
-                size="icon"
-                variant="outline"
-                onClick={() => loadLogs(page)}
-                disabled={isPending}
-                title="Refresh"
-                data-testid="button-refresh-audit"
-              >
-                <RefreshCw className={`w-4 h-4 ${isPending ? 'animate-spin' : ''}`} />
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant="outline"
+                      onClick={() => loadLogs(page)}
+                      disabled={isPending}
+                      data-testid="button-refresh-audit"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${isPending ? 'animate-spin' : ''}`} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Refresh</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             </div>
           </div>
         </CardHeader>
