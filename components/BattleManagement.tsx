@@ -40,6 +40,13 @@ import {
   AdminBattleDetails,
 } from '@/app/actions/admin';
 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
 interface BattleManagementProps {
   battles: AdminBattleDetails[];
 }
@@ -232,31 +239,56 @@ export default function BattleManagement({ battles }: BattleManagementProps) {
                   </div>
 
                   <div className="flex gap-2">
-                    <Link href={`/battle/${battle.displayName}`}>
-                      <Button size="sm" variant="outline" data-testid={`button-view-battle-${battle.battleId}`}>
-                        <Eye className="w-4 h-4" />
-                      </Button>
-                    </Link>
-                    {(battle.status === 'active' || battle.status === 'pending') && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleForfeit(battle)}
-                        disabled={isPending}
-                        data-testid={`button-forfeit-${battle.battleId}`}
-                      >
-                        <Flag className="w-4 h-4" />
-                      </Button>
-                    )}
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleDelete(battle)}
-                      disabled={isPending}
-                      data-testid={`button-delete-battle-${battle.battleId}`}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Link href={`/battle/${battle.displayName}`}>
+                            <Button size="sm" variant="outline" data-testid={`button-view-battle-${battle.battleId}`}>
+                              <Eye className="w-4 h-4" />
+                            </Button>
+                          </Link>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>View Battle</p>
+                        </TooltipContent>
+                      </Tooltip>
+
+                      {(battle.status === 'active' || battle.status === 'pending') && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleForfeit(battle)}
+                              disabled={isPending}
+                              data-testid={`button-forfeit-${battle.battleId}`}
+                            >
+                              <Flag className="w-4 h-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{battle.status === 'pending' ? 'Cancel Battle' : 'Forfeit Battle'}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
+
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleDelete(battle)}
+                            disabled={isPending}
+                            data-testid={`button-delete-battle-${battle.battleId}`}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Delete Battle</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </div>
                 </div>
               </CardContent>

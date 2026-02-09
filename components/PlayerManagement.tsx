@@ -50,6 +50,13 @@ import {
   AdminPlayerDetails,
 } from '@/app/actions/admin';
 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+
 const AVATARS = [
   'BIRD1', 'BIRD2', 'BIRD3', 'BIRD4', 'BIRD5', 'BIRD6',
   'BIRD7', 'BIRD8', 'BIRD9', 'BIRD10', 'BIRD11', 'BIRD12'
@@ -288,42 +295,75 @@ export default function PlayerManagement({ players, gameSlug }: PlayerManagement
                     </div>
 
                     <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleAvatarEdit(player)}
-                        disabled={isPending}
-                        data-testid={`button-edit-avatar-${player.deviceId}`}
-                      >
-                        <Gamepad2 className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleNameEdit(player)}
-                        disabled={isPending}
-                        data-testid={`button-edit-name-${player.deviceId}`}
-                      >
-                        <Pencil className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleBan(player)}
-                        disabled={isPending}
-                        data-testid={`button-ban-${player.deviceId}`}
-                      >
-                        {player.isActive ? <Ban className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleDelete(player)}
-                        disabled={isPending}
-                        data-testid={`button-delete-player-${player.deviceId}`}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleAvatarEdit(player)}
+                              disabled={isPending}
+                              data-testid={`button-edit-avatar-${player.deviceId}`}
+                            >
+                              <Gamepad2 className="w-4 h-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Change Avatar</p>
+                          </TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleNameEdit(player)}
+                              disabled={isPending}
+                              data-testid={`button-edit-name-${player.deviceId}`}
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Change Name</p>
+                          </TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleBan(player)}
+                              disabled={isPending}
+                              data-testid={`button-ban-${player.deviceId}`}
+                            >
+                              {player.isActive ? <Ban className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{player.isActive ? 'Ban Player' : 'Unban Player'}</p>
+                          </TooltipContent>
+                        </Tooltip>
+
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDelete(player)}
+                              disabled={isPending}
+                              data-testid={`button-delete-player-${player.deviceId}`}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>Delete Player</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
                     </div>
                   </div>
                 </div>
