@@ -112,12 +112,12 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background">
       <Card className="p-8 max-w-md w-full mx-4">
-        <div className="text-center items-center mb-8">
+        <div className="flex flex-col items-center text-center mb-8">
           
           <canvas
             ref={ballCanvasRef}
             onClick={handleBallClick}
-            className="mb-6 self-center cursor-pointer"
+            className="mb-6 cursor-pointer"
             data-testid="ball-bounce"
           />
           <h1 className="font-mono text-2xl font-bold uppercase tracking-wide mb-2">
