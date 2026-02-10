@@ -1,0 +1,78 @@
+Since your middleware is clean and your DB connections are now optimized, the final frontier for reducing your Vercel usage is making those polling requests as cheap as possible.
+
+Right now, even if the game state hasn't changed, your server still:
+
+Receives the request.
+
+Queries Mongo for the battle state.
+
+Builds a JSON object.
+
+Sends the full JSON back to the Playdate.
+
+This costs Compute Duration (building JSON) and Bandwidth (sending JSON).
+
+The "304" Optimization (The "Is it my turn yet?" Killer)
+You can modify your polling endpoint to check if the data has actually changed before doing the heavy lifting.
+
+The Logic:
+
+Server: When sending the Battle State, include a header: ETag: "turn-5-v1".
+
+Playdate: Stores that ETag.
+
+Playdate (Next Poll): Sends request with header: If-None-Match: "turn-5-v1".
+
+Server: Checks If-None-Match. Is it still "turn-5-v1"?
+
+Yes: Return 304 Not Modified (Body is empty). Cost: Near Zero.
+
+No: Query DB, build JSON, send 200 OK.
+
+How to implement it in your Route Handler
+You don't need a complex hashing library. You can just use the updatedAt timestamp from your MongoDB document or the current turnNumber.
+
+Here is the pattern for your /api/[gameSlug]/battles/[id]/poll route:
+
+TypeScript
+import { NextResponse } from 'next/server';
+import clientPromise from '@/lib/mongodb-client';
+import { ObjectId } from 'mongodb';
+
+export async function GET(request: Request, { params }: { params: { id: string } }) {
+  const client = await clientPromise;
+  const db = client.db('birdwars'); // or whatever your DB is named
+
+  // 1. Cheap Query: Just get the 'updatedAt' field, not the whole massive document
+  const battleSummary = await db.collection('battles').findOne(
+    { _id: new ObjectId(params.id) },
+    { projection: { updatedAt: 1, turnNumber: 1 } } // minimal data
+  );
+
+  if (!battleSummary) {
+    return NextResponse.json({ error: 'Battle not found' }, { status: 404 });
+  }
+
+  // 2. Generate ETag
+  const currentETag = `"${battleSummary.updatedAt.getTime()}-${battleSummary.turnNumber}"`;
+
+  // 3. Check Request Header
+  const requestETag = request.headers.get('if-none-match');
+
+  if (requestETag === currentETag) {
+    // STOP HERE. Save CPU. Save Bandwidth.
+    return new NextResponse(null, { status: 304 });
+  }
+
+  // 4. Data Changed? Fetch full document and send it.
+  const fullBattle = await db.collection('battles').findOne({ _id: new ObjectId(params.id) });
+  
+  const response = NextResponse.json(fullBattle);
+  response.headers.set('ETag', currentETag);
+  
+  return response;
+}
+Why this works for "Bird Wars":
+Database Load: The projection query is lightning fast and uses almost no memory compared to fetching the full game state with all the units, terrain, and history.
+
+Vercel Bill: A 304 response finishes in <10ms. A full 200 response might take 150ms. That is a 15x savings on execution time.
