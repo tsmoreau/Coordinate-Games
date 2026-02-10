@@ -49,6 +49,125 @@
 
 ---
 
+## Original Configuration (For Rollback)
+
+If anything goes wrong, here are the original values to revert to.
+
+### Original `lib/mongodb-client.ts`
+
+```typescript
+import { MongoClient } from "mongodb";
+
+if (!process.env.MONGODB_URI) {
+  throw new Error("Please add your Mongo URI to .env");
+}
+
+const uri = process.env.MONGODB_URI;
+const options = {};
+
+let client: MongoClient;
+let clientPromise: Promise<MongoClient>;
+
+declare global {
+  var _mongoClientPromise: Promise<MongoClient> | undefined;
+}
+
+if (process.env.NODE_ENV === "development") {
+  if (!global._mongoClientPromise) {
+    client = new MongoClient(uri, options);
+    global._mongoClientPromise = client.connect();
+  }
+  clientPromise = global._mongoClientPromise;
+} else {
+  client = new MongoClient(uri, options);
+  clientPromise = client.connect();
+}
+
+export default clientPromise;
+```
+
+### Original `lib/mongodb.ts` connection options
+
+```typescript
+const opts = {
+  bufferCommands: false,
+  maxPoolSize: 10,
+  minPoolSize: 0,
+  socketTimeoutMS: 45000,
+  serverSelectionTimeoutMS: 10000,
+  heartbeatFrequencyMS: 30000,
+  maxIdleTimeMS: 30000,
+};
+```
+
+### Original `app/api/[gameSlug]/battles/[id]/poll/route.ts`
+
+```typescript
+import { NextRequest, NextResponse } from 'next/server';
+import { connectToDatabase } from '@/lib/mongodb';
+import { Battle } from '@/models/Battle';
+import { validateAsyncGame, isGameContext } from '@/lib/gameMiddleware';
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ gameSlug: string; id: string }> }
+) {
+  try {
+    const { gameSlug, id } = await params;
+
+    const gameResult = await validateAsyncGame(gameSlug);
+    if (!isGameContext(gameResult)) {
+      return gameResult;
+    }
+
+    await connectToDatabase();
+
+    const { searchParams } = new URL(request.url);
+    const lastKnownTurn = parseInt(searchParams.get('lastKnownTurn') || '0', 10);
+
+    const battle = await Battle.findOne({
+      gameSlug: gameResult.slug,
+      battleId: id
+    });
+
+    if (!battle) {
+      return NextResponse.json({
+        success: false,
+        error: 'Battle not found',
+      }, { status: 404 });
+    }
+
+    const hasNewTurns = battle.currentTurn > lastKnownTurn;
+    const newTurns = hasNewTurns
+      ? battle.turns.filter(t => t.turnNumber > lastKnownTurn).sort((a, b) => a.turnNumber - b.turnNumber)
+      : [];
+
+    return NextResponse.json({
+      success: true,
+      game: { slug: gameResult.slug, name: gameResult.game.name },
+      battleId: battle.battleId,
+      status: battle.status,
+      currentTurn: battle.currentTurn,
+      currentPlayerIndex: battle.currentPlayerIndex,
+      hasNewTurns,
+      newTurns,
+      currentState: battle.currentState,
+      winnerId: battle.winnerId,
+      endReason: battle.endReason,
+      lastTurnAt: battle.lastTurnAt,
+    });
+  } catch (error) {
+    console.error('Poll battle error:', error);
+    return NextResponse.json({
+      success: false,
+      error: 'Failed to poll battle',
+    }, { status: 500 });
+  }
+}
+```
+
+---
+
 ## Cost Impact Summary
 
 | Optimization | Before | After |
