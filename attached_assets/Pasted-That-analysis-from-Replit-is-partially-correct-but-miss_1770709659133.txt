@@ -1,0 +1,48 @@
+That analysis from Replit is partially correct but misses the most critical parameter for serverless optimization: maxPoolSize.
+
+While moving to a universal global cache is a safe "belt and suspenders" move, it only helps if your Lambda stays warm. The real reason for "Heavy" usage and connection timeouts in Vercel is that the default MongoDB pool size is 100.
+
+If Vercel spins up 10 serverless function instances (common during a spike), and each has a default pool of 100, you are suddenly hitting your database with 1,000 connections. This chokes the database and spikes your execution time (GB-Hours) while the function waits for a connection slot.
+
+Here is the corrected lib/mongodb-client.ts. It implements the universal global cache AND limits the pool size to prevent connection storms.
+
+Optimized lib/mongodb-client.ts
+TypeScript
+import { MongoClient, MongoClientOptions } from 'mongodb';
+
+if (!process.env.MONGODB_URI) {
+  throw new Error('Invalid/Missing environment variable: "MONGODB_URI"');
+}
+
+const uri = process.env.MONGODB_URI;
+
+// CRITICAL: Limit pool size in serverless. 
+// Without this, every lambda opens 100 connections (default).
+const options: MongoClientOptions = {
+  maxPoolSize: 1, // Keep this low (1-5) for Vercel/Serverless
+  minPoolSize: 0,
+  maxIdleTimeMS: 10000, // Close idle connections faster to save resources
+};
+
+let client: MongoClient;
+let clientPromise: Promise<MongoClient>;
+
+// Declare the global type to prevent TypeScript errors
+declare global {
+  var _mongoClientPromise: Promise<MongoClient> | undefined;
+}
+
+if (!global._mongoClientPromise) {
+  client = new MongoClient(uri, options);
+  global._mongoClientPromise = client.connect();
+}
+
+clientPromise = global._mongoClientPromise;
+
+export default clientPromise;
+Why this fixes "Heavy" usage:
+maxPoolSize: 1: Ensures each Lambda instance only opens one connection socket. If you have 50 concurrent Lambdas, you only have 50 DB connections, not 5,000.
+
+global everywhere: Ensures that if a Lambda container is reused (Warm Start), it definitely reuses that single connection instead of trying to open a new one.
+
+maxIdleTimeMS: Aggressively closes connections that aren't being used, freeing up memory on the Vercel side.
