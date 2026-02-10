@@ -17,12 +17,31 @@ export async function GET(
 
     await connectToDatabase();
 
-    const { searchParams } = new URL(request.url);
-    const lastKnownTurn = parseInt(searchParams.get('lastKnownTurn') || '0', 10);
+    const battleSummary = await Battle.findOne(
+      { gameSlug: gameResult.slug, battleId: id },
+      { updatedAt: 1, currentTurn: 1 }
+    ).lean();
 
-    const battle = await Battle.findOne({ 
+    if (!battleSummary) {
+      return NextResponse.json({
+        success: false,
+        error: 'Battle not found',
+      }, { status: 404 });
+    }
+
+    const currentETag = `"${battleSummary.updatedAt?.getTime() ?? 0}-${battleSummary.currentTurn}"`;
+    const requestETag = request.headers.get('if-none-match');
+
+    if (requestETag === currentETag) {
+      const notModified = new NextResponse(null, { status: 304 });
+      notModified.headers.set('ETag', currentETag);
+      notModified.headers.set('Cache-Control', 'no-cache');
+      return notModified;
+    }
+
+    const battle = await Battle.findOne({
       gameSlug: gameResult.slug,
-      battleId: id 
+      battleId: id,
     });
 
     if (!battle) {
@@ -32,12 +51,15 @@ export async function GET(
       }, { status: 404 });
     }
 
+    const { searchParams } = new URL(request.url);
+    const lastKnownTurn = parseInt(searchParams.get('lastKnownTurn') || '0', 10);
+
     const hasNewTurns = battle.currentTurn > lastKnownTurn;
     const newTurns = hasNewTurns 
       ? battle.turns.filter(t => t.turnNumber > lastKnownTurn).sort((a, b) => a.turnNumber - b.turnNumber)
       : [];
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       game: { slug: gameResult.slug, name: gameResult.game.name },
       battleId: battle.battleId,
@@ -51,6 +73,11 @@ export async function GET(
       endReason: battle.endReason,
       lastTurnAt: battle.lastTurnAt,
     });
+
+    response.headers.set('ETag', currentETag);
+    response.headers.set('Cache-Control', 'no-cache');
+
+    return response;
   } catch (error) {
     console.error('Poll battle error:', error);
     return NextResponse.json({
