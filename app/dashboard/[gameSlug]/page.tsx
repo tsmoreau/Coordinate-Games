@@ -16,14 +16,17 @@ import {
   ArrowLeft,
   Wrench,
   Settings,
-  ScrollText
+  ScrollText,
+  Database
 } from 'lucide-react';
 import Nav from '@/components/Nav';
 import PlayerManagement from '@/components/PlayerManagement';
 import BattleManagement from '@/components/BattleManagement';
+import ScoreManagement from '@/components/ScoreManagement';
+import DataManagement from '@/components/DataManagement';
 import GameAdminPanel from '@/components/GameAdminPanel';
 import AuditLogViewer from '@/components/AuditLogViewer';
-import { getGameBySlug, getGameStats, getGamePlayers, getGameBattles } from '@/app/actions/admin';
+import { getGameBySlug, getGameStats, getGamePlayers, getGameBattles, getGameScores, getGameDataEntries } from '@/app/actions/admin';
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
 
@@ -52,9 +55,15 @@ export default async function GameDashboardPage({ params }: Props) {
     notFound();
   }
 
+  const hasAsync = game.capabilities.includes('async');
+  const hasLeaderboard = game.capabilities.includes('leaderboard');
+  const hasData = game.capabilities.includes('data');
+
   const stats = await getGameStats(gameSlug);
   const players = await getGamePlayers(gameSlug);
-  const battles = await getGameBattles(gameSlug);
+  const battles = hasAsync ? await getGameBattles(gameSlug) : [];
+  const scores = hasLeaderboard ? await getGameScores(gameSlug) : [];
+  const dataEntries = hasData ? await getGameDataEntries(gameSlug) : [];
 
   return (
     <div className="min-h-screen bg-background">
@@ -81,7 +90,10 @@ export default async function GameDashboardPage({ params }: Props) {
             )}
           </div>
           <p className="text-muted-foreground">
-            Manage players and battles for {game.name}
+            Manage {game.name}
+            <span className="ml-2 text-xs">
+              [{game.capabilities.map(c => c.toUpperCase()).join(', ')}]
+            </span>
           </p>
           {game.motd && (
             <p className="text-sm text-muted-foreground mt-1 italic">
@@ -100,10 +112,24 @@ export default async function GameDashboardPage({ params }: Props) {
               <Users className="w-4 h-4 mr-2" />
               PLAYERS
             </TabsTrigger>
-            <TabsTrigger value="battles" data-testid="tab-game-battles">
-              <Swords className="w-4 h-4 mr-2" />
-              BATTLES
-            </TabsTrigger>
+            {hasAsync && (
+              <TabsTrigger value="battles" data-testid="tab-game-battles">
+                <Swords className="w-4 h-4 mr-2" />
+                BATTLES
+              </TabsTrigger>
+            )}
+            {hasLeaderboard && (
+              <TabsTrigger value="leaderboards" data-testid="tab-game-leaderboards">
+                <Trophy className="w-4 h-4 mr-2" />
+                LEADERBOARDS
+              </TabsTrigger>
+            )}
+            {hasData && (
+              <TabsTrigger value="data" data-testid="tab-game-data">
+                <Database className="w-4 h-4 mr-2" />
+                DATA
+              </TabsTrigger>
+            )}
             <TabsTrigger value="audit" data-testid="tab-game-audit">
               <ScrollText className="w-4 h-4 mr-2" />
               AUDIT LOG
@@ -130,63 +156,97 @@ export default async function GameDashboardPage({ params }: Props) {
                   </CardContent>
                 </Card>
 
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium uppercase">ACTIVE BATTLES</CardTitle>
-                    <Activity className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold" data-testid="stat-game-active-battles">{stats.activeBattles}</div>
-                    <p className="text-xs text-muted-foreground">Currently in progress</p>
-                  </CardContent>
-                </Card>
+                {hasAsync && (
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium uppercase">ACTIVE BATTLES</CardTitle>
+                      <Activity className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold" data-testid="stat-game-active-battles">{stats.activeBattles}</div>
+                      <p className="text-xs text-muted-foreground">Currently in progress</p>
+                    </CardContent>
+                  </Card>
+                )}
 
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium uppercase">PENDING BATTLES</CardTitle>
-                    <Clock className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold" data-testid="stat-game-pending-battles">{stats.pendingBattles}</div>
-                    <p className="text-xs text-muted-foreground">Waiting for opponent</p>
-                  </CardContent>
-                </Card>
+                {hasAsync && (
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium uppercase">PENDING BATTLES</CardTitle>
+                      <Clock className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold" data-testid="stat-game-pending-battles">{stats.pendingBattles}</div>
+                      <p className="text-xs text-muted-foreground">Waiting for opponent</p>
+                    </CardContent>
+                  </Card>
+                )}
 
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium uppercase">COMPLETED</CardTitle>
-                    <Trophy className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold" data-testid="stat-game-completed-battles">{stats.completedBattles}</div>
-                    <p className="text-xs text-muted-foreground">Finished battles</p>
-                  </CardContent>
-                </Card>
+                {hasAsync && (
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium uppercase">COMPLETED</CardTitle>
+                      <Trophy className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold" data-testid="stat-game-completed-battles">{stats.completedBattles}</div>
+                      <p className="text-xs text-muted-foreground">Finished battles</p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {hasLeaderboard && (
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium uppercase">TOTAL SCORES</CardTitle>
+                      <Trophy className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold" data-testid="stat-game-total-scores">{stats.totalScores}</div>
+                      <p className="text-xs text-muted-foreground">Score submissions</p>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {hasData && (
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium uppercase">DATA ENTRIES</CardTitle>
+                      <Database className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold" data-testid="stat-game-total-data">{stats.totalDataEntries}</div>
+                      <p className="text-xs text-muted-foreground">Stored key-value pairs</p>
+                    </CardContent>
+                  </Card>
+                )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium uppercase">TOTAL BATTLES</CardTitle>
-                    <Swords className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold" data-testid="stat-game-total-battles">{stats.totalBattles}</div>
-                    <p className="text-xs text-muted-foreground">All-time battles created</p>
-                  </CardContent>
-                </Card>
+              {hasAsync && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium uppercase">TOTAL BATTLES</CardTitle>
+                      <Swords className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold" data-testid="stat-game-total-battles">{stats.totalBattles}</div>
+                      <p className="text-xs text-muted-foreground">All-time battles created</p>
+                    </CardContent>
+                  </Card>
 
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium uppercase">ABANDONED</CardTitle>
-                    <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold" data-testid="stat-game-abandoned-battles">{stats.abandonedBattles}</div>
-                    <p className="text-xs text-muted-foreground">Cancelled before starting</p>
-                  </CardContent>
-                </Card>
-              </div>
+                  <Card>
+                    <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium uppercase">ABANDONED</CardTitle>
+                      <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold" data-testid="stat-game-abandoned-battles">{stats.abandonedBattles}</div>
+                      <p className="text-xs text-muted-foreground">Cancelled before starting</p>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
 
               <Card>
                 <CardHeader>
@@ -202,18 +262,34 @@ export default async function GameDashboardPage({ params }: Props) {
                       <div className="text-3xl font-bold">{stats.bannedPlayers}</div>
                       <div className="text-xs text-muted-foreground uppercase">BANNED PLAYERS</div>
                     </div>
-                    <div className="text-center">
-                      <div className="text-3xl font-bold">{stats.activeBattles + stats.pendingBattles}</div>
-                      <div className="text-xs text-muted-foreground uppercase">ONGOING BATTLES</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-3xl font-bold">
-                        {stats.completedBattles > 0 
-                          ? Math.round((stats.completedBattles / stats.totalBattles) * 100) 
-                          : 0}%
+                    {hasAsync && (
+                      <>
+                        <div className="text-center">
+                          <div className="text-3xl font-bold">{stats.activeBattles + stats.pendingBattles}</div>
+                          <div className="text-xs text-muted-foreground uppercase">ONGOING BATTLES</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-3xl font-bold">
+                            {stats.completedBattles > 0 
+                              ? Math.round((stats.completedBattles / stats.totalBattles) * 100) 
+                              : 0}%
+                          </div>
+                          <div className="text-xs text-muted-foreground uppercase">COMPLETION RATE</div>
+                        </div>
+                      </>
+                    )}
+                    {hasLeaderboard && (
+                      <div className="text-center">
+                        <div className="text-3xl font-bold">{stats.totalScores}</div>
+                        <div className="text-xs text-muted-foreground uppercase">TOTAL SCORES</div>
                       </div>
-                      <div className="text-xs text-muted-foreground uppercase">COMPLETION RATE</div>
-                    </div>
+                    )}
+                    {hasData && (
+                      <div className="text-center">
+                        <div className="text-3xl font-bold">{stats.totalDataEntries}</div>
+                        <div className="text-xs text-muted-foreground uppercase">DATA ENTRIES</div>
+                      </div>
+                    )}
                   </div>
                 </CardContent>
               </Card>
@@ -236,7 +312,7 @@ export default async function GameDashboardPage({ params }: Props) {
                       <Badge variant="outline" className="text-[10px] font-mono">POST</Badge>
                       <span>/api/{gameSlug}/ping</span>
                     </div>
-                    {game.capabilities.includes('async') && (
+                    {hasAsync && (
                       <>
                         <div className="flex items-center gap-2">
                           <Badge variant="outline" className="text-[10px] font-mono">GET/POST</Badge>
@@ -248,17 +324,23 @@ export default async function GameDashboardPage({ params }: Props) {
                         </div>
                       </>
                     )}
-                    {game.capabilities.includes('leaderboard') && (
+                    {hasLeaderboard && (
                       <div className="flex items-center gap-2">
                         <Badge variant="outline" className="text-[10px] font-mono">GET/POST</Badge>
                         <span>/api/{gameSlug}/scores</span>
                       </div>
                     )}
-                    {game.capabilities.includes('data') && (
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-[10px] font-mono">GET/POST/DEL</Badge>
-                        <span>/api/{gameSlug}/data/[key]</span>
-                      </div>
+                    {hasData && (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-[10px] font-mono">GET/POST/DEL</Badge>
+                          <span>/api/{gameSlug}/data/[key]</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-[10px] font-mono">POST</Badge>
+                          <span>/api/{gameSlug}/data/[key]/delete</span>
+                        </div>
+                      </>
                     )}
                   </div>
                 </CardContent>
@@ -270,9 +352,23 @@ export default async function GameDashboardPage({ params }: Props) {
             <PlayerManagement players={players} gameSlug={gameSlug} />
           </TabsContent>
 
-          <TabsContent value="battles">
-            <BattleManagement battles={battles} />
-          </TabsContent>
+          {hasAsync && (
+            <TabsContent value="battles">
+              <BattleManagement battles={battles} />
+            </TabsContent>
+          )}
+
+          {hasLeaderboard && (
+            <TabsContent value="leaderboards">
+              <ScoreManagement scores={scores} gameSlug={gameSlug} />
+            </TabsContent>
+          )}
+
+          {hasData && (
+            <TabsContent value="data">
+              <DataManagement entries={dataEntries} gameSlug={gameSlug} />
+            </TabsContent>
+          )}
 
           <TabsContent value="audit">
             <AuditLogViewer gameSlug={gameSlug} gameName={game.name} />

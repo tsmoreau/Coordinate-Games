@@ -6,6 +6,8 @@ import { connectToDatabase } from '@/lib/mongodb';
 import { Battle } from '@/models/Battle';
 import { GameIdentity, VALID_AVATARS, PlayerAvatar } from '@/models/GameIdentity';
 import { Game } from '@/models/Game';
+import { Score } from '@/models/Score';
+import { Data } from '@/models/Data';
 import { AuditLog } from '@/models/AuditLog';
 import { revalidatePath } from 'next/cache';
 
@@ -97,6 +99,28 @@ export interface GameStats {
   pendingBattles: number;
   completedBattles: number;
   abandonedBattles: number;
+  totalScores: number;
+  totalDataEntries: number;
+}
+
+export interface AdminScoreEntry {
+  id: string;
+  deviceId: string;
+  displayName: string;
+  score: number;
+  metadata: Record<string, unknown>;
+  createdAt: string;
+}
+
+export interface AdminDataEntry {
+  id: string;
+  key: string;
+  value: Record<string, unknown>;
+  scope: string;
+  ownerId: string | null;
+  ownerDisplayName: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 async function requireAdminAuth(): Promise<{ success: true } | { success: false; error: string }> {
@@ -376,7 +400,9 @@ export async function getGameStats(gameSlug: string): Promise<GameStats> {
       activeBattles,
       pendingBattles,
       completedBattles,
-      abandonedBattles
+      abandonedBattles,
+      totalScores,
+      totalDataEntries
     ] = await Promise.all([
       GameIdentity.countDocuments({ gameSlug }),
       GameIdentity.countDocuments({ gameSlug, isActive: true }),
@@ -385,7 +411,9 @@ export async function getGameStats(gameSlug: string): Promise<GameStats> {
       Battle.countDocuments({ gameSlug, status: 'active' }),
       Battle.countDocuments({ gameSlug, status: 'pending' }),
       Battle.countDocuments({ gameSlug, status: 'completed' }),
-      Battle.countDocuments({ gameSlug, status: 'abandoned' })
+      Battle.countDocuments({ gameSlug, status: 'abandoned' }),
+      Score.countDocuments({ gameSlug }),
+      Data.countDocuments({ gameSlug })
     ]);
 
     return {
@@ -396,7 +424,9 @@ export async function getGameStats(gameSlug: string): Promise<GameStats> {
       activeBattles,
       pendingBattles,
       completedBattles,
-      abandonedBattles
+      abandonedBattles,
+      totalScores,
+      totalDataEntries
     };
   } catch (error) {
     console.error('Error fetching game stats:', error);
@@ -1058,3 +1088,100 @@ export async function getPlayerBattleHistory(
   }
 }
 
+export async function getGameScores(gameSlug: string): Promise<AdminScoreEntry[]> {
+  const auth = await requireAdminAuth();
+  if (!auth.success) {
+    throw new Error(auth.error);
+  }
+
+  try {
+    await connectToDatabase();
+
+    const scores = await Score.find({ gameSlug })
+      .sort({ score: -1 })
+      .limit(200)
+      .lean();
+
+    return scores.map((s) => ({
+      id: String(s._id),
+      deviceId: s.deviceId,
+      displayName: s.displayName,
+      score: s.score,
+      metadata: s.metadata || {},
+      createdAt: s.createdAt.toISOString(),
+    }));
+  } catch (error) {
+    console.error('Error fetching game scores:', error);
+    throw new Error('Failed to fetch game scores');
+  }
+}
+
+export async function getGameDataEntries(gameSlug: string): Promise<AdminDataEntry[]> {
+  const auth = await requireAdminAuth();
+  if (!auth.success) {
+    throw new Error(auth.error);
+  }
+
+  try {
+    await connectToDatabase();
+
+    const entries = await Data.find({ gameSlug })
+      .sort({ updatedAt: -1 })
+      .limit(200)
+      .lean();
+
+    return entries.map((d) => ({
+      id: String(d._id),
+      key: d.key,
+      value: d.value,
+      scope: d.scope,
+      ownerId: d.ownerId,
+      ownerDisplayName: d.ownerDisplayName,
+      createdAt: d.createdAt.toISOString(),
+      updatedAt: d.updatedAt.toISOString(),
+    }));
+  } catch (error) {
+    console.error('Error fetching game data entries:', error);
+    throw new Error('Failed to fetch game data entries');
+  }
+}
+
+export async function deleteScore(scoreId: string): Promise<{ success: boolean; error?: string }> {
+  const auth = await requireAdminAuth();
+  if (!auth.success) {
+    return { success: false, error: auth.error };
+  }
+
+  try {
+    await connectToDatabase();
+    const result = await Score.deleteOne({ _id: scoreId });
+    if (result.deletedCount === 0) {
+      return { success: false, error: 'Score not found' };
+    }
+    revalidatePath('/dashboard');
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting score:', error);
+    return { success: false, error: 'Failed to delete score' };
+  }
+}
+
+export async function deleteDataEntry(entryId: string): Promise<{ success: boolean; error?: string }> {
+  const auth = await requireAdminAuth();
+  if (!auth.success) {
+    return { success: false, error: auth.error };
+  }
+
+  try {
+    await connectToDatabase();
+    const result = await Data.deleteOne({ _id: entryId });
+    if (result.deletedCount === 0) {
+      return { success: false, error: 'Data entry not found' };
+    }
+    revalidatePath('/dashboard');
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting data entry:', error);
+    return { success: false, error: 'Failed to delete data entry' };
+  }
+}
