@@ -108,6 +108,7 @@ export interface AdminScoreEntry {
   deviceId: string;
   displayName: string;
   score: number;
+  category: string;
   metadata: Record<string, unknown>;
   createdAt: string;
 }
@@ -1107,6 +1108,7 @@ export async function getGameScores(gameSlug: string): Promise<AdminScoreEntry[]
       deviceId: s.deviceId,
       displayName: s.displayName,
       score: s.score,
+      category: s.category || 'default',
       metadata: s.metadata || {},
       createdAt: s.createdAt.toISOString(),
     }));

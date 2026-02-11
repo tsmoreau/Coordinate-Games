@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useTransition } from 'react';
+import { useState, useTransition, useMemo } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,6 +15,13 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import {
   Search,
   Trash2,
@@ -43,13 +50,21 @@ interface ScoreManagementProps {
 export default function ScoreManagement({ scores: initialScores, gameSlug }: ScoreManagementProps) {
   const [scores, setScores] = useState(initialScores);
   const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [deleteTarget, setDeleteTarget] = useState<AdminScoreEntry | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const filtered = scores.filter(s =>
-    s.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.deviceId.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const categories = useMemo(() => {
+    const cats = new Set(scores.map(s => s.category || 'default'));
+    return Array.from(cats).sort();
+  }, [scores]);
+
+  const filtered = scores.filter(s => {
+    const matchesSearch = s.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      s.deviceId.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesCategory = categoryFilter === 'all' || (s.category || 'default') === categoryFilter;
+    return matchesSearch && matchesCategory;
+  });
 
   const handleDelete = () => {
     if (!deleteTarget) return;
@@ -68,8 +83,8 @@ export default function ScoreManagement({ scores: initialScores, gameSlug }: Sco
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
-        <div className="relative flex-1">
+      <div className="flex items-center gap-2 flex-wrap">
+        <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search by player name or device ID..."
@@ -79,6 +94,19 @@ export default function ScoreManagement({ scores: initialScores, gameSlug }: Sco
             data-testid="input-score-search"
           />
         </div>
+        {categories.length > 1 && (
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-[160px]" data-testid="select-score-category">
+              <SelectValue placeholder="Category" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Categories</SelectItem>
+              {categories.map(cat => (
+                <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
         <Badge variant="secondary">
           <Hash className="w-3 h-3 mr-1" />
           {filtered.length}
@@ -106,8 +134,15 @@ export default function ScoreManagement({ scores: initialScores, gameSlug }: Sco
                       <div className="font-medium" data-testid={`text-score-player-${score.id}`}>
                         {score.displayName}
                       </div>
-                      <div className="text-xs text-muted-foreground font-mono">
-                        {score.deviceId.substring(0, 12)}...
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span className="text-xs text-muted-foreground font-mono">
+                          {score.deviceId.substring(0, 12)}...
+                        </span>
+                        {score.category && score.category !== 'default' && (
+                          <Badge variant="outline" className="text-[10px] uppercase">
+                            {score.category}
+                          </Badge>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -160,7 +195,8 @@ export default function ScoreManagement({ scores: initialScores, gameSlug }: Sco
           <AlertDialogHeader>
             <AlertDialogTitle>DELETE SCORE</AlertDialogTitle>
             <AlertDialogDescription>
-              Delete the score of {deleteTarget?.score.toLocaleString()} by {deleteTarget?.displayName}? This cannot be undone.
+              Delete the score of {deleteTarget?.score.toLocaleString()} by {deleteTarget?.displayName}
+              {deleteTarget?.category && deleteTarget.category !== 'default' ? ` in category "${deleteTarget.category}"` : ''}? This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

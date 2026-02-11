@@ -5,6 +5,7 @@ export interface IScore {
   deviceId: string;
   displayName: string;
   score: number;
+  category: string;
   metadata: Record<string, unknown>;
   createdAt: Date;
 }
@@ -32,6 +33,11 @@ const ScoreSchema = new Schema<IScoreDocument>({
     required: true,
     index: true
   },
+  category: {
+    type: String,
+    default: 'default',
+    index: true
+  },
   metadata: { 
     type: Schema.Types.Mixed, 
     default: {} 
@@ -43,9 +49,11 @@ const ScoreSchema = new Schema<IScoreDocument>({
   }
 });
 
+ScoreSchema.index({ gameSlug: 1, category: 1, score: -1 });
+ScoreSchema.index({ gameSlug: 1, category: 1, deviceId: 1 });
+ScoreSchema.index({ gameSlug: 1, category: 1, createdAt: -1 });
 ScoreSchema.index({ gameSlug: 1, score: -1 });
 ScoreSchema.index({ gameSlug: 1, deviceId: 1 });
-ScoreSchema.index({ gameSlug: 1, createdAt: -1 });
 
 if (mongoose.models.Score) {
   delete mongoose.models.Score;

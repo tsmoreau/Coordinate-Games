@@ -8,6 +8,7 @@ import { z } from 'zod';
 
 const submitScoreSchema = z.object({
   score: z.number().int().min(0).max(999999999),
+  category: z.string().min(1).max(64).regex(/^[a-zA-Z0-9_-]+$/, 'Category must be alphanumeric with dashes/underscores').optional(),
   metadata: z.record(z.unknown()).optional(),
 });
 
@@ -29,6 +30,7 @@ export async function GET(
     const limitParam = searchParams.get('limit');
     const offsetParam = searchParams.get('offset');
     const period = searchParams.get('period');
+    const category = searchParams.get('category');
 
     const limit = Math.min(Math.max(1, parseInt(limitParam || '100', 10)), 500);
     const offset = Math.max(0, parseInt(offsetParam || '0', 10));
@@ -36,6 +38,10 @@ export async function GET(
     const baseQuery: Record<string, unknown> = { 
       gameSlug: gameResult.slug 
     };
+
+    if (category) {
+      baseQuery.category = category;
+    }
 
     if (period === 'day') {
       baseQuery.createdAt = { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) };
@@ -52,11 +58,14 @@ export async function GET(
       .skip(offset)
       .limit(limit);
 
+    const categories = await Score.distinct('category', { gameSlug: gameResult.slug });
+
     const formattedScores = scores.map((score, index) => ({
       rank: offset + index + 1,
       deviceId: score.deviceId,
       displayName: score.displayName,
       score: score.score,
+      category: score.category || 'default',
       metadata: score.metadata,
       createdAt: score.createdAt,
     }));
@@ -64,6 +73,8 @@ export async function GET(
     return NextResponse.json({
       success: true,
       game: { slug: gameResult.slug, name: gameResult.game.name },
+      category: category || null,
+      categories,
       scores: formattedScores,
       pagination: {
         total,
@@ -112,13 +123,15 @@ export async function POST(
       }, { status: 400 });
     }
 
-    const { score, metadata } = parsed.data;
+    const { score, category, metadata } = parsed.data;
+    const resolvedCategory = category || 'default';
 
     const newScore = new Score({
       gameSlug: gameResult.slug,
       deviceId: auth.deviceId,
       displayName: auth.displayName,
       score,
+      category: resolvedCategory,
       metadata: metadata || {},
       createdAt: new Date(),
     });
@@ -127,11 +140,13 @@ export async function POST(
 
     const rank = await Score.countDocuments({
       gameSlug: gameResult.slug,
+      category: resolvedCategory,
       score: { $gt: score }
     }) + 1;
 
     const personalBest = await Score.findOne({
       gameSlug: gameResult.slug,
+      category: resolvedCategory,
       deviceId: auth.deviceId
     }).sort({ score: -1 });
 
@@ -144,6 +159,7 @@ export async function POST(
         deviceId: newScore.deviceId,
         displayName: newScore.displayName,
         score: newScore.score,
+        category: resolvedCategory,
         rank,
         isPersonalBest,
         createdAt: newScore.createdAt,
