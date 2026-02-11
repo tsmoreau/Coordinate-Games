@@ -27,6 +27,7 @@ import DataManagement from '@/components/DataManagement';
 import GameAdminPanel from '@/components/GameAdminPanel';
 import AuditLogViewer from '@/components/AuditLogViewer';
 import { getGameBySlug, getGameStats, getGamePlayers, getGameBattles, getGameScores, getGameDataEntries } from '@/app/actions/admin';
+import { getGameAvatars } from '@/models/Game';
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
 
@@ -58,6 +59,7 @@ export default async function GameDashboardPage({ params }: Props) {
   const hasAsync = game.capabilities.includes('async');
   const hasLeaderboard = game.capabilities.includes('leaderboard');
   const hasData = game.capabilities.includes('data');
+  const gameAvatars = getGameAvatars(game);
 
   const stats = await getGameStats(gameSlug);
   const players = await getGamePlayers(gameSlug);
@@ -349,7 +351,7 @@ export default async function GameDashboardPage({ params }: Props) {
           </TabsContent>
 
           <TabsContent value="players">
-            <PlayerManagement players={players} gameSlug={gameSlug} />
+            <PlayerManagement players={players} gameSlug={gameSlug} gameAvatars={gameAvatars} />
           </TabsContent>
 
           {hasAsync && (
@@ -382,6 +384,7 @@ export default async function GameDashboardPage({ params }: Props) {
               motd={game.motd} 
               haikunator={game.haikunator}
               versioning={game.versioning}
+              avatars={game.avatars || null}
             />
           </TabsContent>
         </Tabs>

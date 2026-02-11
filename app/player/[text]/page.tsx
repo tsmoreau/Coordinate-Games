@@ -46,17 +46,9 @@ function getBattleStatusBadge(status: string, winnerId: string | null, deviceId:
 }
 
 function PlayerAvatar({ avatar }: { avatar: string }) {
-  const birdNumber = avatar.replace('BIRD', '').padStart(3, '0');
-  const imageSrc = `/birb${birdNumber}.png`;
-  
   return (
-    <div className="mx-auto w-24 h-24 rounded-full bg-muted flex items-center justify-center mb-4 border-2 border-border overflow-hidden">
-      <img 
-        src={imageSrc} 
-        alt={`${avatar} avatar`}
-        className="w-16 h-16 object-contain"
-        data-testid="img-player-avatar"
-      />
+    <div className="mx-auto w-24 h-24 rounded-full bg-muted flex items-center justify-center mb-4 border-2 border-border" data-testid="img-player-avatar">
+      <span className="text-lg font-bold uppercase text-muted-foreground">{avatar.substring(0, 5)}</span>
     </div>
   );
 }

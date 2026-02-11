@@ -113,20 +113,12 @@ export default function BattlesList({
                   <div className="flex items-center gap-4 min-w-0 w-full">
                     <div className="w-12 shrink-0 flex items-center justify-center">
                       <div className="flex -space-x-3">
-                        <div className="w-9 h-9 overflow-hidden relative z-10">
-                          <img 
-                            src={`/birb${battle.player1Avatar?.replace('BIRD', '').padStart(3, '0') || '001'}.png`} 
-                            alt={battle.player1Avatar || 'BIRD1'}
-                            className="w-full h-full object-contain"
-                          />
+                        <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center relative z-10 border-2 border-background">
+                          <span className="text-[9px] font-bold uppercase text-muted-foreground">{(battle.player1Avatar || 'P1').substring(0, 3)}</span>
                         </div>
                         {battle.player2Avatar && (
-                          <div className="w-9 h-9 overflow-hidden relative z-0">
-                            <img 
-                              src={`/birb${battle.player2Avatar.replace('BIRD', '').padStart(3, '0')}.png`} 
-                              alt={battle.player2Avatar}
-                              className="w-full h-full object-contain"
-                            />
+                          <div className="w-9 h-9 rounded-full bg-muted flex items-center justify-center relative z-0 border-2 border-background">
+                            <span className="text-[9px] font-bold uppercase text-muted-foreground">{battle.player2Avatar.substring(0, 3)}</span>
                           </div>
                         )}
                       </div>

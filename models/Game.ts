@@ -13,12 +13,22 @@ export interface IVersioning {
   updateUrl: string | null;
 }
 
+export const DEFAULT_AVATARS = [
+  'BIRD1', 'BIRD2', 'BIRD3', 'BIRD4', 'BIRD5', 'BIRD6',
+  'BIRD7', 'BIRD8', 'BIRD9', 'BIRD10', 'BIRD11', 'BIRD12'
+];
+
+export function getGameAvatars(game: { avatars?: string[] | null }): string[] {
+  return (game.avatars && game.avatars.length > 0) ? game.avatars : DEFAULT_AVATARS;
+}
+
 export interface IGame {
   slug: string;
   name: string;
   description?: string | null;
   tagline?: string | null;
   capabilities: GameCapability[];
+  avatars?: string[] | null;
   haikunator?: IHaikunatorConfig | null;
   versioning?: IVersioning | null;
   maintenance: boolean;
@@ -69,6 +79,10 @@ const GameSchema = new Schema<IGameDocument>({
       validator: (v: string[]) => v.length > 0,
       message: 'Game must have at least one capability'
     }
+  },
+  avatars: {
+    type: [String],
+    default: null
   },
   haikunator: {
     type: HaikunatorSchema,
