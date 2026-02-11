@@ -15,8 +15,7 @@ import {
   UserSearch,
   BookType,
   Save,
-  Tag,
-  Users
+  Tag
 } from 'lucide-react';
 import { 
   recoverPlayerByDeviceId, 
@@ -26,8 +25,7 @@ import {
   toggleGameMaintenance,
   updateGameMotd,
   updateGameHaikunator,
-  updateGameVersioning,
-  updateGameAvatars
+  updateGameVersioning
 } from '@/app/actions/admin';
 import type { AdminPlayerDetails } from '@/app/actions/admin';
 
@@ -38,10 +36,9 @@ interface GameAdminPanelProps {
   motd: string | null;
   haikunator: { adjectives: string[]; nouns: string[] } | null;
   versioning: { minVersion: string; currentVersion: string; updateUrl: string | null } | null;
-  avatars: string[] | null;
 }
 
-export default function GameAdminPanel({ gameSlug, gameName, maintenance, motd, haikunator, versioning, avatars }: GameAdminPanelProps) {
+export default function GameAdminPanel({ gameSlug, gameName, maintenance, motd, haikunator, versioning }: GameAdminPanelProps) {
   const [deviceIdSearch, setDeviceIdSearch] = useState('');
   const [recoveredPlayer, setRecoveredPlayer] = useState<AdminPlayerDetails | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -59,8 +56,6 @@ export default function GameAdminPanel({ gameSlug, gameName, maintenance, motd, 
   const [minVersion, setMinVersion] = useState(versioning?.minVersion ?? '');
   const [currentVersion, setCurrentVersion] = useState(versioning?.currentVersion ?? '');
   const [updateUrl, setUpdateUrl] = useState(versioning?.updateUrl ?? '');
-
-  const [avatarList, setAvatarList] = useState((avatars ?? []).join('\n'));
 
   async function handleRecoverPlayer() {
     if (!deviceIdSearch.trim()) return;
@@ -426,57 +421,6 @@ export default function GameAdminPanel({ gameSlug, gameName, maintenance, motd, 
             </Button>
             <p className="text-xs text-muted-foreground">
               Clear all three fields and save to remove versioning
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="uppercase flex items-center gap-2">
-            <Users className="w-5 h-5" />
-            AVATARS
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Define the avatar identifiers available for players in {gameName}. Enter one avatar ID per line (e.g., KNIGHT1, MAGE2). If empty, the default bird avatars will be used.
-          </p>
-          <div className="space-y-2">
-            <label className="text-sm font-medium uppercase">AVATAR IDS</label>
-            <textarea
-              className="flex min-h-[160px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 font-mono"
-              placeholder={"BIRD1\nBIRD2\nBIRD3\n..."}
-              value={avatarList}
-              onChange={(e) => setAvatarList(e.target.value)}
-              data-testid="textarea-avatars"
-            />
-            <p className="text-xs text-muted-foreground">
-              {avatarList.split('\n').filter(w => w.trim()).length} avatars defined
-              {avatarList.split('\n').filter(w => w.trim()).length === 0 && ' (using default bird set)'}
-            </p>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              onClick={async () => {
-                setActionLoading('avatars');
-                const list = avatarList.split('\n').map(a => a.trim()).filter(Boolean);
-                const result = await updateGameAvatars(gameSlug, list);
-                if (result.success) {
-                  setActionResult({ type: 'success', message: `Avatar list saved (${list.length} avatars${list.length === 0 ? ', using defaults' : ''})` });
-                } else {
-                  setActionResult({ type: 'error', message: result.error || 'Failed to save avatar list' });
-                }
-                setActionLoading(null);
-              }}
-              disabled={actionLoading === 'avatars'}
-              data-testid="button-save-avatars"
-            >
-              <Save className="w-4 h-4 mr-2" />
-              {actionLoading === 'avatars' ? 'SAVING...' : 'SAVE AVATARS'}
-            </Button>
-            <p className="text-xs text-muted-foreground">
-              Clear all entries and save to revert to default bird avatars
             </p>
           </div>
         </CardContent>

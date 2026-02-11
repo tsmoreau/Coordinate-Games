@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
-import { GameIdentity } from '@/models/GameIdentity';
-import { getGameAvatars } from '@/models/Game';
+import { GameIdentity, VALID_AVATARS, PlayerAvatar } from '@/models/GameIdentity';
 import { validateGame, gameNotFoundResponse } from '@/lib/gameMiddleware';
 import { generateSecureToken, hashToken } from '@/lib/auth';
 import { generatePlayerName } from '@/lib/battleNames';
@@ -29,15 +28,13 @@ export async function POST(
     const body = await request.json();
     const { displayName, avatar } = body;
 
-    const validAvatars = getGameAvatars(gameContext.game);
-
     const auth = await authenticateDevice(request, gameSlug);
 
     if (auth) {
       const updateFields: Record<string, unknown> = {};
 
-      if (avatar && validAvatars.includes(avatar)) {
-        updateFields.avatar = avatar;
+      if (avatar && VALID_AVATARS.includes(avatar)) {
+        updateFields.avatar = avatar as PlayerAvatar;
       }
 
       if (displayName && typeof displayName === 'string') {
@@ -75,9 +72,9 @@ export async function POST(
       });
     }
 
-    let validatedAvatar = validAvatars[Math.floor(Math.random() * validAvatars.length)];
-    if (avatar && validAvatars.includes(avatar)) {
-      validatedAvatar = avatar;
+    let validatedAvatar: PlayerAvatar = 'BIRD1';
+    if (avatar && VALID_AVATARS.includes(avatar)) {
+      validatedAvatar = avatar as PlayerAvatar;
     }
 
     let validatedDisplayName: string | null = null;

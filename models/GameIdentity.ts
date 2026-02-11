@@ -5,7 +5,7 @@ export const VALID_AVATARS = [
   'BIRD7', 'BIRD8', 'BIRD9', 'BIRD10', 'BIRD11', 'BIRD12'
 ] as const;
 
-export type PlayerAvatar = string;
+export type PlayerAvatar = typeof VALID_AVATARS[number];
 
 export interface IGameIdentity {
   gameSlug: string;
@@ -41,6 +41,7 @@ const GameIdentitySchema = new Schema<IGameIdentityDocument>({
   },
   avatar: {
     type: String,
+    enum: VALID_AVATARS,
     default: 'BIRD1'
   },
   createdAt: {

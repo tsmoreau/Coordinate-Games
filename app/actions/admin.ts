@@ -4,8 +4,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { connectToDatabase } from '@/lib/mongodb';
 import { Battle } from '@/models/Battle';
-import { GameIdentity } from '@/models/GameIdentity';
-import { Game, getGameAvatars } from '@/models/Game';
+import { GameIdentity, VALID_AVATARS, PlayerAvatar } from '@/models/GameIdentity';
+import { Game } from '@/models/Game';
 import { Score } from '@/models/Score';
 import { Data } from '@/models/Data';
 import { AuditLog } from '@/models/AuditLog';
@@ -364,28 +364,6 @@ export async function updateGameMotd(slug: string, motd: string): Promise<{ succ
   }
 }
 
-export async function updateGameAvatars(slug: string, avatars: string[]): Promise<{ success: boolean; error?: string }> {
-  const auth = await requireAdminAuth();
-  if (!auth.success) {
-    return { success: false, error: auth.error };
-  }
-
-  try {
-    await connectToDatabase();
-    const game = await Game.findOne({ slug });
-    if (!game) return { success: false, error: 'Game not found' };
-
-    const cleaned = avatars.map(a => a.trim()).filter(Boolean);
-    await Game.updateOne({ slug }, { avatars: cleaned.length > 0 ? cleaned : null });
-    revalidatePath('/dashboard');
-    revalidatePath(`/dashboard/${slug}`);
-    return { success: true };
-  } catch (error) {
-    console.error('Error updating avatars:', error);
-    return { success: false, error: 'Failed to update avatars' };
-  }
-}
-
 export async function toggleGameActive(slug: string): Promise<{ success: boolean; error?: string }> {
   const auth = await requireAdminAuth();
   if (!auth.success) {
@@ -672,14 +650,8 @@ export async function changeAvatar(gameSlug: string, deviceId: string, newAvatar
   try {
     await connectToDatabase();
 
-    const game = await Game.findOne({ slug: gameSlug });
-    if (!game) {
-      return { success: false, error: 'Game not found' };
-    }
-
-    const validAvatars = getGameAvatars(game);
-    if (!validAvatars.includes(newAvatar)) {
-      return { success: false, error: 'Invalid avatar for this game' };
+    if (!VALID_AVATARS.includes(newAvatar as PlayerAvatar)) {
+      return { success: false, error: 'Invalid avatar' };
     }
 
     const player = await GameIdentity.findOne({ gameSlug, deviceId });

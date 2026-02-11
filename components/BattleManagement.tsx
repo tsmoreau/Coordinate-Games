@@ -190,12 +190,20 @@ export default function BattleManagement({ battles }: BattleManagementProps) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 mb-2">
                       <div className="flex -space-x-2">
-                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center border-2 border-background">
-                          <span className="text-[9px] font-bold uppercase text-muted-foreground">{battle.player1Avatar.substring(0, 3)}</span>
+                        <div className="w-8 h-8 overflow-hidden">
+                          <img 
+                            src={`/birb${battle.player1Avatar.replace('BIRD', '').padStart(3, '0')}.png`} 
+                            alt={battle.player1Avatar}
+                            className="w-full h-full object-contain"
+                          />
                         </div>
                         {battle.player2Avatar && (
-                          <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center border-2 border-background">
-                            <span className="text-[9px] font-bold uppercase text-muted-foreground">{battle.player2Avatar.substring(0, 3)}</span>
+                          <div className="w-8 h-8 overflow-hidden">
+                            <img 
+                              src={`/birb${battle.player2Avatar.replace('BIRD', '').padStart(3, '0')}.png`} 
+                              alt={battle.player2Avatar}
+                              className="w-full h-full object-contain"
+                            />
                           </div>
                         )}
                       </div>

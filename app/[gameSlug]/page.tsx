@@ -163,8 +163,12 @@ export default async function GamePage({ params }: Props) {
                         <div className="hover:border-foreground/20 hover:bg-muted/50 transition-all cursor-pointer active:scale-[0.99] relative border border-border rounded-lg">
                           <div className="flex items-center justify-between p-3">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center shrink-0">
-                                <span className="text-[10px] font-bold uppercase text-muted-foreground">{device.avatar.substring(0, 4)}</span>
+                              <div className="w-10 h-10 overflow-hidden shrink-0">
+                                <img
+                                  src={`/birb${device.avatar.replace('BIRD', '').padStart(3, '0')}.png`}
+                                  alt={device.avatar}
+                                  className="w-full h-full object-contain"
+                                />
                               </div>
                               <div>
                                 <p className="font-bold text-sm uppercase tracking-tight">
