@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
-import { validateAsyncGame, isGameContext } from '@/lib/gameMiddleware';
+import { validateGame, gameNotFoundResponse } from '@/lib/gameMiddleware';
 import { authenticateDevice, unauthorizedResponse } from '@/lib/authMiddleware';
 import { GameIdentity } from '@/models/GameIdentity';
 import { Ping } from '@/models/Ping';
@@ -36,9 +36,9 @@ export async function GET(
     const clientVersion = searchParams.get('clientVersion');
     const ip = getClientIp(request);
 
-    const gameResult = await validateAsyncGame(gameSlug);
-    if (!isGameContext(gameResult)) {
-      return gameResult;
+    const gameResult = await validateGame(gameSlug);
+    if (!gameResult) {
+      return gameNotFoundResponse();
     }
 
     const { game } = gameResult;
@@ -110,9 +110,9 @@ export async function POST(
     const { gameSlug } = await params;
     const ip = getClientIp(request);
 
-    const gameResult = await validateAsyncGame(gameSlug);
-    if (!isGameContext(gameResult)) {
-      return gameResult;
+    const gameResult = await validateGame(gameSlug);
+    if (!gameResult) {
+      return gameNotFoundResponse();
     }
 
     const auth = await authenticateDevice(request, gameResult.slug);
