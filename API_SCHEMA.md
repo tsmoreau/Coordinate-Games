@@ -926,6 +926,39 @@ Delete a key-value pair. Global: any authenticated user can delete. Player/publi
 
 ---
 
+### POST `/api/[gameSlug]/data/[key]/delete`
+
+Alternative deletion endpoint using POST method, for clients that only support POST/GET. Behaves identically to `DELETE /api/[gameSlug]/data/[key]`.
+
+**Authentication:** **Auth Required**
+
+**Request Body:** None required.
+
+**Response:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `success` | boolean | Whether the deletion was successful |
+| `message` | string | Confirmation message |
+| `deletedKey` | string | The key that was deleted |
+
+**Example (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Data deleted",
+  "deletedKey": "old-settings"
+}
+```
+
+**Error Responses:**
+
+- `401` — Authentication required
+- `403` — Only the owner can delete this data
+- `404` — Data not found or game not found
+
+---
+
 ### GET `/api/[gameSlug]/data`
 
 List all keys for a game. For player scope, only returns caller's keys. Supports pagination and filtering.
