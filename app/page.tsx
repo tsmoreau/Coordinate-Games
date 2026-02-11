@@ -3,12 +3,13 @@ import Nav from "@/components/Nav";
 import IsometricHero from "@/components/IsometricHero";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { getHubStats } from "@/app/actions/battles";
+import { Badge } from "@/components/ui/badge";
+import { getActiveGames } from "@/app/actions/games";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const stats = await getHubStats();
+  const games = await getActiveGames();
 
   return (
     <div className="min-h-screen bg-background">
@@ -24,97 +25,66 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Minimal Games Section */}
+      {/* Games Section */}
       <main className="max-w-5xl mx-auto px-4 py-24">
         <section>
-          
-          <h2 className= "hidden font-mono text-xl font-bold uppercase tracking-tight text-center mb-8 text-muted-foreground">coordinate games</h2>
+          <h2 className="hidden font-mono text-xl font-bold uppercase tracking-tight text-center mb-8 text-muted-foreground">coordinate games</h2>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Bird Wars */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg text-center">
-                  Bird Wars: First Flight
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground text-center">
-                  Turn-based tactics in the vien of Advance Wars.
-                </p>
+            {games.map((game) => (
+              <Card key={game.slug}>
+                <CardHeader>
+                  <CardTitle className="text-lg text-center">
+                    {game.name}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {game.tagline && (
+                    <p className="text-sm text-muted-foreground text-center">
+                      {game.tagline}
+                    </p>
+                  )}
 
-                <p className="text-xs text-muted-foreground text-center">
-                  {stats.activeBattles} active · {stats.pendingBattles} waiting
-                </p>
+                  <div className="flex justify-center gap-2">
+                    {game.capabilities.map((cap) => (
+                      <Badge key={cap} variant="outline" className="text-xs font-mono uppercase">
+                        {cap}
+                      </Badge>
+                    ))}
+                  </div>
 
-                <Link href="/battles" className="block">
-                  <Button
-                    variant="outline"
-                    className="w-full"
-                    data-testid="button-birdwars-battles text-center"
-                  >
-                    Open
-                  </Button>
-                </Link>
-              </CardContent>
-            </Card>
+                  <p className="text-xs text-muted-foreground text-center">
+                    {game.playerCount} players
+                    {game.capabilities.includes('async') && (
+                      <> · {game.activeBattles} active · {game.pendingBattles} waiting</>
+                    )}
+                  </p>
 
-            {/* Power Pentagon */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg text-center">
-                  Pulse Pentagon
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground text-center">
-                  Score attack music arcade. Version of a classic.
-                </p>
-
-                <p className="text-xs text-muted-foreground text-center">
-                  Global leaderboard
-                </p>
-
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  disabled
-                  data-testid="button-powerpentagon-leaderboard"
-                >
-                  Coming Soon
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Power Pentagon */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg text-center">
-                  Play Chess
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-sm text-muted-foreground text-center">
-                  Online chess. For Playdate.
-                </p>
-
-                <p className="text-xs text-muted-foreground text-center">
-                  Global leaderboard
-                </p>
-
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  disabled
-                  data-testid="button-powerpentagon-leaderboard"
-                >
-                  Coming Soon
-                </Button>
-              </CardContent>
-            </Card>
+                  {game.maintenance ? (
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      disabled
+                    >
+                      Maintenance
+                    </Button>
+                  ) : (
+                    <Link href={`/${game.slug}`} className="block">
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                      >
+                        Open
+                      </Button>
+                    </Link>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </section>
       </main>
+
       <footer className="pb-8 text-center text-sm text-muted-foreground">
         <p>2026 Coordinate Games • Los Angeles</p>
       </footer>

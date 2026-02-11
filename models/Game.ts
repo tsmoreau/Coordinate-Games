@@ -16,6 +16,8 @@ export interface IVersioning {
 export interface IGame {
   slug: string;
   name: string;
+  description?: string | null;
+  tagline?: string | null;
   capabilities: GameCapability[];
   haikunator?: IHaikunatorConfig | null;
   versioning?: IVersioning | null;
@@ -50,6 +52,14 @@ const GameSchema = new Schema<IGameDocument>({
   name: { 
     type: String, 
     required: true 
+  },
+  description: {
+    type: String,
+    default: null
+  },
+  tagline: {
+    type: String,
+    default: null
   },
   capabilities: { 
     type: [String],
