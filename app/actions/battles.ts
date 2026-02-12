@@ -16,7 +16,7 @@ export interface BattleWithDetails {
   player1DeviceId: string;
   player2DeviceId: string | null;
   player1DisplayName: string;
-  player1Avatar: string;
+  player1Avatar: string | null;
   player2DisplayName: string | null;
   player2Avatar: string | null;
   status: 'pending' | 'active' | 'completed' | 'abandoned';
