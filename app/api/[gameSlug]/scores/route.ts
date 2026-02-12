@@ -31,6 +31,7 @@ export async function GET(
     const offsetParam = searchParams.get('offset');
     const period = searchParams.get('period');
     const category = searchParams.get('category');
+    const filter = searchParams.get('filter');
 
     const limit = Math.min(Math.max(1, parseInt(limitParam || '100', 10)), 500);
     const offset = Math.max(0, parseInt(offsetParam || '0', 10));
@@ -51,14 +52,59 @@ export async function GET(
       baseQuery.createdAt = { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) };
     }
 
+    const categories = await Score.distinct('category', { gameSlug: gameResult.slug });
+
+    if (filter === 'top') {
+      const matchStage: Record<string, unknown> = { gameSlug: gameResult.slug };
+      if (category) {
+        matchStage.category = category;
+      }
+      if (baseQuery.createdAt) {
+        matchStage.createdAt = baseQuery.createdAt;
+      }
+
+      const topScores = await Score.aggregate([
+        { $match: matchStage },
+        { $sort: { score: -1, createdAt: 1 } },
+        {
+          $group: {
+            _id: '$category',
+            score: { $first: '$score' },
+            deviceId: { $first: '$deviceId' },
+            displayName: { $first: '$displayName' },
+            metadata: { $first: '$metadata' },
+            createdAt: { $first: '$createdAt' },
+          },
+        },
+        { $sort: { score: -1 } },
+      ]);
+
+      const formattedScores = topScores.map((entry) => ({
+        category: entry._id || 'default',
+        deviceId: entry.deviceId,
+        displayName: entry.displayName,
+        score: entry.score,
+        metadata: entry.metadata,
+        createdAt: entry.createdAt,
+      }));
+
+      return NextResponse.json({
+        success: true,
+        game: { slug: gameResult.slug, name: gameResult.game.name },
+        filter: 'top',
+        category: category || null,
+        categories,
+        scores: formattedScores,
+        total: formattedScores.length,
+      });
+    }
+
     const total = await Score.countDocuments(baseQuery);
 
     const scores = await Score.find(baseQuery)
       .sort({ score: -1, createdAt: 1 })
       .skip(offset)
       .limit(limit);
-
-    const categories = await Score.distinct('category', { gameSlug: gameResult.slug });
 
     const formattedScores = scores.map((score, index) => ({
       rank: offset + index + 1,

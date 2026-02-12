@@ -724,13 +724,18 @@ Get leaderboard scores for a game. Only available for games with the "leaderboar
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `limit` | number | No | Max results (default: 100) |
+| `limit` | number | No | Max results (default: 100, max: 500) |
 | `offset` | number | No | Results offset for pagination |
 | `period` | string | No | Filter: day, week, month (default: all time) |
+| `category` | string | No | Filter by score category |
+| `filter` | string | No | Use `top` to get only the highest score per category |
 
-**Example:**
+**Examples:**
 ```
 /api/[gameSlug]/scores?limit=10&period=week
+/api/[gameSlug]/scores?category=speed_run
+/api/[gameSlug]/scores?filter=top
+/api/[gameSlug]/scores?filter=top&period=week
 ```
 
 **Response:**
@@ -738,18 +743,43 @@ Get leaderboard scores for a game. Only available for games with the "leaderboar
 | Field | Type | Description |
 |-------|------|-------------|
 | `success` | boolean | Whether the request was successful |
+| `game` | object | Game slug and name |
+| `category` | string\|null | The category filter applied, or null |
+| `categories` | string[] | All distinct categories for this game |
+| `filter` | string | Present when `filter=top` is used |
 | `scores` | Score[] | Array of scores, sorted highest first |
-| `total` | number | Total number of scores |
+| `pagination` | object | Pagination info (omitted when `filter=top`) |
+| `total` | number | Total scores (when `filter=top`, count of categories returned) |
 
-**Example (200 OK):**
+**Example — Default (200 OK):**
 ```json
 {
   "success": true,
+  "game": { "slug": "powerpentagon", "name": "Power Pentagon" },
+  "category": null,
+  "categories": ["default", "speed_run", "survival"],
   "scores": [
-    { "deviceId": "a0dcb007...", "displayName": "BirdMaster", "score": 25000, "metadata": { "level": 8 }, "createdAt": "2026-02-01T10:00:00.000Z" },
-    { "deviceId": "f55c9b25...", "displayName": "PentagonPro", "score": 18500, "metadata": { "level": 6 }, "createdAt": "2026-02-01T11:00:00.000Z" }
+    { "rank": 1, "deviceId": "a0dcb007...", "displayName": "BirdMaster", "score": 25000, "category": "default", "metadata": { "level": 8 }, "createdAt": "2026-02-01T10:00:00.000Z" },
+    { "rank": 2, "deviceId": "f55c9b25...", "displayName": "PentagonPro", "score": 18500, "category": "speed_run", "metadata": { "level": 6 }, "createdAt": "2026-02-01T11:00:00.000Z" }
   ],
-  "total": 42
+  "pagination": { "total": 42, "limit": 100, "offset": 0, "hasMore": false }
+}
+```
+
+**Example — filter=top (200 OK):**
+```json
+{
+  "success": true,
+  "game": { "slug": "powerpentagon", "name": "Power Pentagon" },
+  "filter": "top",
+  "category": null,
+  "categories": ["default", "speed_run", "survival"],
+  "scores": [
+    { "category": "default", "deviceId": "a0dcb007...", "displayName": "BirdMaster", "score": 25000, "metadata": { "level": 8 }, "createdAt": "2026-02-01T10:00:00.000Z" },
+    { "category": "speed_run", "deviceId": "f55c9b25...", "displayName": "PentagonPro", "score": 18500, "metadata": {}, "createdAt": "2026-02-01T11:00:00.000Z" },
+    { "category": "survival", "deviceId": "c23ab1f9...", "displayName": "SurvivorX", "score": 12000, "metadata": {}, "createdAt": "2026-02-02T08:00:00.000Z" }
+  ],
+  "total": 3
 }
 ```
 
