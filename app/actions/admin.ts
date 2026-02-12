@@ -246,6 +246,7 @@ export async function getGameBySlug(gameSlug: string) {
       slug: game.slug,
       name: game.name,
       capabilities: game.capabilities,
+      avatars: game.avatars || [],
       active: game.active,
       maintenance: game.maintenance,
       motd: game.motd || null,
