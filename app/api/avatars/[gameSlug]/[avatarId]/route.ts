@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAvatarUrl } from '@/lib/gcs';
+import { getAvatarBuffer } from '@/lib/gcs';
 
 export async function GET(
   request: NextRequest,
@@ -8,15 +8,13 @@ export async function GET(
   const { gameSlug, avatarId } = await params;
 
   try {
-    const url = getAvatarUrl(gameSlug, avatarId);
-    const response = await fetch(url);
+    const buffer = await getAvatarBuffer(gameSlug, avatarId);
 
-    if (!response.ok) {
+    if (!buffer) {
       return NextResponse.json({ error: 'Avatar not found' }, { status: 404 });
     }
 
-    const buffer = await response.arrayBuffer();
-    return new NextResponse(Buffer.from(buffer), {
+    return new NextResponse(buffer, {
       headers: {
         'Content-Type': 'image/png',
         'Cache-Control': 'public, max-age=3600, s-maxage=86400',

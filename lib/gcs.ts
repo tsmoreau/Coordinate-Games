@@ -49,8 +49,6 @@ export async function uploadAvatar(
     metadata: { contentType },
   });
 
-  await file.makePublic();
-
   return getAvatarUrl(gameSlug, avatarId);
 }
 
@@ -71,6 +69,22 @@ export async function deleteAvatar(gameSlug: string, avatarId: string): Promise<
 }
 
 export function getAvatarUrl(gameSlug: string, avatarId: string): string {
-  const bucket = getBucketName();
-  return `https://storage.googleapis.com/${bucket}/${gameSlug}/${avatarId}.png`;
+  return `/api/avatars/${gameSlug}/${avatarId}`;
+}
+
+export async function getAvatarBuffer(gameSlug: string, avatarId: string): Promise<Buffer | null> {
+  const bucket = getBucket();
+  const filePath = `${gameSlug}/${avatarId}.png`;
+  const file = bucket.file(filePath);
+
+  try {
+    const [buffer] = await file.download();
+    return buffer;
+  } catch (err: unknown) {
+    const error = err as { code?: number };
+    if (error.code === 404) {
+      return null;
+    }
+    throw err;
+  }
 }
