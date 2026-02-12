@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth';
 import { redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth-options';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -16,6 +16,7 @@ import {
   ExternalLink,
   Code,
 } from 'lucide-react';
+import ResponsiveTabs from '@/components/ResponsiveTabs';
 import Nav from '@/components/Nav';
 import GameManagement from '@/components/GameManagement';
 import DevManagement from '@/components/DevManagement';
@@ -68,25 +69,16 @@ export default async function DashboardPage() {
           </Card>
         )}
 
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="overview" data-testid="tab-overview">
-              <Activity className="w-4 h-4 mr-2" />
-              OVERVIEW
-            </TabsTrigger>
-            <TabsTrigger value="admin" data-testid="tab-admin">
-              <Settings className="w-4 h-4 mr-2" />
-              ADMIN
-            </TabsTrigger>
-            <TabsTrigger value="games" data-testid="tab-games">
-              <Gamepad2 className="w-4 h-4 mr-2" />
-              GAMES
-            </TabsTrigger>
-            <TabsTrigger value="devs" data-testid="tab-devs">
-              <Code className="w-4 h-4 mr-2" />
-              DEVS
-            </TabsTrigger>
-          </TabsList>
+        <ResponsiveTabs
+          defaultValue="overview"
+          className="space-y-6"
+          tabs={[
+            { value: 'overview', label: 'OVERVIEW', icon: 'activity', testId: 'tab-overview' },
+            { value: 'admin', label: 'ADMIN', icon: 'settings', testId: 'tab-admin' },
+            { value: 'games', label: 'GAMES', icon: 'gamepad2', testId: 'tab-games' },
+            { value: 'devs', label: 'DEVS', icon: 'code', testId: 'tab-devs' },
+          ]}
+        >
 
           <TabsContent value="overview">
             <div className="space-y-6">
@@ -247,7 +239,7 @@ export default async function DashboardPage() {
             <DevManagement />
           </TabsContent>
 
-        </Tabs>
+        </ResponsiveTabs>
       </main>
     </div>
   );

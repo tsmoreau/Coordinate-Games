@@ -2,7 +2,7 @@ import { getServerSession } from 'next-auth';
 import { redirect, notFound } from 'next/navigation';
 import { authOptions } from '@/lib/auth-options';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { TabsContent } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -20,6 +20,7 @@ import {
   Database,
   ImageIcon
 } from 'lucide-react';
+import ResponsiveTabs from '@/components/ResponsiveTabs';
 import Nav from '@/components/Nav';
 import PlayerManagement from '@/components/PlayerManagement';
 import BattleManagement from '@/components/BattleManagement';
@@ -104,47 +105,20 @@ export default async function GameDashboardPage({ params }: Props) {
           )}
         </div>
 
-        <Tabs defaultValue="overview" className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="overview" data-testid="tab-game-overview">
-              <Activity className="w-4 h-4 mr-2" />
-              OVERVIEW
-            </TabsTrigger>
-            <TabsTrigger value="players" data-testid="tab-game-players">
-              <Users className="w-4 h-4 mr-2" />
-              PLAYERS
-            </TabsTrigger>
-            {hasAsync && (
-              <TabsTrigger value="battles" data-testid="tab-game-battles">
-                <Swords className="w-4 h-4 mr-2" />
-                BATTLES
-              </TabsTrigger>
-            )}
-            {hasLeaderboard && (
-              <TabsTrigger value="leaderboards" data-testid="tab-game-leaderboards">
-                <Trophy className="w-4 h-4 mr-2" />
-                LEADERBOARDS
-              </TabsTrigger>
-            )}
-            {hasData && (
-              <TabsTrigger value="data" data-testid="tab-game-data">
-                <Database className="w-4 h-4 mr-2" />
-                DATA
-              </TabsTrigger>
-            )}
-            <TabsTrigger value="avatars" data-testid="tab-game-avatars">
-              <ImageIcon className="w-4 h-4 mr-2" />
-              AVATARS
-            </TabsTrigger>
-            <TabsTrigger value="audit" data-testid="tab-game-audit">
-              <ScrollText className="w-4 h-4 mr-2" />
-              AUDIT LOG
-            </TabsTrigger>
-            <TabsTrigger value="admin" data-testid="tab-game-admin">
-              <Settings className="w-4 h-4 mr-2" />
-              ADMIN
-            </TabsTrigger>
-          </TabsList>
+        <ResponsiveTabs
+          defaultValue="overview"
+          className="space-y-6"
+          tabs={[
+            { value: 'overview', label: 'OVERVIEW', icon: 'activity', testId: 'tab-game-overview' },
+            { value: 'players', label: 'PLAYERS', icon: 'users', testId: 'tab-game-players' },
+            ...(hasAsync ? [{ value: 'battles', label: 'BATTLES', icon: 'swords', testId: 'tab-game-battles' }] : []),
+            ...(hasLeaderboard ? [{ value: 'leaderboards', label: 'LEADERBOARDS', icon: 'trophy', testId: 'tab-game-leaderboards' }] : []),
+            ...(hasData ? [{ value: 'data', label: 'DATA', icon: 'database', testId: 'tab-game-data' }] : []),
+            { value: 'avatars', label: 'AVATARS', icon: 'image', testId: 'tab-game-avatars' },
+            { value: 'audit', label: 'AUDIT LOG', icon: 'scrolltext', testId: 'tab-game-audit' },
+            { value: 'admin', label: 'ADMIN', icon: 'settings', testId: 'tab-game-admin' },
+          ]}
+        >
 
           <TabsContent value="overview">
             <div className="space-y-6">
@@ -394,7 +368,7 @@ export default async function GameDashboardPage({ params }: Props) {
               versioning={game.versioning}
             />
           </TabsContent>
-        </Tabs>
+        </ResponsiveTabs>
       </main>
     </div>
   );
