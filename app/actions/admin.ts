@@ -36,7 +36,7 @@ export interface AdminBattleDetails {
   displayName: string;
   player1DeviceId: string;
   player1DisplayName: string;
-  player1Avatar: string;
+  player1Avatar: string | null;
   player2DeviceId: string | null;
   player2DisplayName: string | null;
   player2Avatar: string | null;
