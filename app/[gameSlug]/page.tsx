@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Users, Activity, Clock, Trophy, ArrowLeft, Wrench, Gamepad2 } from 'lucide-react';
 import BattlesList from '@/components/BattlesList';
-import { getPublicGameBySlug, getGameDevices } from '@/app/actions/games';
+import { getPublicGameBySlug, getGameDevices, getGameLeaderboards } from '@/app/actions/games';
 import { getBattles } from '@/app/actions/battles';
 import { formatRelativeTime } from '@/lib/utils';
 
@@ -25,10 +25,12 @@ export default async function GamePage({ params }: Props) {
   }
 
   const hasAsync = game.capabilities.includes('async');
+  const hasLeaderboard = game.capabilities.includes('leaderboard');
 
-  const [battles, devices] = await Promise.all([
+  const [battles, devices, leaderboards] = await Promise.all([
     hasAsync ? getBattles({ gameSlug: game.slug, limit: 10 }) : Promise.resolve([]),
     hasAsync ? getGameDevices(game.slug, 5) : Promise.resolve([]),
+    hasLeaderboard ? getGameLeaderboards(game.slug, 10) : Promise.resolve([]),
   ]);
 
   return (
@@ -36,7 +38,7 @@ export default async function GamePage({ params }: Props) {
       <Nav />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        
+
 
         <div className="mb-6 mt-8">
           <div className="flex items-start gap-3 -mb-1 flex-">
@@ -84,35 +86,39 @@ export default async function GamePage({ params }: Props) {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium uppercase">Active</CardTitle>
-              <Activity className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{game.activeBattles}</div>
-            </CardContent>
-          </Card>
+          {hasAsync && (
+            <>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium uppercase">Active</CardTitle>
+                  <Activity className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{game.activeBattles}</div>
+                </CardContent>
+              </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium uppercase">Waiting</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{game.pendingBattles}</div>
-            </CardContent>
-          </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium uppercase">Waiting</CardTitle>
+                  <Clock className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{game.pendingBattles}</div>
+                </CardContent>
+              </Card>
 
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium uppercase">Completed</CardTitle>
-              <Trophy className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{game.completedBattles}</div>
-            </CardContent>
-          </Card>
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
+                  <CardTitle className="text-sm font-medium uppercase">Completed</CardTitle>
+                  <Trophy className="h-4 w-4 text-muted-foreground" />
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold">{game.completedBattles}</div>
+                </CardContent>
+              </Card>
+            </>
+          )}
         </div>
 
         {hasAsync && (
@@ -191,6 +197,60 @@ export default async function GamePage({ params }: Props) {
                 )}
               </CardContent>
             </Card>
+          </div>
+        )}
+
+        {hasLeaderboard && leaderboards.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+            {leaderboards.map((board) => (
+              <Card key={board.category}>
+                <CardHeader>
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <CardTitle className="flex items-center gap-2">
+                        <Trophy className="h-4 w-4" />
+                        {board.category === 'default' ? 'Leaderboard' : board.category}
+                      </CardTitle>
+                      <CardDescription>Top {board.scores.length} players</CardDescription>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {board.scores.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Trophy className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                      <p>No scores yet</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      {board.scores.map((entry) => (
+                        <Link
+                          key={`${entry.deviceId}-${entry.rank}`}
+                          href={`/player/${encodeURIComponent(entry.displayName)}`}
+                          className="block group"
+                        >
+                          <div className="hover:border-foreground/20 hover:bg-muted/50 transition-all cursor-pointer active:scale-[0.99] relative border border-border rounded-lg">
+                            <div className="flex items-center justify-between p-3">
+                              <div className="flex items-center gap-3">
+                                <span className="text-sm font-mono text-muted-foreground w-6 text-right">
+                                  {entry.rank}
+                                </span>
+                                <p className="font-bold text-sm uppercase tracking-tight">
+                                  {entry.displayName}
+                                </p>
+                              </div>
+                              <span className="text-sm font-bold font-mono">
+                                {entry.score.toLocaleString()}
+                              </span>
+                            </div>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
           </div>
         )}
       </main>

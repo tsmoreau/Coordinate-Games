@@ -4,6 +4,7 @@ import { connectToDatabase } from '@/lib/mongodb';
 import { Game } from '@/models/Game';
 import { GameIdentity } from '@/models/GameIdentity';
 import { Battle } from '@/models/Battle';
+import { Score } from '@/models/Score';
 
 export interface PublicGameInfo {
   slug: string;
@@ -111,4 +112,46 @@ export async function getGameDevices(gameSlug: string, limit: number = 5): Promi
       lastSeen: obj.lastSeen.toISOString(),
     };
   });
+}
+
+export interface PublicScoreEntry {
+  rank: number;
+  deviceId: string;
+  displayName: string;
+  score: number;
+  createdAt: string;
+}
+
+export interface CategoryLeaderboard {
+  category: string;
+  scores: PublicScoreEntry[];
+}
+
+export async function getGameLeaderboards(gameSlug: string, limit: number = 10): Promise<CategoryLeaderboard[]> {
+  await connectToDatabase();
+
+  const categories = await Score.distinct('category', { gameSlug });
+
+  if (categories.length === 0) return [];
+
+  const leaderboards: CategoryLeaderboard[] = await Promise.all(
+    categories.sort().map(async (category) => {
+      const scores = await Score.find({ gameSlug, category })
+        .sort({ score: -1, createdAt: 1 })
+        .limit(limit);
+
+      return {
+        category: category || 'default',
+        scores: scores.map((s, index) => ({
+          rank: index + 1,
+          deviceId: s.deviceId,
+          displayName: s.displayName,
+          score: s.score,
+          createdAt: s.createdAt.toISOString(),
+        })),
+      };
+    })
+  );
+
+  return leaderboards;
 }
