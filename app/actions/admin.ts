@@ -17,7 +17,7 @@ const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim
 export interface AdminPlayerDetails {
   deviceId: string;
   displayName: string;
-  avatar: string;
+  avatar: string | null;
   registeredAt: string;
   lastSeen: string;
   isActive: boolean;
