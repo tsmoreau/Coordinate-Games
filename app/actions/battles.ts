@@ -6,7 +6,7 @@ import { GameIdentity } from '@/models/GameIdentity';
 
 interface PlayerInfo {
   displayName: string;
-  avatar: string;
+  avatar: string | null;
 }
 
 export interface BattleWithDetails {

@@ -6,7 +6,7 @@ import { validateAsyncGame, isGameContext } from '@/lib/gameMiddleware';
 
 interface PlayerInfo {
   displayName: string;
-  avatar: string;
+  avatar: string | null;
 }
 
 async function getPlayerInfo(gameSlug: string, deviceIds: (string | null)[]): Promise<Map<string, PlayerInfo>> {

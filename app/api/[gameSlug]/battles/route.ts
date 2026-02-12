@@ -23,7 +23,7 @@ async function getUserActiveGameCount(gameSlug: string, deviceId: string): Promi
 
 interface PlayerInfo {
   displayName: string;
-  avatar: string;
+  avatar: string | null;
 }
 
 async function getPlayerInfo(gameSlug: string, deviceIds: (string | null)[]): Promise<Map<string, PlayerInfo>> {

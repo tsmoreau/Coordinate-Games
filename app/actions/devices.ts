@@ -6,7 +6,7 @@ import { GameIdentity } from '@/models/GameIdentity';
 export interface DeviceWithDetails {
   deviceId: string;
   displayName: string;
-  avatar: string;
+  avatar: string | null;
   createdAt: string;
   lastSeen: string;
   isActive: boolean;

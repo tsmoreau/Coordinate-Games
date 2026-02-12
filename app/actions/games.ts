@@ -24,7 +24,7 @@ export interface PublicGameInfo {
 export interface GameDeviceInfo {
   deviceId: string;
   displayName: string;
-  avatar: string;
+  avatar: string | null;
   lastSeen: string;
 }
 
