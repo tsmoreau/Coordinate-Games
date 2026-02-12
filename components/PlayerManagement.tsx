@@ -154,7 +154,7 @@ export default function PlayerManagement({ players, gameSlug, avatars = [] }: Pl
 
   const handleAvatarEdit = (player: AdminPlayerDetails) => {
     setEditingPlayer(player);
-    setNewAvatar(player.avatar);
+    setNewAvatar(player.avatar || '');
     setShowAvatarDialog(true);
   };
 
