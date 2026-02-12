@@ -4,8 +4,9 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth-options';
 import { connectToDatabase } from '@/lib/mongodb';
 import { Battle } from '@/models/Battle';
-import { GameIdentity, VALID_AVATARS, PlayerAvatar } from '@/models/GameIdentity';
+import { GameIdentity } from '@/models/GameIdentity';
 import { Game } from '@/models/Game';
+import { deleteAvatar } from '@/lib/gcs';
 import { Score } from '@/models/Score';
 import { Data } from '@/models/Data';
 import { AuditLog } from '@/models/AuditLog';
@@ -488,7 +489,7 @@ export async function getGamePlayers(gameSlug: string): Promise<AdminPlayerDetai
         return {
           deviceId: player.deviceId,
           displayName: player.displayName || 'Unnamed Player',
-          avatar: player.avatar || 'BIRD1',
+          avatar: player.avatar || null,
           registeredAt: player.createdAt.toISOString(),
           lastSeen: player.lastSeen.toISOString(),
           isActive: player.isActive,
@@ -542,7 +543,7 @@ export async function getGameBattles(gameSlug: string, filter?: { status?: strin
         displayName: battle.displayName,
         player1DeviceId: battle.player1DeviceId,
         player1DisplayName: p1Info?.displayName || 'Unknown Player',
-        player1Avatar: p1Info?.avatar || 'BIRD1',
+        player1Avatar: p1Info?.avatar || null,
         player2DeviceId: battle.player2DeviceId,
         player2DisplayName: p2Info?.displayName || null,
         player2Avatar: p2Info?.avatar || null,
@@ -650,7 +651,8 @@ export async function changeAvatar(gameSlug: string, deviceId: string, newAvatar
   try {
     await connectToDatabase();
 
-    if (!VALID_AVATARS.includes(newAvatar as PlayerAvatar)) {
+    const game = await Game.findOne({ slug: gameSlug });
+    if (!game || !(game.avatars || []).includes(newAvatar)) {
       return { success: false, error: 'Invalid avatar' };
     }
 
@@ -790,7 +792,7 @@ export async function recoverPlayerByDeviceId(gameSlug: string, deviceId: string
       data: {
         deviceId: identity.deviceId,
         displayName: identity.displayName || 'Unnamed Player',
-        avatar: identity.avatar || 'BIRD1',
+        avatar: identity.avatar || null,
         registeredAt: identity.createdAt.toISOString(),
         lastSeen: identity.lastSeen.toISOString(),
         isActive: identity.isActive,
@@ -1165,6 +1167,32 @@ export async function deleteScore(scoreId: string): Promise<{ success: boolean; 
   } catch (error) {
     console.error('Error deleting score:', error);
     return { success: false, error: 'Failed to delete score' };
+  }
+}
+
+export async function deleteGameAvatar(gameSlug: string, avatarId: string): Promise<{ success: boolean; error?: string }> {
+  const auth = await requireAdminAuth();
+  if (!auth.success) {
+    return { success: false, error: auth.error };
+  }
+
+  try {
+    await connectToDatabase();
+
+    await deleteAvatar(gameSlug, avatarId);
+
+    await Game.updateOne({ slug: gameSlug }, { $pull: { avatars: avatarId } });
+
+    await GameIdentity.updateMany(
+      { gameSlug, avatar: avatarId },
+      { $set: { avatar: null } }
+    );
+
+    revalidatePath(`/dashboard/${gameSlug}`);
+    return { success: true };
+  } catch (error) {
+    console.error('Error deleting game avatar:', error);
+    return { success: false, error: 'Failed to delete avatar' };
   }
 }
 

@@ -22,7 +22,7 @@ async function getPlayerInfo(gameSlug: string, deviceIds: (string | null)[]): Pr
   for (const identity of identities) {
     map.set(identity.deviceId, {
       displayName: identity.displayName || 'Unknown Player',
-      avatar: identity.avatar || 'BIRD1'
+      avatar: identity.avatar || null
     });
   }
   
@@ -77,7 +77,7 @@ export async function GET(
         player1DeviceId: battle.player1DeviceId,
         player2DeviceId: battle.player2DeviceId,
         player1DisplayName: p1Info?.displayName || 'Unknown Player',
-        player1Avatar: p1Info?.avatar || 'BIRD1',
+        player1Avatar: p1Info?.avatar || null,
         player2DisplayName: p2Info?.displayName || null,
         player2Avatar: p2Info?.avatar || null,
         status: battle.status,

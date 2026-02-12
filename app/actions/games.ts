@@ -12,6 +12,7 @@ export interface PublicGameInfo {
   description: string | null;
   tagline: string | null;
   capabilities: string[];
+  avatars: string[];
   maintenance: boolean;
   motd: string | null;
   playerCount: number;
@@ -57,6 +58,7 @@ export async function getActiveGames(): Promise<PublicGameInfo[]> {
         description: game.description || null,
         tagline: game.tagline || null,
         capabilities: game.capabilities,
+        avatars: game.avatars || [],
         maintenance: game.maintenance,
         motd: game.motd || null,
         playerCount,
@@ -87,6 +89,7 @@ export async function getPublicGameBySlug(gameSlug: string): Promise<PublicGameI
     description: game.description || null,
     tagline: game.tagline || null,
     capabilities: game.capabilities,
+    avatars: game.avatars || [],
     maintenance: game.maintenance,
     motd: game.motd || null,
     playerCount,
@@ -108,7 +111,7 @@ export async function getGameDevices(gameSlug: string, limit: number = 5): Promi
     return {
       deviceId: obj.deviceId,
       displayName: obj.displayName || 'Unnamed Player',
-      avatar: obj.avatar || 'BIRD1',
+      avatar: obj.avatar || null,
       lastSeen: obj.lastSeen.toISOString(),
     };
   });

@@ -58,18 +58,15 @@ import {
 } from "@/components/ui/tooltip";
 
 import PlayerDetailDialog from '@/components/PlayerDetailDialog';
-
-const AVATARS = [
-  'BIRD1', 'BIRD2', 'BIRD3', 'BIRD4', 'BIRD5', 'BIRD6',
-  'BIRD7', 'BIRD8', 'BIRD9', 'BIRD10', 'BIRD11', 'BIRD12'
-];
+import AvatarImage from '@/components/AvatarImage';
 
 interface PlayerManagementProps {
   players: AdminPlayerDetails[];
   gameSlug: string;
+  avatars?: string[];
 }
 
-export default function PlayerManagement({ players, gameSlug }: PlayerManagementProps) {
+export default function PlayerManagement({ players, gameSlug, avatars = [] }: PlayerManagementProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'banned'>('all');
   const [isPending, startTransition] = useTransition();
@@ -261,11 +258,12 @@ export default function PlayerManagement({ players, gameSlug }: PlayerManagement
               <CardContent className="p-4">
                 <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
                   <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 shrink-0 overflow-hidden">
-                      <img 
-                        src={`/birb${player.avatar.replace('BIRD', '').padStart(3, '0')}.png`} 
-                        alt={player.avatar}
-                        className="w-full h-full object-contain"
+                    <div className="w-12 h-12 shrink-0">
+                      <AvatarImage
+                        gameSlug={gameSlug}
+                        avatarId={player.avatar}
+                        displayName={player.displayName}
+                        size={48}
                       />
                     </div>
                     <div className="min-w-0">
@@ -417,27 +415,32 @@ export default function PlayerManagement({ players, gameSlug }: PlayerManagement
             </DialogDescription>
           </DialogHeader>
           <div className="grid grid-cols-4 gap-2">
-            {AVATARS.map((avatar) => (
-              <button
-                key={avatar}
-                onClick={() => setNewAvatar(avatar)}
-                className={`p-1 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${
-                  newAvatar === avatar
-                    ? 'border-foreground bg-muted'
-                    : 'border-transparent hover:border-foreground/20'
-                }`}
-                data-testid={`button-avatar-${avatar}`}
-              >
-                <div className="w-10 h-10 overflow-hidden">
-                  <img 
-                    src={`/birb${avatar.replace('BIRD', '').padStart(3, '0')}.png`} 
-                    alt={avatar}
-                    className="w-full h-full object-contain"
+            {avatars.length === 0 ? (
+              <p className="col-span-4 text-center text-muted-foreground text-sm py-4">
+                No avatars configured for this game
+              </p>
+            ) : (
+              avatars.map((avatar) => (
+                <button
+                  key={avatar}
+                  onClick={() => setNewAvatar(avatar)}
+                  className={`p-1 rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${
+                    newAvatar === avatar
+                      ? 'border-foreground bg-muted'
+                      : 'border-transparent hover:border-foreground/20'
+                  }`}
+                  data-testid={`button-avatar-${avatar}`}
+                >
+                  <AvatarImage
+                    gameSlug={gameSlug}
+                    avatarId={avatar}
+                    displayName={avatar}
+                    size={40}
                   />
-                </div>
-                <span className="text-[10px] font-bold uppercase">{avatar}</span>
-              </button>
-            ))}
+                  <span className="text-[10px] font-bold uppercase">{avatar}</span>
+                </button>
+              ))
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowAvatarDialog(false)}>

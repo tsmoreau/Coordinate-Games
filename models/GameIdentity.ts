@@ -1,18 +1,11 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
-export const VALID_AVATARS = [
-  'BIRD1', 'BIRD2', 'BIRD3', 'BIRD4', 'BIRD5', 'BIRD6',
-  'BIRD7', 'BIRD8', 'BIRD9', 'BIRD10', 'BIRD11', 'BIRD12'
-] as const;
-
-export type PlayerAvatar = typeof VALID_AVATARS[number];
-
 export interface IGameIdentity {
   gameSlug: string;
   deviceId: string;
   tokenHash: string;
   displayName: string;
-  avatar: PlayerAvatar;
+  avatar: string | null;
   createdAt: Date;
   lastSeen: Date;
   isActive: boolean;
@@ -41,8 +34,7 @@ const GameIdentitySchema = new Schema<IGameIdentityDocument>({
   },
   avatar: {
     type: String,
-    enum: VALID_AVATARS,
-    default: 'BIRD1'
+    default: null
   },
   createdAt: {
     type: Date,

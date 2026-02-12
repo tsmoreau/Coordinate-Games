@@ -7,7 +7,8 @@ import { Battle } from '@/models/Battle';
 export interface PlayerProfile {
   deviceId: string;
   displayName: string;
-  avatar: string;
+  avatar: string | null;
+  gameSlug: string;
   createdAt: string;
   lastSeen: string;
   isActive: boolean;
@@ -132,7 +133,8 @@ export async function getPlayerByDisplayName(displayName: string): Promise<Playe
   return {
     deviceId: obj.deviceId,
     displayName: obj.displayName || 'Unknown Player',
-    avatar: obj.avatar || 'BIRD1',
+    avatar: obj.avatar || null,
+    gameSlug: obj.gameSlug,
     createdAt: obj.createdAt.toISOString(),
     lastSeen: obj.lastSeen.toISOString(),
     isActive: obj.isActive,

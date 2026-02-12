@@ -46,9 +46,11 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import AvatarImage from '@/components/AvatarImage';
 
 interface BattleManagementProps {
   battles: AdminBattleDetails[];
+  gameSlug: string;
 }
 
 function getStatusBadge(status: string) {
@@ -66,7 +68,7 @@ function getStatusBadge(status: string) {
   }
 }
 
-export default function BattleManagement({ battles }: BattleManagementProps) {
+export default function BattleManagement({ battles, gameSlug }: BattleManagementProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState<string>('all');
   const [isPending, startTransition] = useTransition();
@@ -190,21 +192,19 @@ export default function BattleManagement({ battles }: BattleManagementProps) {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-3 mb-2">
                       <div className="flex -space-x-2">
-                        <div className="w-8 h-8 overflow-hidden">
-                          <img 
-                            src={`/birb${battle.player1Avatar.replace('BIRD', '').padStart(3, '0')}.png`} 
-                            alt={battle.player1Avatar}
-                            className="w-full h-full object-contain"
-                          />
-                        </div>
+                        <AvatarImage
+                          gameSlug={gameSlug}
+                          avatarId={battle.player1Avatar}
+                          displayName={battle.player1DisplayName}
+                          size={32}
+                        />
                         {battle.player2Avatar && (
-                          <div className="w-8 h-8 overflow-hidden">
-                            <img 
-                              src={`/birb${battle.player2Avatar.replace('BIRD', '').padStart(3, '0')}.png`} 
-                              alt={battle.player2Avatar}
-                              className="w-full h-full object-contain"
-                            />
-                          </div>
+                          <AvatarImage
+                            gameSlug={gameSlug}
+                            avatarId={battle.player2Avatar}
+                            displayName={battle.player2DisplayName || 'Unknown'}
+                            size={32}
+                          />
                         )}
                       </div>
                       <h3 className="font-bold uppercase tracking-tight">{battle.displayName}</h3>

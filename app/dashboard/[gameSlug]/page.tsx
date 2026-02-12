@@ -17,7 +17,8 @@ import {
   Wrench,
   Settings,
   ScrollText,
-  Database
+  Database,
+  ImageIcon
 } from 'lucide-react';
 import Nav from '@/components/Nav';
 import PlayerManagement from '@/components/PlayerManagement';
@@ -26,6 +27,7 @@ import ScoreManagement from '@/components/ScoreManagement';
 import DataManagement from '@/components/DataManagement';
 import GameAdminPanel from '@/components/GameAdminPanel';
 import AuditLogViewer from '@/components/AuditLogViewer';
+import AvatarUpload from '@/components/AvatarUpload';
 import { getGameBySlug, getGameStats, getGamePlayers, getGameBattles, getGameScores, getGameDataEntries } from '@/app/actions/admin';
 
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || '').split(',').map(e => e.trim().toLowerCase()).filter(Boolean);
@@ -130,6 +132,10 @@ export default async function GameDashboardPage({ params }: Props) {
                 DATA
               </TabsTrigger>
             )}
+            <TabsTrigger value="avatars" data-testid="tab-game-avatars">
+              <ImageIcon className="w-4 h-4 mr-2" />
+              AVATARS
+            </TabsTrigger>
             <TabsTrigger value="audit" data-testid="tab-game-audit">
               <ScrollText className="w-4 h-4 mr-2" />
               AUDIT LOG
@@ -349,12 +355,12 @@ export default async function GameDashboardPage({ params }: Props) {
           </TabsContent>
 
           <TabsContent value="players">
-            <PlayerManagement players={players} gameSlug={gameSlug} />
+            <PlayerManagement players={players} gameSlug={gameSlug} avatars={game.avatars || []} />
           </TabsContent>
 
           {hasAsync && (
             <TabsContent value="battles">
-              <BattleManagement battles={battles} />
+              <BattleManagement battles={battles} gameSlug={gameSlug} />
             </TabsContent>
           )}
 
@@ -369,6 +375,10 @@ export default async function GameDashboardPage({ params }: Props) {
               <DataManagement entries={dataEntries} gameSlug={gameSlug} />
             </TabsContent>
           )}
+
+          <TabsContent value="avatars">
+            <AvatarUpload gameSlug={gameSlug} avatars={game.avatars || []} />
+          </TabsContent>
 
           <TabsContent value="audit">
             <AuditLogViewer gameSlug={gameSlug} gameName={game.name} />

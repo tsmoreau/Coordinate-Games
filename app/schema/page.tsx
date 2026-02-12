@@ -179,7 +179,7 @@ function generateMarkdownSpec(
   lines.push('| `deviceId` | Game-scoped player identifier (unique per game) |');
   lines.push('| `gameSlug` | Game this identity belongs to |');
   lines.push('| `displayName` | Player\'s display name for this game |');
-  lines.push('| `avatar` | Bird avatar (BIRD1-BIRD12) |');
+  lines.push('| `avatar` | Avatar ID from the game\'s configured set (nullable) |');
   lines.push('| `createdAt` | Registration timestamp |');
   lines.push('| `lastSeen` | Last activity timestamp |');
   lines.push('');
@@ -334,9 +334,9 @@ const perGameEndpoints: EndpointSection[] = [
     requestBody: {
       fields: [
         { name: 'displayName', type: 'string', required: false, description: 'Player display name (max 50 chars)' },
-        { name: 'avatar', type: 'string', required: false, description: 'Bird avatar: BIRD1-BIRD12 (default: BIRD1)' },
+        { name: 'avatar', type: 'string', required: false, description: 'Avatar ID from the game\'s configured avatars (default: null)' },
       ],
-      example: { displayName: 'BirdMaster', avatar: 'BIRD4' },
+      example: { displayName: 'PlayerOne', avatar: 'KNIGHT1' },
     },
     responseBody: {
       fields: [
@@ -345,15 +345,15 @@ const perGameEndpoints: EndpointSection[] = [
         { name: 'deviceId', type: 'string', description: 'Game-scoped player ID (unique per game)' },
         { name: 'secretToken', type: 'string', description: 'Game-scoped auth token (only on NEW registration!)' },
         { name: 'displayName', type: 'string', description: 'Player display name for this game' },
-        { name: 'avatar', type: 'string', description: 'Selected bird avatar for this game' },
+        { name: 'avatar', type: 'string|null', description: 'Selected avatar ID for this game (null if none)' },
       ],
       example: {
         success: true,
         registered: false,
         deviceId: 'a0dcb007051f88c0aef99bf01ffe224b',
         secretToken: 'bvUKW9vBPZS8GHtCXe3k8jSm56BQDP...',
-        displayName: 'BirdMaster',
-        avatar: 'BIRD4',
+        displayName: 'PlayerOne',
+        avatar: 'KNIGHT1',
       },
     },
     errors: [
@@ -447,7 +447,7 @@ const perGameEndpoints: EndpointSection[] = [
         { name: 'stats', type: 'object', description: 'Player stats object' },
         { name: 'stats.deviceId', type: 'string', description: 'Player device ID' },
         { name: 'stats.displayName', type: 'string', description: 'Player display name' },
-        { name: 'stats.avatar', type: 'string', description: 'Player avatar (e.g., BIRD1)' },
+        { name: 'stats.avatar', type: 'string|null', description: 'Player avatar ID (null if none selected)' },
         { name: 'stats.memberSince', type: 'string|null', description: 'Registration date (ISO 8601) or null' },
         { name: 'stats.totalBattles', type: 'number', description: 'Total battles across all statuses' },
         { name: 'stats.completedBattles', type: 'number', description: 'Battles that reached completion' },
@@ -464,7 +464,7 @@ const perGameEndpoints: EndpointSection[] = [
         stats: {
           deviceId: 'a0dcb007051f88c0aef99bf01ffe224b',
           displayName: 'BirdMaster',
-          avatar: 'BIRD4',
+          avatar: 'KNIGHT1',
           memberSince: '2026-01-15T08:30:00.000Z',
           totalBattles: 10,
           completedBattles: 8,
@@ -518,9 +518,9 @@ const asyncEndpoints: EndpointSection[] = [
             player1DeviceId: 'a0dcb007...',
             player2DeviceId: 'f55c9b25...',
             player1DisplayName: 'BirdMaster',
-            player1Avatar: 'BIRD3',
+            player1Avatar: 'KNIGHT1',
             player2DisplayName: 'EagleEye',
-            player2Avatar: 'BIRD1',
+            player2Avatar: 'WARRIOR2',
             status: 'active',
             currentTurn: 4,
             currentPlayerIndex: 0,
@@ -698,7 +698,7 @@ const asyncEndpoints: EndpointSection[] = [
           { type: 'end_turn' },
         ],
         gameState: {
-          units: [{ unitId: 'u1', type: 'BIRD1', x: 3, y: 2, hp: 10, owner: 'a0dcb007...' }],
+          units: [{ unitId: 'u1', type: 'WARRIOR1', x: 3, y: 2, hp: 10, owner: 'a0dcb007...' }],
         },
       },
     },
@@ -1411,7 +1411,7 @@ export default function SchemaPage() {
                       <p><code className="bg-muted px-1 rounded">deviceId</code> — Game-scoped player identifier (unique per game)</p>
                       <p><code className="bg-muted px-1 rounded">gameSlug</code> — Game this identity belongs to</p>
                       <p><code className="bg-muted px-1 rounded">displayName</code> — Player's display name for this game</p>
-                      <p><code className="bg-muted px-1 rounded">avatar</code> — Bird avatar (BIRD1-BIRD12)</p>
+                      <p><code className="bg-muted px-1 rounded">avatar</code> — Avatar ID from the game's configured set (nullable)</p>
                       <p><code className="bg-muted px-1 rounded">createdAt</code> — Registration timestamp</p>
                       <p><code className="bg-muted px-1 rounded">lastSeen</code> — Last activity timestamp</p>
                     </div>

@@ -19,6 +19,7 @@ export interface IGame {
   description?: string | null;
   tagline?: string | null;
   capabilities: GameCapability[];
+  avatars: string[];
   haikunator?: IHaikunatorConfig | null;
   versioning?: IVersioning | null;
   maintenance: boolean;
@@ -69,6 +70,10 @@ const GameSchema = new Schema<IGameDocument>({
       validator: (v: string[]) => v.length > 0,
       message: 'Game must have at least one capability'
     }
+  },
+  avatars: {
+    type: [String],
+    default: []
   },
   haikunator: {
     type: HaikunatorSchema,

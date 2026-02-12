@@ -15,6 +15,7 @@ import {
 import { formatRelativeTime, formatDate } from '@/lib/utils';
 import { generateBattleName } from '@/lib/battleNames';
 import type { BattleWithDetails } from '@/app/actions/battles';
+import AvatarImage from '@/components/AvatarImage';
 
 interface BattlesListProps {
   battles: BattleWithDetails[];
@@ -113,19 +114,21 @@ export default function BattlesList({
                   <div className="flex items-center gap-4 min-w-0 w-full">
                     <div className="w-12 shrink-0 flex items-center justify-center">
                       <div className="flex -space-x-3">
-                        <div className="w-9 h-9 overflow-hidden relative z-10">
-                          <img 
-                            src={`/birb${battle.player1Avatar?.replace('BIRD', '').padStart(3, '0') || '001'}.png`} 
-                            alt={battle.player1Avatar || 'BIRD1'}
-                            className="w-full h-full object-contain"
+                        <div className="relative z-10">
+                          <AvatarImage
+                            gameSlug={battle.gameSlug}
+                            avatarId={battle.player1Avatar}
+                            displayName={battle.player1DisplayName}
+                            size={36}
                           />
                         </div>
                         {battle.player2Avatar && (
-                          <div className="w-9 h-9 overflow-hidden relative z-0">
-                            <img 
-                              src={`/birb${battle.player2Avatar.replace('BIRD', '').padStart(3, '0')}.png`} 
-                              alt={battle.player2Avatar}
-                              className="w-full h-full object-contain"
+                          <div className="relative z-0">
+                            <AvatarImage
+                              gameSlug={battle.gameSlug}
+                              avatarId={battle.player2Avatar}
+                              displayName={battle.player2DisplayName || 'Unknown'}
+                              size={36}
                             />
                           </div>
                         )}

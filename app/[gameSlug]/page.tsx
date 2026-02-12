@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Users, Activity, Clock, Trophy, ArrowLeft, Wrench, Gamepad2 } from 'lucide-react';
 import BattlesList from '@/components/BattlesList';
+import AvatarImage from '@/components/AvatarImage';
 import { getPublicGameBySlug, getGameDevices, getGameLeaderboards } from '@/app/actions/games';
 import { getBattles } from '@/app/actions/battles';
 import { formatRelativeTime } from '@/lib/utils';
@@ -169,11 +170,12 @@ export default async function GamePage({ params }: Props) {
                         <div className="hover:border-foreground/20 hover:bg-muted/50 transition-all cursor-pointer active:scale-[0.99] relative border border-border rounded-lg">
                           <div className="flex items-center justify-between p-3">
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 overflow-hidden shrink-0">
-                                <img
-                                  src={`/birb${device.avatar.replace('BIRD', '').padStart(3, '0')}.png`}
-                                  alt={device.avatar}
-                                  className="w-full h-full object-contain"
+                              <div className="w-10 h-10 shrink-0">
+                                <AvatarImage
+                                  gameSlug={game.slug}
+                                  avatarId={device.avatar}
+                                  displayName={device.displayName}
+                                  size={40}
                                 />
                               </div>
                               <div>

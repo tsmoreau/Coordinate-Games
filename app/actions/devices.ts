@@ -26,7 +26,7 @@ export async function getDevices(options?: { limit?: number }): Promise<DeviceWi
     return {
       deviceId: obj.deviceId,
       displayName: obj.displayName || 'Unnamed Player',
-      avatar: obj.avatar || 'BIRD1',
+      avatar: obj.avatar || null,
       createdAt: obj.createdAt.toISOString(),
       lastSeen: obj.lastSeen.toISOString(),
       isActive: obj.isActive,

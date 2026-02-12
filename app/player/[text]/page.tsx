@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { formatRelativeTime, formatDate } from '@/lib/utils';
 import Nav from '@/components/Nav';
+import AvatarImage from '@/components/AvatarImage';
 import { getPlayerByDisplayName, getPlayerBattles } from '@/app/actions/players';
 
 export const dynamic = 'force-dynamic';
@@ -45,17 +46,14 @@ function getBattleStatusBadge(status: string, winnerId: string | null, deviceId:
   }
 }
 
-function PlayerAvatar({ avatar }: { avatar: string }) {
-  const birdNumber = avatar.replace('BIRD', '').padStart(3, '0');
-  const imageSrc = `/birb${birdNumber}.png`;
-  
+function PlayerAvatarDisplay({ avatar, displayName, gameSlug }: { avatar: string | null; displayName: string; gameSlug?: string }) {
   return (
-    <div className="mx-auto w-24 h-24 rounded-full bg-muted flex items-center justify-center mb-4 border-2 border-border overflow-hidden">
-      <img 
-        src={imageSrc} 
-        alt={`${avatar} avatar`}
-        className="w-16 h-16 object-contain"
-        data-testid="img-player-avatar"
+    <div className="mx-auto w-24 h-24 rounded-full bg-muted flex items-center justify-center mb-4 border-2 border-border overflow-hidden" data-testid="img-player-avatar">
+      <AvatarImage
+        gameSlug={gameSlug || ''}
+        avatarId={avatar}
+        displayName={displayName}
+        size={64}
       />
     </div>
   );
@@ -90,7 +88,7 @@ export default async function PlayerProfilePage({ params }: Props) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           <Card className="lg:col-span-1 lg:sticky lg:top-24 h-fit">
             <CardHeader className="text-center">
-              <PlayerAvatar avatar={player.avatar} />
+              <PlayerAvatarDisplay avatar={player.avatar} displayName={player.displayName} gameSlug={player.gameSlug} />
               <CardTitle className="text-2xl" data-testid="text-player-name">
                 {player.displayName}
               </CardTitle>

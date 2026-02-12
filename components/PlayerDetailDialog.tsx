@@ -26,6 +26,7 @@ import {
   PlayerBattleHistoryEntry,
   getPlayerBattleHistory,
 } from '@/app/actions/admin';
+import AvatarImage from '@/components/AvatarImage';
 
 interface PlayerDetailDialogProps {
   player: AdminPlayerDetails | null;
@@ -83,12 +84,12 @@ export default function PlayerDetailDialog({ player, gameSlug, open, onOpenChang
         <div className="flex flex-col h-full overflow-hidden" data-testid="dialog-player-detail-content">
           <div className="space-y-6 pb-6 shrink-0">
             <div className="flex items-start gap-4">
-              <div className="w-16 h-16 shrink-0 overflow-hidden">
-                <img
-                  src={`/birb${player.avatar.replace('BIRD', '').padStart(3, '0')}.png`}
-                  alt={player.avatar}
-                  className="w-full h-full object-contain"
-                  data-testid="img-player-avatar"
+              <div className="w-16 h-16 shrink-0" data-testid="img-player-avatar">
+                <AvatarImage
+                  gameSlug={gameSlug}
+                  avatarId={player.avatar}
+                  displayName={player.displayName}
+                  size={64}
                 />
               </div>
               <div className="min-w-0 flex-1">
@@ -188,11 +189,12 @@ export default function PlayerDetailDialog({ player, gameSlug, open, onOpenChang
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                               <div className="flex items-center gap-3 min-w-0">
                                 {battle.opponentAvatar && (
-                                  <div className="w-8 h-8 shrink-0 overflow-hidden">
-                                    <img
-                                      src={`/birb${battle.opponentAvatar.replace('BIRD', '').padStart(3, '0')}.png`}
-                                      alt={battle.opponentAvatar}
-                                      className="w-full h-full object-contain"
+                                  <div className="w-8 h-8 shrink-0">
+                                    <AvatarImage
+                                      gameSlug={gameSlug}
+                                      avatarId={battle.opponentAvatar}
+                                      displayName={battle.opponentDisplayName || 'Unknown'}
+                                      size={32}
                                     />
                                   </div>
                                 )}
