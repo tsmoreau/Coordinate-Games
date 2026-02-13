@@ -718,6 +718,8 @@ Score submission and rankings. Requires "leaderboard" capability.
 
 Get leaderboard scores for a game. Only available for games with the "leaderboard" capability.
 
+**Note:** The `displayName` in score responses is always the player's **current** display name, resolved from their GameIdentity via `deviceId`. If a player changes their name, all their scores will reflect the updated name.
+
 **Authentication:** Public
 
 **Query Parameters:**

@@ -88,12 +88,29 @@ export async function GET(
         { $sort: { '_id': 1 } },
       ]);
 
+      const allDeviceIds = new Set<string>();
+      for (const group of topScores) {
+        for (const entry of group.entries) {
+          allDeviceIds.add(entry.deviceId as string);
+        }
+      }
+
+      const identities = await GameIdentity.find({
+        gameSlug: gameResult.slug,
+        deviceId: { $in: Array.from(allDeviceIds) },
+      }, { deviceId: 1, displayName: 1 });
+
+      const nameMap = new Map<string, string>();
+      for (const id of identities) {
+        nameMap.set(id.deviceId, id.displayName);
+      }
+
       const formattedScores = topScores.map((group) => ({
         category: group._id || 'default',
         scores: group.entries.map((entry: Record<string, unknown>, index: number) => ({
           rank: index + 1,
           deviceId: entry.deviceId,
-          displayName: entry.displayName,
+          displayName: nameMap.get(entry.deviceId as string) || entry.displayName,
           score: entry.score,
           metadata: entry.metadata,
           createdAt: entry.createdAt,
@@ -118,10 +135,21 @@ export async function GET(
       .skip(offset)
       .limit(limit);
 
+    const deviceIds = [...new Set(scores.map((s) => s.deviceId))];
+    const identities = await GameIdentity.find({
+      gameSlug: gameResult.slug,
+      deviceId: { $in: deviceIds },
+    }, { deviceId: 1, displayName: 1 });
+
+    const nameMap = new Map<string, string>();
+    for (const id of identities) {
+      nameMap.set(id.deviceId, id.displayName);
+    }
+
     const formattedScores = scores.map((score, index) => ({
       rank: offset + index + 1,
       deviceId: score.deviceId,
-      displayName: score.displayName,
+      displayName: nameMap.get(score.deviceId) || score.displayName,
       score: score.score,
       category: score.category || 'default',
       metadata: score.metadata,
