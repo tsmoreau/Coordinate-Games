@@ -728,7 +728,7 @@ Get leaderboard scores for a game. Only available for games with the "leaderboar
 | `offset` | number | No | Results offset for pagination |
 | `period` | string | No | Filter: day, week, month (default: all time) |
 | `category` | string | No | Filter by score category |
-| `filter` | string | No | Use `top` to get only the highest score per category |
+| `filter` | string | No | Use `top` to get the top 10 scores per category |
 
 **Examples:**
 ```
@@ -767,6 +767,9 @@ Get leaderboard scores for a game. Only available for games with the "leaderboar
 ```
 
 **Example — filter=top (200 OK):**
+
+Returns up to 10 scores per category, grouped by category with ranks within each group.
+
 ```json
 {
   "success": true,
@@ -775,11 +778,21 @@ Get leaderboard scores for a game. Only available for games with the "leaderboar
   "category": null,
   "categories": ["default", "speed_run", "survival"],
   "scores": [
-    { "category": "default", "deviceId": "a0dcb007...", "displayName": "BirdMaster", "score": 25000, "metadata": { "level": 8 }, "createdAt": "2026-02-01T10:00:00.000Z" },
-    { "category": "speed_run", "deviceId": "f55c9b25...", "displayName": "PentagonPro", "score": 18500, "metadata": {}, "createdAt": "2026-02-01T11:00:00.000Z" },
-    { "category": "survival", "deviceId": "c23ab1f9...", "displayName": "SurvivorX", "score": 12000, "metadata": {}, "createdAt": "2026-02-02T08:00:00.000Z" }
+    {
+      "category": "default",
+      "scores": [
+        { "rank": 1, "deviceId": "a0dcb007...", "displayName": "BirdMaster", "score": 25000, "metadata": { "level": 8 }, "createdAt": "2026-02-01T10:00:00.000Z" },
+        { "rank": 2, "deviceId": "f55c9b25...", "displayName": "PentagonPro", "score": 18500, "metadata": {}, "createdAt": "2026-02-01T11:00:00.000Z" }
+      ]
+    },
+    {
+      "category": "speed_run",
+      "scores": [
+        { "rank": 1, "deviceId": "c23ab1f9...", "displayName": "SurvivorX", "score": 12000, "metadata": {}, "createdAt": "2026-02-02T08:00:00.000Z" }
+      ]
+    }
   ],
-  "total": 3
+  "total": 2
 }
 ```
 

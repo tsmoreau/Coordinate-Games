@@ -69,23 +69,35 @@ export async function GET(
         {
           $group: {
             _id: '$category',
-            score: { $first: '$score' },
-            deviceId: { $first: '$deviceId' },
-            displayName: { $first: '$displayName' },
-            metadata: { $first: '$metadata' },
-            createdAt: { $first: '$createdAt' },
+            entries: {
+              $push: {
+                score: '$score',
+                deviceId: '$deviceId',
+                displayName: '$displayName',
+                metadata: '$metadata',
+                createdAt: '$createdAt',
+              },
+            },
           },
         },
-        { $sort: { score: -1 } },
+        {
+          $project: {
+            entries: { $slice: ['$entries', 10] },
+          },
+        },
+        { $sort: { '_id': 1 } },
       ]);
 
-      const formattedScores = topScores.map((entry) => ({
-        category: entry._id || 'default',
-        deviceId: entry.deviceId,
-        displayName: entry.displayName,
-        score: entry.score,
-        metadata: entry.metadata,
-        createdAt: entry.createdAt,
+      const formattedScores = topScores.map((group) => ({
+        category: group._id || 'default',
+        scores: group.entries.map((entry: Record<string, unknown>, index: number) => ({
+          rank: index + 1,
+          deviceId: entry.deviceId,
+          displayName: entry.displayName,
+          score: entry.score,
+          metadata: entry.metadata,
+          createdAt: entry.createdAt,
+        })),
       }));
 
       return NextResponse.json({
