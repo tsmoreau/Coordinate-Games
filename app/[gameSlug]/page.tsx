@@ -213,7 +213,7 @@ export default async function GamePage({ params }: Props) {
                         <Trophy className="h-4 w-4" />
                         {board.category === 'default' ? 'Leaderboard' : board.category}
                       </CardTitle>
-                      <CardDescription>Top {board.scores.length} players</CardDescription>
+                      <CardDescription>Top {board.scores.length} players.</CardDescription>
                     </div>
                   </div>
                 </CardHeader>
