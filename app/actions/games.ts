@@ -137,24 +137,35 @@ export async function getGameLeaderboards(gameSlug: string, limit: number = 10):
 
   if (categories.length === 0) return [];
 
-  const leaderboards: CategoryLeaderboard[] = await Promise.all(
+  const allScores = await Promise.all(
     categories.sort().map(async (category) => {
       const scores = await Score.find({ gameSlug, category })
         .sort({ score: -1, createdAt: 1 })
         .limit(limit);
-
-      return {
-        category: category || 'default',
-        scores: scores.map((s, index) => ({
-          rank: index + 1,
-          deviceId: s.deviceId,
-          displayName: s.displayName,
-          score: s.score,
-          createdAt: s.createdAt.toISOString(),
-        })),
-      };
+      return { category, scores };
     })
   );
+
+  const allDeviceIds = [...new Set(allScores.flatMap(g => g.scores.map(s => s.deviceId)))];
+  const identities = await GameIdentity.find(
+    { gameSlug, deviceId: { $in: allDeviceIds } },
+    { deviceId: 1, displayName: 1 }
+  );
+  const nameMap = new Map<string, string>();
+  for (const id of identities) {
+    nameMap.set(id.deviceId, id.displayName);
+  }
+
+  const leaderboards: CategoryLeaderboard[] = allScores.map(({ category, scores }) => ({
+    category: category || 'default',
+    scores: scores.map((s, index) => ({
+      rank: index + 1,
+      deviceId: s.deviceId,
+      displayName: nameMap.get(s.deviceId) || s.displayName,
+      score: s.score,
+      createdAt: s.createdAt.toISOString(),
+    })),
+  }));
 
   return leaderboards;
 }

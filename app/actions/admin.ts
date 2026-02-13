@@ -1106,10 +1106,20 @@ export async function getGameScores(gameSlug: string): Promise<AdminScoreEntry[]
       .limit(200)
       .lean();
 
+    const deviceIds = [...new Set(scores.map(s => s.deviceId))];
+    const identities = await GameIdentity.find(
+      { gameSlug, deviceId: { $in: deviceIds } },
+      { deviceId: 1, displayName: 1 }
+    );
+    const nameMap = new Map<string, string>();
+    for (const id of identities) {
+      nameMap.set(id.deviceId, id.displayName);
+    }
+
     return scores.map((s) => ({
       id: String(s._id),
       deviceId: s.deviceId,
-      displayName: s.displayName,
+      displayName: nameMap.get(s.deviceId) || s.displayName,
       score: s.score,
       category: s.category || 'default',
       metadata: s.metadata || {},
