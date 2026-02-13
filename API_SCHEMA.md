@@ -102,7 +102,7 @@ Creates a game-scoped identity with unique deviceId and secretToken.
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
 | `displayName` | string | No | Player display name (max 50 chars) |
-| `avatar` | string | No | Bird avatar: BIRD1-BIRD12 (default: BIRD1) |
+| `avatar` | string | No | Avatar ID from the game's configured avatar set (validated server-side) |
 
 **Example:**
 ```json
@@ -117,7 +117,7 @@ Creates a game-scoped identity with unique deviceId and secretToken.
 | `deviceId` | string | Game-scoped player ID (unique per game) |
 | `secretToken` | string | Game-scoped auth token (store this securely!) |
 | `displayName` | string | Player display name for this game |
-| `avatar` | string | Selected bird avatar for this game |
+| `avatar` | string\|null | Selected avatar for this game (null if none) |
 
 **Example (200 OK):**
 ```json
@@ -138,7 +138,7 @@ When called with a valid `Authorization: Bearer <token>` header, updates the aut
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `avatar` | string | No | Bird avatar: BIRD1-BIRD12 |
+| `avatar` | string | No | Avatar ID from the game's configured avatar set |
 | `displayName` | string | No | Player display name (max 50 chars) |
 
 At least one field must be provided.
@@ -286,7 +286,7 @@ Get the authenticated player's profile and battle statistics for a game. Returns
 | `stats` | object | Player stats object |
 | `stats.deviceId` | string | Player device ID |
 | `stats.displayName` | string | Player display name |
-| `stats.avatar` | string | Player avatar (e.g., BIRD1) |
+| `stats.avatar` | string\|null | Player avatar ID (null if none selected) |
 | `stats.memberSince` | string\|null | Registration date (ISO 8601) or null |
 | `stats.totalBattles` | number | Total battles across all statuses |
 | `stats.completedBattles` | number | Battles that reached completion |
@@ -458,7 +458,7 @@ Create a new battle. The authenticated player becomes player 1. Maximum 9 active
 
 ### GET `/api/[gameSlug]/battles/[id]`
 
-Get detailed information about a specific battle.
+Get detailed information about a specific battle, including player info, turns, and current game state.
 
 **Authentication:** Public
 
@@ -467,24 +467,36 @@ Get detailed information about a specific battle.
 | Field | Type | Description |
 |-------|------|-------------|
 | `success` | boolean | Whether the request was successful |
-| `battle` | Battle | Full battle object with current state |
+| `game` | object | Game info: { slug, name } |
+| `battle` | Battle | Full battle object with player info, turns, and current state |
+
+The `battle` object includes `player1DisplayName`, `player1Avatar`, `player2DisplayName`, `player2Avatar` (resolved from GameIdentity), a `winner` field (0, 1, or null), and a `turns` array with all turn history.
 
 **Example (200 OK):**
 ```json
 {
   "success": true,
+  "game": { "slug": "birdwars", "name": "Bird Wars" },
   "battle": {
     "battleId": "e0a5b571c0ddc493",
     "displayName": "Territorial-Retreat-54",
-    "gameSlug": "birdwars",
     "player1DeviceId": "a0dcb007...",
     "player2DeviceId": "f55c9b25...",
+    "player1DisplayName": "BirdMaster",
+    "player1Avatar": "BIRD4",
+    "player2DisplayName": "EagleEye",
+    "player2Avatar": "BIRD1",
     "status": "active",
     "currentTurn": 5,
     "currentPlayerIndex": 1,
+    "isPrivate": false,
+    "lastTurnAt": "2026-02-07T15:30:00.000Z",
     "mapData": { "selection": "ForestMap" },
     "currentState": { "units": [], "blockedTiles": [] },
-    "isPrivate": false,
+    "winnerId": null,
+    "endReason": null,
+    "winner": null,
+    "turns": [],
     "createdAt": "2026-02-01T12:00:00.000Z",
     "updatedAt": "2026-02-02T15:30:00.000Z"
   }
@@ -499,7 +511,7 @@ Get detailed information about a specific battle.
 
 ### POST `/api/[gameSlug]/battles/[id]/join`
 
-Join a pending battle as player 2. Changes status from "pending" to "active".
+Join a pending battle as player 2. Changes status from "pending" to "active". Initializes the game state from map data.
 
 **Authentication:** **Auth Required**
 
@@ -508,20 +520,24 @@ Join a pending battle as player 2. Changes status from "pending" to "active".
 | Field | Type | Description |
 |-------|------|-------------|
 | `success` | boolean | Whether joining was successful |
-| `battle` | Battle | Updated battle object |
+| `game` | object | Game info: { slug, name } |
+| `battle` | Battle | Updated battle object with player IDs and initial currentState |
 | `message` | string | Human-readable message |
 
 **Example (200 OK):**
 ```json
 {
   "success": true,
+  "game": { "slug": "birdwars", "name": "Bird Wars" },
   "battle": {
     "battleId": "e0a5b571c0ddc493",
     "status": "active",
     "currentTurn": 0,
-    "currentPlayerIndex": 0
+    "player1DeviceId": "a0dcb007...",
+    "player2DeviceId": "f55c9b25...",
+    "currentState": { "units": [], "blockedTiles": [] }
   },
-  "message": "Successfully joined battle as player 2"
+  "message": "Joined battle successfully. Battle is now active."
 }
 ```
 
@@ -529,6 +545,7 @@ Join a pending battle as player 2. Changes status from "pending" to "active".
 
 - `400` — Battle not pending, already full, or cannot join own battle
 - `401` — Authentication required
+- `403` — Maximum 9 active games allowed (limit_reached)
 - `404` — Battle or game not found
 
 ---
@@ -544,12 +561,16 @@ Get all turns for a battle, ordered by turn number.
 | Field | Type | Description |
 |-------|------|-------------|
 | `success` | boolean | Whether the request was successful |
+| `game` | object | Game info: { slug, name } |
+| `battleId` | string | Battle identifier |
 | `turns` | Turn[] | Array of turns in order |
 
 **Example (200 OK):**
 ```json
 {
   "success": true,
+  "game": { "slug": "birdwars", "name": "Bird Wars" },
+  "battleId": "e0a5b571c0ddc493",
   "turns": [
     {
       "turnId": "abc123...",
@@ -633,7 +654,7 @@ Submit a turn with actions. Only the current active player can submit. Must incl
 
 ### GET `/api/[gameSlug]/battles/[id]/poll`
 
-Long-poll for new turns since a given turn number. Use for real-time updates.
+Poll for new turns since a given turn number. Supports ETag-based caching — returns 304 Not Modified if nothing has changed. Use for efficient real-time updates.
 
 **Authentication:** Public
 
@@ -643,6 +664,12 @@ Long-poll for new turns since a given turn number. Use for real-time updates.
 |-------|------|----------|-------------|
 | `lastKnownTurn` | number | No | Last turn number client has (query param) |
 
+**Headers:**
+
+| Header | Description |
+|--------|-------------|
+| `If-None-Match` | ETag from previous response. Returns 304 if battle hasn't changed. |
+
 **Example:**
 ```
 /api/[gameSlug]/battles/[id]/poll?lastKnownTurn=5
@@ -650,25 +677,44 @@ Long-poll for new turns since a given turn number. Use for real-time updates.
 
 **Response:**
 
+Returns battle state as a flat object (not nested). Includes ETag header for caching.
+
 | Field | Type | Description |
 |-------|------|-------------|
 | `success` | boolean | Whether the request was successful |
+| `game` | object | Game info: { slug, name } |
+| `battleId` | string | Battle identifier |
+| `status` | string | Current battle status |
+| `currentTurn` | number | Current turn number |
+| `currentPlayerIndex` | number | Whose turn it is (0 or 1) |
 | `hasNewTurns` | boolean | Whether new turns are available |
-| `battle` | Battle | Current battle state |
 | `newTurns` | Turn[] | New turns since lastKnownTurn |
+| `currentState` | object | Current game state |
+| `winnerId` | string\|null | Winner's deviceId (null if ongoing) |
+| `endReason` | string\|null | How the battle ended |
+| `lastTurnAt` | string\|null | Timestamp of the last turn |
 
 **Example (200 OK):**
 ```json
 {
   "success": true,
+  "game": { "slug": "birdwars", "name": "Bird Wars" },
+  "battleId": "e0a5b571c0ddc493",
+  "status": "active",
+  "currentTurn": 7,
+  "currentPlayerIndex": 1,
   "hasNewTurns": true,
-  "battle": { "currentTurn": 7, "currentPlayerIndex": 1, "status": "active" },
-  "newTurns": [{ "turnNumber": 6, "deviceId": "f55c9b25...", "actions": [] }]
+  "newTurns": [{ "turnNumber": 6, "deviceId": "f55c9b25...", "actions": [] }],
+  "currentState": { "units": [] },
+  "winnerId": null,
+  "endReason": null,
+  "lastTurnAt": "2026-02-07T15:30:00.000Z"
 }
 ```
 
 **Error Responses:**
 
+- `304` — Not Modified (when ETag matches, no body returned)
 - `404` — Battle or game not found
 
 ---
@@ -684,6 +730,7 @@ Forfeit an active battle or cancel a pending battle you created.
 | Field | Type | Description |
 |-------|------|-------------|
 | `success` | boolean | Whether the forfeit was successful |
+| `game` | object | Game info: { slug, name } |
 | `battle` | Battle | Updated battle with winnerId and endReason |
 | `message` | string | Human-readable message |
 
@@ -691,19 +738,22 @@ Forfeit an active battle or cancel a pending battle you created.
 ```json
 {
   "success": true,
+  "game": { "slug": "birdwars", "name": "Bird Wars" },
   "battle": {
     "battleId": "e0a5b571c0ddc493",
     "status": "completed",
     "winnerId": "f55c9b25...",
     "endReason": "forfeit"
   },
-  "message": "Battle forfeited. Opponent wins."
+  "message": "You have forfeited the battle"
 }
 ```
 
+For pending battles, the status becomes "abandoned" with endReason "cancelled" and message "Battle cancelled successfully".
+
 **Error Responses:**
 
-- `400` — Battle already completed or cannot forfeit
+- `400` — Battle already completed or cannot forfeit (status is not active/pending)
 - `401` — Authentication required
 - `403` — Not a participant in this battle
 - `404` — Battle or game not found
@@ -806,7 +856,7 @@ Returns up to 10 scores per category, grouped by category with ranks within each
 
 ### POST `/api/[gameSlug]/scores`
 
-Submit a score to the leaderboard. Players can submit multiple scores.
+Submit a score to the leaderboard. Players can submit multiple scores. Returns rank within the score's category.
 
 **Authentication:** **Auth Required**
 
@@ -814,12 +864,13 @@ Submit a score to the leaderboard. Players can submit multiple scores.
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `score` | number | Yes | The score value (must be positive) |
+| `score` | number | Yes | The score value (integer, 0-999999999) |
+| `category` | string | No | Score category (alphanumeric with dashes/underscores, max 64 chars). Defaults to "default". |
 | `metadata` | object | No | Additional data (level, combo, etc.) |
 
 **Example:**
 ```json
-{ "score": 15000, "metadata": { "level": 5, "combo": 12 } }
+{ "score": 15000, "category": "speed_run", "metadata": { "level": 5, "combo": 12 } }
 ```
 
 **Response:**
@@ -827,23 +878,31 @@ Submit a score to the leaderboard. Players can submit multiple scores.
 | Field | Type | Description |
 |-------|------|-------------|
 | `success` | boolean | Whether the score was submitted |
-| `score` | Score | Created score object |
-| `rank` | number | Current rank on leaderboard |
-| `message` | string | Human-readable message |
+| `game` | object | Game info: { slug, name } |
+| `score` | Score | Created score object with rank, category, and isPersonalBest |
+| `message` | string | Human-readable message (e.g., "New personal best!" or "Score submitted successfully") |
 
-**Example (200 OK):**
+**Example (201 Created):**
 ```json
 {
   "success": true,
-  "score": { "scoreId": "score123...", "score": 15000, "metadata": { "level": 5 } },
-  "rank": 7,
-  "message": "Score submitted! You are ranked #7"
+  "game": { "slug": "powerpentagon", "name": "Power Pentagon" },
+  "score": {
+    "deviceId": "a0dcb007...",
+    "displayName": "BirdMaster",
+    "score": 15000,
+    "category": "speed_run",
+    "rank": 7,
+    "isPersonalBest": true,
+    "createdAt": "2026-02-02T10:00:00.000Z"
+  },
+  "message": "New personal best!"
 }
 ```
 
 **Error Responses:**
 
-- `400` — Invalid score value
+- `400` — Invalid score value or request body
 - `401` — Authentication required
 - `404` — Game not found or missing leaderboard capability
 
@@ -1053,6 +1112,95 @@ List all keys for a game. For player scope, only returns caller's keys. Supports
 
 ---
 
+### POST `/api/[gameSlug]/data/[key]/delete`
+
+Alternative POST-based delete endpoint for clients that cannot send DELETE requests. Behaves identically to `DELETE /api/[gameSlug]/data/[key]`.
+
+**Authentication:** **Auth Required**
+
+**Response:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `success` | boolean | Whether the deletion was successful |
+| `message` | string | Confirmation message |
+| `deletedKey` | string | The key that was deleted |
+
+**Example (200 OK):**
+```json
+{
+  "success": true,
+  "message": "Data deleted",
+  "deletedKey": "old-settings"
+}
+```
+
+**Error Responses:**
+
+- `401` — Authentication required
+- `403` — Only the owner can delete this data
+- `404` — Data not found or game not found
+
+---
+
+## Avatar Endpoints
+
+Admin-only avatar management and public avatar retrieval.
+
+### POST `/api/avatars/upload`
+
+Upload a new avatar image for a game. Admin access required (authenticated via NextAuth session).
+
+**Authentication:** Admin session required
+
+**Request Body:** `multipart/form-data`
+
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| `gameSlug` | string | Yes | Target game slug |
+| `avatarId` | string | Yes | Avatar ID (1-20 alphanumeric chars, plus - and _) |
+| `file` | File | Yes | PNG image file (max 500KB) |
+
+**Response:**
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `success` | boolean | Whether the upload was successful |
+| `url` | string | URL of the uploaded avatar |
+
+**Example (200 OK):**
+```json
+{
+  "success": true,
+  "url": "https://storage.googleapis.com/.../avatars/birdwars/BIRD4.png"
+}
+```
+
+**Error Responses:**
+
+- `400` — Missing fields, invalid avatar ID, wrong file type, or file too large
+- `401` — Unauthorized (no session)
+- `403` — Admin access required
+- `404` — Game not found
+
+---
+
+### GET `/api/avatars/[gameSlug]/[avatarId]`
+
+Retrieve an avatar image by game and avatar ID. Returns the PNG image directly with caching headers.
+
+**Authentication:** Public
+
+**Response:** Binary PNG image with headers:
+- `Content-Type: image/png`
+- `Cache-Control: public, max-age=3600, s-maxage=86400`
+
+**Error Responses:**
+
+- `404` — Avatar not found
+
+---
+
 ## Data Models
 
 ### Game
@@ -1074,7 +1222,7 @@ List all keys for a game. For player scope, only returns caller's keys. Supports
 | `deviceId` | Game-scoped player identifier (unique per game) |
 | `gameSlug` | Game this identity belongs to |
 | `displayName` | Player's display name for this game |
-| `avatar` | Bird avatar (BIRD1-BIRD12) |
+| `avatar` | Avatar ID from the game's configured avatar set (nullable) |
 | `createdAt` | Registration timestamp |
 | `lastSeen` | Last activity timestamp |
 
@@ -1127,6 +1275,7 @@ List all keys for a game. For player scope, only returns caller's keys. Supports
 | `deviceId` | Player who submitted |
 | `displayName` | Player's display name |
 | `score` | Numeric score value |
+| `category` | Score category (defaults to "default") |
 | `metadata` | Additional data (level, combo, etc.) |
 | `createdAt` | When score was submitted |
 

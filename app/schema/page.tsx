@@ -179,7 +179,7 @@ function generateMarkdownSpec(
   lines.push('| `deviceId` | Game-scoped player identifier (unique per game) |');
   lines.push('| `gameSlug` | Game this identity belongs to |');
   lines.push('| `displayName` | Player\'s display name for this game |');
-  lines.push('| `avatar` | Avatar ID from the game\'s configured set (nullable) |');
+  lines.push('| `avatar` | Avatar ID from the game\'s configured avatar set (nullable) |');
   lines.push('| `createdAt` | Registration timestamp |');
   lines.push('| `lastSeen` | Last activity timestamp |');
   lines.push('');
@@ -329,27 +329,25 @@ const perGameEndpoints: EndpointSection[] = [
     id: 'post-register',
     method: 'POST',
     path: '/api/[gameSlug]/register',
-    description: 'Register for a specific game. Creates a game-scoped identity with unique deviceId and secretToken.',
+    description: 'Register for a specific game, or update your profile if already registered. Without auth, creates a new game-scoped identity with unique deviceId and secretToken. With a valid Bearer token, updates the authenticated player\'s displayName and/or avatar instead.',
     auth: false,
     requestBody: {
       fields: [
         { name: 'displayName', type: 'string', required: false, description: 'Player display name (max 50 chars)' },
-        { name: 'avatar', type: 'string', required: false, description: 'Avatar ID from the game\'s configured avatars (default: null)' },
+        { name: 'avatar', type: 'string', required: false, description: 'Avatar ID from the game\'s configured avatar set (validated server-side)' },
       ],
       example: { displayName: 'PlayerOne', avatar: 'KNIGHT1' },
     },
     responseBody: {
       fields: [
-        { name: 'success', type: 'boolean', description: 'Whether the registration was successful' },
-        { name: 'registered', type: 'boolean', description: 'True if already registered for this game, false if newly registered' },
+        { name: 'success', type: 'boolean', description: 'Whether the registration/update was successful' },
         { name: 'deviceId', type: 'string', description: 'Game-scoped player ID (unique per game)' },
-        { name: 'secretToken', type: 'string', description: 'Game-scoped auth token (only on NEW registration!)' },
+        { name: 'secretToken', type: 'string', description: 'Game-scoped auth token (only returned on NEW registration, not on profile update)' },
         { name: 'displayName', type: 'string', description: 'Player display name for this game' },
         { name: 'avatar', type: 'string|null', description: 'Selected avatar ID for this game (null if none)' },
       ],
       example: {
         success: true,
-        registered: false,
         deviceId: 'a0dcb007051f88c0aef99bf01ffe224b',
         secretToken: 'bvUKW9vBPZS8GHtCXe3k8jSm56BQDP...',
         displayName: 'PlayerOne',
@@ -357,8 +355,8 @@ const perGameEndpoints: EndpointSection[] = [
       },
     },
     errors: [
-      { status: 400, description: 'Invalid request body' },
-      { status: 404, description: 'Game not found or missing data capability' },
+      { status: 400, description: 'No valid fields to update (when authenticated)' },
+      { status: 404, description: 'Game not found, or player not found (when authenticated)' },
     ],
   },
   {
@@ -495,6 +493,7 @@ const asyncEndpoints: EndpointSection[] = [
     requestBody: {
       fields: [
         { name: 'mine', type: 'string', required: false, description: 'Set to "true" to filter to the authenticated caller\'s battles only (requires auth). Includes private and abandoned battles.' },
+        { name: 'myturn', type: 'string', required: false, description: 'Set to "true" to filter to battles where it is the caller\'s turn. Requires mine=true. Defaults to status=active. Only valid with status=active or no status filter.' },
         { name: 'status', type: 'string', required: false, description: 'Filter by status: pending, active, completed, abandoned. Only works with mine=true.' },
         { name: 'limit', type: 'number', required: false, description: 'Max results per page (default: 9, max: 50). Enables cursor-based pagination.' },
         { name: 'cursor', type: 'string', required: false, description: 'Pagination cursor from previous response\'s pagination.nextCursor' },
@@ -589,27 +588,37 @@ const asyncEndpoints: EndpointSection[] = [
     id: 'get-battle',
     method: 'GET',
     path: '/api/[gameSlug]/battles/[id]',
-    description: 'Get detailed information about a specific battle.',
+    description: 'Get detailed information about a specific battle, including player info, turns, and current game state. Includes resolved player display names and avatars.',
     auth: false,
     responseBody: {
       fields: [
         { name: 'success', type: 'boolean', description: 'Whether the request was successful' },
-        { name: 'battle', type: 'Battle', description: 'Full battle object with current state' },
+        { name: 'game', type: 'object', description: 'Game info: { slug, name }' },
+        { name: 'battle', type: 'Battle', description: 'Full battle object with player info, turns, winner, and current state' },
       ],
       example: {
         success: true,
+        game: { slug: 'birdwars', name: 'Bird Wars' },
         battle: {
           battleId: 'e0a5b571c0ddc493',
           displayName: 'Territorial-Retreat-54',
-          gameSlug: 'birdwars',
           player1DeviceId: 'a0dcb007...',
           player2DeviceId: 'f55c9b25...',
+          player1DisplayName: 'BirdMaster',
+          player1Avatar: 'BIRD4',
+          player2DisplayName: 'EagleEye',
+          player2Avatar: 'BIRD1',
           status: 'active',
           currentTurn: 5,
           currentPlayerIndex: 1,
+          isPrivate: false,
+          lastTurnAt: '2026-02-07T15:30:00.000Z',
           mapData: { selection: 'ForestMap' },
           currentState: { units: [], blockedTiles: [] },
-          isPrivate: false,
+          winnerId: null,
+          endReason: null,
+          winner: null,
+          turns: [],
           createdAt: '2026-02-01T12:00:00.000Z',
           updatedAt: '2026-02-02T15:30:00.000Z',
         },
@@ -623,28 +632,33 @@ const asyncEndpoints: EndpointSection[] = [
     id: 'post-join',
     method: 'POST',
     path: '/api/[gameSlug]/battles/[id]/join',
-    description: 'Join a pending battle as player 2. Changes status from "pending" to "active".',
+    description: 'Join a pending battle as player 2. Changes status from "pending" to "active". Initializes the game state from map data.',
     auth: true,
     responseBody: {
       fields: [
         { name: 'success', type: 'boolean', description: 'Whether joining was successful' },
-        { name: 'battle', type: 'Battle', description: 'Updated battle object' },
+        { name: 'game', type: 'object', description: 'Game info: { slug, name }' },
+        { name: 'battle', type: 'Battle', description: 'Updated battle object with player IDs and initial currentState' },
         { name: 'message', type: 'string', description: 'Human-readable message' },
       ],
       example: {
         success: true,
+        game: { slug: 'birdwars', name: 'Bird Wars' },
         battle: {
           battleId: 'e0a5b571c0ddc493',
           status: 'active',
           currentTurn: 0,
-          currentPlayerIndex: 0,
+          player1DeviceId: 'a0dcb007...',
+          player2DeviceId: 'f55c9b25...',
+          currentState: { units: [], blockedTiles: [] },
         },
-        message: 'Successfully joined battle as player 2',
+        message: 'Joined battle successfully. Battle is now active.',
       },
     },
     errors: [
       { status: 400, description: 'Battle not pending, already full, or cannot join own battle' },
       { status: 401, description: 'Authentication required' },
+      { status: 403, description: 'Maximum 9 active games allowed (limit_reached)' },
       { status: 404, description: 'Battle or game not found' },
     ],
   },
@@ -657,10 +671,14 @@ const asyncEndpoints: EndpointSection[] = [
     responseBody: {
       fields: [
         { name: 'success', type: 'boolean', description: 'Whether the request was successful' },
+        { name: 'game', type: 'object', description: 'Game info: { slug, name }' },
+        { name: 'battleId', type: 'string', description: 'Battle identifier' },
         { name: 'turns', type: 'Turn[]', description: 'Array of turns in order' },
       ],
       example: {
         success: true,
+        game: { slug: 'birdwars', name: 'Bird Wars' },
+        battleId: 'e0a5b571c0ddc493',
         turns: [
           {
             turnId: 'abc123...',
@@ -731,7 +749,7 @@ const asyncEndpoints: EndpointSection[] = [
     id: 'get-poll',
     method: 'GET',
     path: '/api/[gameSlug]/battles/[id]/poll',
-    description: 'Long-poll for new turns since a given turn number. Use for real-time updates.',
+    description: 'Poll for new turns since a given turn number. Supports ETag-based caching (returns 304 if unchanged). Returns battle state as a flat object.',
     auth: false,
     requestBody: {
       fields: [
@@ -742,18 +760,35 @@ const asyncEndpoints: EndpointSection[] = [
     responseBody: {
       fields: [
         { name: 'success', type: 'boolean', description: 'Whether the request was successful' },
+        { name: 'game', type: 'object', description: 'Game info: { slug, name }' },
+        { name: 'battleId', type: 'string', description: 'Battle identifier' },
+        { name: 'status', type: 'string', description: 'Current battle status' },
+        { name: 'currentTurn', type: 'number', description: 'Current turn number' },
+        { name: 'currentPlayerIndex', type: 'number', description: 'Whose turn it is (0 or 1)' },
         { name: 'hasNewTurns', type: 'boolean', description: 'Whether new turns are available' },
-        { name: 'battle', type: 'Battle', description: 'Current battle state' },
         { name: 'newTurns', type: 'Turn[]', description: 'New turns since lastKnownTurn' },
+        { name: 'currentState', type: 'object', description: 'Current game state' },
+        { name: 'winnerId', type: 'string|null', description: 'Winner\'s deviceId (null if ongoing)' },
+        { name: 'endReason', type: 'string|null', description: 'How the battle ended' },
+        { name: 'lastTurnAt', type: 'string|null', description: 'Timestamp of the last turn' },
       ],
       example: {
         success: true,
+        game: { slug: 'birdwars', name: 'Bird Wars' },
+        battleId: 'e0a5b571c0ddc493',
+        status: 'active',
+        currentTurn: 7,
+        currentPlayerIndex: 1,
         hasNewTurns: true,
-        battle: { currentTurn: 7, currentPlayerIndex: 1, status: 'active' },
         newTurns: [{ turnNumber: 6, deviceId: 'f55c9b25...', actions: [] }],
+        currentState: { units: [] },
+        winnerId: null,
+        endReason: null,
+        lastTurnAt: '2026-02-07T15:30:00.000Z',
       },
     },
     errors: [
+      { status: 304, description: 'Not Modified (when ETag matches, no body returned)' },
       { status: 404, description: 'Battle or game not found' },
     ],
   },
@@ -761,23 +796,25 @@ const asyncEndpoints: EndpointSection[] = [
     id: 'post-forfeit',
     method: 'POST',
     path: '/api/[gameSlug]/battles/[id]/forfeit',
-    description: 'Forfeit an active battle or cancel a pending battle you created.',
+    description: 'Forfeit an active battle or cancel a pending battle you created. Active battles become "completed" with endReason "forfeit". Pending battles become "abandoned" with endReason "cancelled".',
     auth: true,
     responseBody: {
       fields: [
         { name: 'success', type: 'boolean', description: 'Whether the forfeit was successful' },
+        { name: 'game', type: 'object', description: 'Game info: { slug, name }' },
         { name: 'battle', type: 'Battle', description: 'Updated battle with winnerId and endReason' },
         { name: 'message', type: 'string', description: 'Human-readable message' },
       ],
       example: {
         success: true,
+        game: { slug: 'birdwars', name: 'Bird Wars' },
         battle: {
           battleId: 'e0a5b571c0ddc493',
           status: 'completed',
           winnerId: 'f55c9b25...',
           endReason: 'forfeit',
         },
-        message: 'Battle forfeited. Opponent wins.',
+        message: 'You have forfeited the battle',
       },
     },
     errors: [
@@ -794,29 +831,37 @@ const leaderboardEndpoints: EndpointSection[] = [
     id: 'get-scores',
     method: 'GET',
     path: '/api/[gameSlug]/scores',
-    description: 'Get leaderboard scores for a game. Only available for games with the "leaderboard" capability.',
+    description: 'Get leaderboard scores for a game. Only available for games with the "leaderboard" capability. The displayName in responses is always the player\'s current display name, resolved from their GameIdentity via deviceId.',
     auth: false,
     requestBody: {
       fields: [
-        { name: 'limit', type: 'number', required: false, description: 'Max results (default: 100)' },
+        { name: 'limit', type: 'number', required: false, description: 'Max results (default: 100, max: 500)' },
         { name: 'offset', type: 'number', required: false, description: 'Results offset for pagination' },
         { name: 'period', type: 'string', required: false, description: 'Filter: day, week, month (default: all time)' },
+        { name: 'category', type: 'string', required: false, description: 'Filter by score category' },
+        { name: 'filter', type: 'string', required: false, description: 'Use "top" to get the top 10 scores per category' },
       ],
       example: { limit: 10, period: 'week' },
     },
     responseBody: {
       fields: [
         { name: 'success', type: 'boolean', description: 'Whether the request was successful' },
+        { name: 'game', type: 'object', description: 'Game slug and name' },
+        { name: 'category', type: 'string|null', description: 'The category filter applied, or null' },
+        { name: 'categories', type: 'string[]', description: 'All distinct categories for this game' },
         { name: 'scores', type: 'Score[]', description: 'Array of scores, sorted highest first' },
-        { name: 'total', type: 'number', description: 'Total number of scores' },
+        { name: 'pagination', type: 'object', description: 'Pagination info: { total, limit, offset, hasMore } (omitted when filter=top)' },
       ],
       example: {
         success: true,
+        game: { slug: 'powerpentagon', name: 'Power Pentagon' },
+        category: null,
+        categories: ['default', 'speed_run'],
         scores: [
-          { deviceId: 'a0dcb007...', displayName: 'BirdMaster', score: 25000, metadata: { level: 8 }, createdAt: '2026-02-01T10:00:00.000Z' },
-          { deviceId: 'f55c9b25...', displayName: 'PentagonPro', score: 18500, metadata: { level: 6 }, createdAt: '2026-02-01T11:00:00.000Z' },
+          { rank: 1, deviceId: 'a0dcb007...', displayName: 'BirdMaster', score: 25000, category: 'default', metadata: { level: 8 }, createdAt: '2026-02-01T10:00:00.000Z' },
+          { rank: 2, deviceId: 'f55c9b25...', displayName: 'PentagonPro', score: 18500, category: 'default', metadata: { level: 6 }, createdAt: '2026-02-01T11:00:00.000Z' },
         ],
-        total: 42,
+        pagination: { total: 42, limit: 100, offset: 0, hasMore: false },
       },
     },
     errors: [
@@ -827,31 +872,32 @@ const leaderboardEndpoints: EndpointSection[] = [
     id: 'post-scores',
     method: 'POST',
     path: '/api/[gameSlug]/scores',
-    description: 'Submit a score to the leaderboard. Players can submit multiple scores.',
+    description: 'Submit a score to the leaderboard. Players can submit multiple scores. Returns rank within the score\'s category.',
     auth: true,
     requestBody: {
       fields: [
-        { name: 'score', type: 'number', required: true, description: 'The score value (must be positive)' },
+        { name: 'score', type: 'number', required: true, description: 'The score value (integer, 0-999999999)' },
+        { name: 'category', type: 'string', required: false, description: 'Score category (alphanumeric with dashes/underscores, max 64 chars). Defaults to "default".' },
         { name: 'metadata', type: 'object', required: false, description: 'Additional data (level, combo, etc.)' },
       ],
-      example: { score: 15000, metadata: { level: 5, combo: 12 } },
+      example: { score: 15000, category: 'speed_run', metadata: { level: 5, combo: 12 } },
     },
     responseBody: {
       fields: [
         { name: 'success', type: 'boolean', description: 'Whether the score was submitted' },
-        { name: 'score', type: 'Score', description: 'Created score object' },
-        { name: 'rank', type: 'number', description: 'Current rank on leaderboard' },
-        { name: 'message', type: 'string', description: 'Human-readable message' },
+        { name: 'game', type: 'object', description: 'Game info: { slug, name }' },
+        { name: 'score', type: 'Score', description: 'Created score object with rank, category, and isPersonalBest' },
+        { name: 'message', type: 'string', description: 'Human-readable message (e.g., "New personal best!" or "Score submitted successfully")' },
       ],
       example: {
         success: true,
-        score: { scoreId: 'score123...', score: 15000, metadata: { level: 5 } },
-        rank: 7,
-        message: 'Score submitted! You are ranked #7',
+        game: { slug: 'powerpentagon', name: 'Power Pentagon' },
+        score: { deviceId: 'a0dcb007...', displayName: 'BirdMaster', score: 15000, category: 'speed_run', rank: 7, isPersonalBest: true, createdAt: '2026-02-02T10:00:00.000Z' },
+        message: 'New personal best!',
       },
     },
     errors: [
-      { status: 400, description: 'Invalid score value' },
+      { status: 400, description: 'Invalid score value or request body' },
       { status: 401, description: 'Authentication required' },
       { status: 404, description: 'Game not found or missing leaderboard capability' },
     ],
