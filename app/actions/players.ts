@@ -3,6 +3,7 @@
 import { connectToDatabase } from '@/lib/mongodb';
 import { GameIdentity } from '@/models/GameIdentity';
 import { Battle } from '@/models/Battle';
+import { Score } from '@/models/Score';
 
 export interface PlayerProfile {
   deviceId: string;
@@ -218,4 +219,27 @@ export async function getPlayerBattles(deviceId: string, gameSlug: string, limit
       updatedAt: battleObj.updatedAt.toISOString()
     };
   });
+}
+
+export interface PlayerScoreEntry {
+  id: string;
+  score: number;
+  category: string;
+  createdAt: string;
+}
+
+export async function getPlayerScores(deviceId: string, gameSlug: string, limit: number = 20): Promise<PlayerScoreEntry[]> {
+  await connectToDatabase();
+
+  const scores = await Score.find({ gameSlug, deviceId })
+    .sort({ score: -1 })
+    .limit(limit)
+    .lean();
+
+  return scores.map((s: any) => ({
+    id: s._id.toString(),
+    score: s.score,
+    category: s.category || 'default',
+    createdAt: new Date(s.createdAt).toISOString(),
+  }));
 }

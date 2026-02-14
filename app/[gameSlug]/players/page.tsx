@@ -56,7 +56,7 @@ export default async function PlayerListPage({ params }: Props) {
             {players.map((player) => (
               <Link
                 key={player.deviceId}
-                href={`/${game.slug}/player/${encodeURIComponent(player.displayName)}`}
+                href={`/${game.slug}/players/${encodeURIComponent(player.displayName)}`}
                 className="block group"
               >
                 <div className="hover:border-foreground/20 hover:bg-muted/50 transition-all cursor-pointer active:scale-[0.99] relative border border-border rounded-lg">

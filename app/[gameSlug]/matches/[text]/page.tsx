@@ -64,7 +64,7 @@ export default async function MatchDetailPage({ params }: Props) {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-6 mt-8">
           <div className="flex items-start gap-3 -mb-1">
-            <Link href={`/${game.slug}/match`}>
+            <Link href={`/${game.slug}/matches`}>
               <Button variant="ghost" size="sm">
                 <ArrowLeft className="w-4 h-4 -ml-3" />
               </Button>
@@ -141,7 +141,7 @@ export default async function MatchDetailPage({ params }: Props) {
             </CardHeader>
             <CardContent className="space-y-4">
               <Link
-                href={`/${game.slug}/player/${encodeURIComponent(battle.player1DisplayName || '')}`}
+                href={`/${game.slug}/players/${encodeURIComponent(battle.player1DisplayName || '')}`}
                 className="block group no-underline"
               >
                 <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-card transition-all active:scale-[0.98] hover:border-foreground/20 hover:bg-muted/50">
@@ -179,7 +179,7 @@ export default async function MatchDetailPage({ params }: Props) {
 
               {battle.player2DeviceId ? (
                 <Link
-                  href={`/${game.slug}/player/${encodeURIComponent(battle.player2DisplayName || '')}`}
+                  href={`/${game.slug}/players/${encodeURIComponent(battle.player2DisplayName || '')}`}
                   className="block group no-underline"
                 >
                   <div className="flex items-center justify-between p-4 rounded-lg border border-border bg-card transition-all active:scale-[0.98] hover:border-foreground/20 hover:bg-muted/50">

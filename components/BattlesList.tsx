@@ -104,7 +104,7 @@ export default function BattlesList({
           {filteredBattles.map((battle) => (
             <Link
               key={battle.battleId}
-              href={`/${gameSlug}/match/${encodeURIComponent(battle.displayName)}`}
+              href={`/${gameSlug}/matches/${encodeURIComponent(battle.displayName)}`}
               data-testid={`battle-card-${battle.battleId}`}
               className="block group"
             >

@@ -28,15 +28,15 @@ export interface BattleWithDetails {
 
 export async function getBattles(options?: { includePrivate?: boolean; limit?: number; gameSlug?: string }): Promise<BattleWithDetails[]> {
   await connectToDatabase();
-
+  
   const query: Record<string, unknown> = options?.includePrivate 
     ? { status: { $ne: 'abandoned' } } 
     : { isPrivate: { $ne: true }, status: { $ne: 'abandoned' } };
-
+  
   if (options?.gameSlug) {
     query.gameSlug = options.gameSlug;
   }
-
+  
   const limit = options?.limit ?? 50;
 
   const battles = await Battle.find(query)
@@ -61,7 +61,7 @@ export async function getBattles(options?: { includePrivate?: boolean; limit?: n
     const playerInfoMap = playerInfoMaps.get(battleObj.gameSlug) || new Map();
     const p1Info = playerInfoMap.get(battle.player1DeviceId);
     const p2Info = battle.player2DeviceId ? playerInfoMap.get(battle.player2DeviceId) : null;
-
+    
     return {
       battleId: battleObj.battleId,
       displayName: battleObj.displayName,
@@ -125,7 +125,7 @@ export interface TurnData {
 
 export async function getBattleByDisplayName(displayName: string, gameSlug?: string): Promise<BattleProfile | null> {
   await connectToDatabase();
-
+  
   const escapedName = displayName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const query: Record<string, unknown> = {
     displayName: { $regex: new RegExp(`^${escapedName}$`, 'i') },
@@ -135,7 +135,7 @@ export async function getBattleByDisplayName(displayName: string, gameSlug?: str
   }
 
   const battle = await Battle.findOne(query);
-
+  
   if (!battle) {
     return null;
   }
@@ -170,13 +170,13 @@ export async function getBattleByDisplayName(displayName: string, gameSlug?: str
 
 export async function getBattleTurns(battleId: string): Promise<TurnData[]> {
   await connectToDatabase();
-
+  
   const battle = await Battle.findOne({ battleId }).lean();
-
+  
   if (!battle) {
     return [];
   }
-
+  
   return battle.turns.sort((a: any, b: any) => b.turnNumber - a.turnNumber).map((turn: any) => ({
     turnId: turn.turnId,
     deviceId: turn.deviceId,
@@ -204,9 +204,9 @@ export interface HubStats {
 export async function getHubStats(): Promise<HubStats> {
   const { Game } = await import('@/models/Game');
   const { Score } = await import('@/models/Score');
-
+  
   await connectToDatabase();
-
+  
   const [games, playerCount, battleStats, topScores] = await Promise.all([
     Game.countDocuments({ active: true }),
     GameIdentity.countDocuments({ isActive: true }),
