@@ -8,79 +8,69 @@ import {
   Swords, 
   Activity, 
   Clock, 
-  Calendar,
   ArrowLeft,
-  User,
   Target,
   TrendingUp
 } from 'lucide-react';
 import { formatRelativeTime, formatDate } from '@/lib/utils';
 import Nav from '@/components/Nav';
 import AvatarImage from '@/components/AvatarImage';
+import { getPublicGameBySlug } from '@/app/actions/games';
 import { getPlayerByDisplayName, getPlayerBattles } from '@/app/actions/players';
 
 export const dynamic = 'force-dynamic';
 
 interface Props {
-  params: Promise<{ text: string }>;
+  params: Promise<{ gameSlug: string; text: string }>;
 }
 
-function getBattleStatusBadge(status: string, winnerId: string | null, deviceId: string) {
+function getMatchStatusBadge(status: string, winnerId: string | null, deviceId: string) {
   switch (status) {
     case 'active':
-      return <Badge variant="default" data-testid="badge-active">Active</Badge>;
+      return <Badge variant="default">Active</Badge>;
     case 'pending':
-      return <Badge variant="secondary" data-testid="badge-pending">Pending</Badge>;
+      return <Badge variant="secondary">Pending</Badge>;
     case 'completed':
       if (winnerId === deviceId) {
-        return <Badge variant="default" data-testid="badge-won">Won</Badge>;
+        return <Badge variant="default">Won</Badge>;
       } else if (winnerId === null) {
-        return <Badge variant="secondary" data-testid="badge-draw">Draw</Badge>;
+        return <Badge variant="secondary">Draw</Badge>;
       } else {
-        return <Badge variant="destructive" data-testid="badge-lost">Lost</Badge>;
+        return <Badge variant="destructive">Lost</Badge>;
       }
     case 'abandoned':
-      return <Badge variant="outline" data-testid="badge-abandoned">Abandoned</Badge>;
+      return <Badge variant="outline">Abandoned</Badge>;
     default:
       return <Badge variant="outline">{status}</Badge>;
   }
 }
 
-function PlayerAvatarDisplay({ avatar, displayName, gameSlug }: { avatar: string | null; displayName: string; gameSlug?: string }) {
-  return (
-    <div className="mx-auto w-24 h-24 rounded-full bg-muted flex items-center justify-center mb-4 border-2 border-border overflow-hidden" data-testid="img-player-avatar">
-      <AvatarImage
-        gameSlug={gameSlug || ''}
-        avatarId={avatar}
-        displayName={displayName}
-        size={64}
-      />
-    </div>
-  );
-}
-
 export default async function PlayerProfilePage({ params }: Props) {
-  const { text } = await params;
+  const { gameSlug, text } = await params;
   const displayName = decodeURIComponent(text);
-  
-  const player = await getPlayerByDisplayName(displayName);
-  
+
+  const game = await getPublicGameBySlug(gameSlug);
+  if (!game) {
+    notFound();
+  }
+
+  const player = await getPlayerByDisplayName(displayName, game.slug);
   if (!player) {
     notFound();
   }
 
-  const battles = await getPlayerBattles(player.deviceId, 10);
+  const battles = await getPlayerBattles(player.deviceId, game.slug, 10);
 
   return (
     <div className="min-h-screen bg-background">
       <Nav />
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <Link href="/">
-            <Button variant="ghost" size="sm" data-testid="button-back">
+        <div className="mb-6 mt-8">
+          <Link href={`/${game.slug}/player`}>
+            <Button variant="ghost" size="sm">
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Home
+              Back to Players
             </Button>
           </Link>
         </div>
@@ -88,29 +78,32 @@ export default async function PlayerProfilePage({ params }: Props) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           <Card className="lg:col-span-1 lg:sticky lg:top-24 h-fit">
             <CardHeader className="text-center">
-              <PlayerAvatarDisplay avatar={player.avatar} displayName={player.displayName} gameSlug={player.gameSlug} />
-              <CardTitle className="text-2xl" data-testid="text-player-name">
+              <div className="mx-auto w-24 h-24 rounded-full bg-muted flex items-center justify-center mb-4 border-2 border-border overflow-hidden">
+                <AvatarImage
+                  gameSlug={game.slug}
+                  avatarId={player.avatar}
+                  displayName={player.displayName}
+                  size={64}
+                />
+              </div>
+              <CardTitle className="text-2xl">
                 {player.displayName}
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-2 py-2 border-t border-border">
                 <span className="text-sm text-muted-foreground">Status</span>
-                <Badge variant={player.isActive ? "default" : "secondary"} data-testid="badge-player-status">
+                <Badge variant={player.isActive ? 'default' : 'secondary'}>
                   {player.isActive ? 'Active' : 'Inactive'}
                 </Badge>
               </div>
               <div className="flex flex-wrap items-center justify-between gap-2 py-2 border-t border-border">
                 <span className="text-sm text-muted-foreground">Member Since</span>
-                <span className="text-sm font-medium" data-testid="text-member-since">
-                  {formatDate(player.createdAt)}
-                </span>
+                <span className="text-sm font-medium">{formatDate(player.createdAt)}</span>
               </div>
               <div className="flex flex-wrap items-center justify-between gap-2 py-2 border-t border-border">
                 <span className="text-sm text-muted-foreground">Last Seen</span>
-                <span className="text-sm font-medium" data-testid="text-last-seen">
-                  {formatRelativeTime(player.lastSeen)}
-                </span>
+                <span className="text-sm font-medium">{formatRelativeTime(player.lastSeen)}</span>
               </div>
             </CardContent>
           </Card>
@@ -123,7 +116,7 @@ export default async function PlayerProfilePage({ params }: Props) {
                   <Trophy className="h-4 w-4 text-green-500 dark:text-green-400" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-green-600 dark:text-green-400" data-testid="stat-wins">{player.stats.wins}</div>
+                  <div className="text-2xl font-bold text-green-600 dark:text-green-400">{player.stats.wins}</div>
                 </CardContent>
               </Card>
 
@@ -133,7 +126,7 @@ export default async function PlayerProfilePage({ params }: Props) {
                   <Target className="h-4 w-4 text-red-500 dark:text-red-400" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold text-red-600 dark:text-red-400" data-testid="stat-losses">{player.stats.losses}</div>
+                  <div className="text-2xl font-bold text-red-600 dark:text-red-400">{player.stats.losses}</div>
                 </CardContent>
               </Card>
 
@@ -143,7 +136,7 @@ export default async function PlayerProfilePage({ params }: Props) {
                   <Swords className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold" data-testid="stat-draws">{player.stats.draws}</div>
+                  <div className="text-2xl font-bold">{player.stats.draws}</div>
                 </CardContent>
               </Card>
 
@@ -153,7 +146,7 @@ export default async function PlayerProfilePage({ params }: Props) {
                   <TrendingUp className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold" data-testid="stat-winrate">{player.stats.winRate}</div>
+                  <div className="text-2xl font-bold">{player.stats.winRate}</div>
                 </CardContent>
               </Card>
             </div>
@@ -161,22 +154,22 @@ export default async function PlayerProfilePage({ params }: Props) {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Battles</CardTitle>
+                  <CardTitle className="text-sm font-medium">Total Matches</CardTitle>
                   <Swords className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold" data-testid="stat-total-battles">{player.stats.totalBattles}</div>
+                  <div className="text-2xl font-bold">{player.stats.totalBattles}</div>
                   <p className="text-xs text-muted-foreground">{player.stats.completedBattles} completed</p>
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between gap-2 space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Active Battles</CardTitle>
+                  <CardTitle className="text-sm font-medium">Active Matches</CardTitle>
                   <Activity className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold" data-testid="stat-active-battles">{player.stats.activeBattles}</div>
+                  <div className="text-2xl font-bold">{player.stats.activeBattles}</div>
                   <p className="text-xs text-muted-foreground">{player.stats.pendingBattles} pending</p>
                 </CardContent>
               </Card>
@@ -187,7 +180,7 @@ export default async function PlayerProfilePage({ params }: Props) {
                   <Clock className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold" data-testid="stat-turns">{player.stats.totalTurnsSubmitted}</div>
+                  <div className="text-2xl font-bold">{player.stats.totalTurnsSubmitted}</div>
                   <p className="text-xs text-muted-foreground">Total actions</p>
                 </CardContent>
               </Card>
@@ -195,29 +188,28 @@ export default async function PlayerProfilePage({ params }: Props) {
 
             <Card>
               <CardHeader>
-                <CardTitle>Recent Battles</CardTitle>
-                <CardDescription>Latest battle history for this player</CardDescription>
+                <CardTitle>Recent Matches</CardTitle>
+                <CardDescription>Latest match history for this player</CardDescription>
               </CardHeader>
               <CardContent>
                 {battles.length === 0 ? (
                   <div className="text-center py-8 text-muted-foreground">
                     <Swords className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                    <p>No battles yet</p>
+                    <p>No matches yet</p>
                   </div>
                 ) : (
                   <div className="space-y-3">
                     {battles.map((battle) => (
                       <Link 
                         key={battle.battleId} 
-                        href={`/battle/${encodeURIComponent(battle.displayName)}`}
+                        href={`/${game.slug}/match/${encodeURIComponent(battle.displayName)}`}
                         className="block"
-                        data-testid={`link-battle-${battle.battleId}`}
                       >
-                        <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-lg border border-border hover-elevate">
+                        <div className="flex flex-wrap items-center justify-between gap-2 p-3 rounded-lg border border-border hover:border-foreground/20 hover:bg-muted/50 transition-all">
                           <div className="flex-1 min-w-0">
                             <div className="flex flex-wrap items-center gap-2">
                               <p className="font-medium text-sm truncate">{battle.displayName}</p>
-                              {getBattleStatusBadge(battle.status, battle.winnerId, player.deviceId)}
+                              {getMatchStatusBadge(battle.status, battle.winnerId, player.deviceId)}
                             </div>
                             <p className="text-xs text-muted-foreground mt-1">
                               vs {battle.opponentName || 'Waiting for opponent'} 

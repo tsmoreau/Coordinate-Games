@@ -169,3 +169,45 @@ export async function getGameLeaderboards(gameSlug: string, limit: number = 10):
 
   return leaderboards;
 }
+
+export interface ScoreDetail {
+  id: string;
+  deviceId: string;
+  displayName: string;
+  avatar: string | null;
+  score: number;
+  category: string;
+  metadata: Record<string, unknown> | null;
+  createdAt: string;
+}
+
+export async function getScoreById(gameSlug: string, scoreId: string): Promise<ScoreDetail | null> {
+  await connectToDatabase();
+
+  let score;
+  try {
+    score = await Score.findById(scoreId);
+  } catch {
+    return null;
+  }
+
+  if (!score || score.gameSlug !== gameSlug) {
+    return null;
+  }
+
+  const identity = await GameIdentity.findOne(
+    { gameSlug, deviceId: score.deviceId },
+    { displayName: 1, avatar: 1 }
+  );
+
+  return {
+    id: score._id.toString(),
+    deviceId: score.deviceId,
+    displayName: identity?.displayName || score.displayName || 'Unknown Player',
+    avatar: identity?.avatar || null,
+    score: score.score,
+    category: score.category || 'default',
+    metadata: score.metadata || null,
+    createdAt: score.createdAt.toISOString(),
+  };
+}

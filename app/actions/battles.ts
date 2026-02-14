@@ -3,11 +3,7 @@
 import { connectToDatabase } from '@/lib/mongodb';
 import { Battle } from '@/models/Battle';
 import { GameIdentity } from '@/models/GameIdentity';
-
-interface PlayerInfo {
-  displayName: string;
-  avatar: string | null;
-}
+import { getPlayerInfo } from '@/lib/playerInfo';
 
 export interface BattleWithDetails {
   battleId: string;
@@ -30,34 +26,17 @@ export interface BattleWithDetails {
   winnerId: string | null;
 }
 
-async function getPlayerInfo(deviceIds: (string | null)[], gameSlug: string): Promise<Map<string, PlayerInfo>> {
-  const validIds = deviceIds.filter((id): id is string => id !== null);
-  if (validIds.length === 0) return new Map();
-  
-  const identities = await GameIdentity.find({ deviceId: { $in: validIds }, gameSlug });
-  const map = new Map<string, PlayerInfo>();
-  
-  for (const identity of identities) {
-    map.set(identity.deviceId, {
-      displayName: identity.displayName || 'Unknown Player',
-      avatar: identity.avatar || null,
-    });
-  }
-  
-  return map;
-}
-
 export async function getBattles(options?: { includePrivate?: boolean; limit?: number; gameSlug?: string }): Promise<BattleWithDetails[]> {
   await connectToDatabase();
-  
+
   const query: Record<string, unknown> = options?.includePrivate 
     ? { status: { $ne: 'abandoned' } } 
     : { isPrivate: { $ne: true }, status: { $ne: 'abandoned' } };
-  
+
   if (options?.gameSlug) {
     query.gameSlug = options.gameSlug;
   }
-  
+
   const limit = options?.limit ?? 50;
 
   const battles = await Battle.find(query)
@@ -71,10 +50,10 @@ export async function getBattles(options?: { includePrivate?: boolean; limit?: n
     battlesByGame.get(slug)!.push(battle);
   }
 
-  const playerInfoMaps = new Map<string, Map<string, PlayerInfo>>();
+  const playerInfoMaps = new Map<string, Awaited<ReturnType<typeof getPlayerInfo>>>();
   for (const [slug, gameBattles] of battlesByGame) {
     const allPlayerIds = gameBattles.flatMap(b => [b.player1DeviceId, b.player2DeviceId]);
-    playerInfoMaps.set(slug, await getPlayerInfo(allPlayerIds, slug));
+    playerInfoMaps.set(slug, await getPlayerInfo(slug, allPlayerIds));
   }
 
   return battles.map(battle => {
@@ -82,7 +61,7 @@ export async function getBattles(options?: { includePrivate?: boolean; limit?: n
     const playerInfoMap = playerInfoMaps.get(battleObj.gameSlug) || new Map();
     const p1Info = playerInfoMap.get(battle.player1DeviceId);
     const p2Info = battle.player2DeviceId ? playerInfoMap.get(battle.player2DeviceId) : null;
-    
+
     return {
       battleId: battleObj.battleId,
       displayName: battleObj.displayName,
@@ -144,19 +123,25 @@ export interface TurnData {
   validationErrors: string[];
 }
 
-export async function getBattleByDisplayName(displayName: string): Promise<BattleProfile | null> {
+export async function getBattleByDisplayName(displayName: string, gameSlug?: string): Promise<BattleProfile | null> {
   await connectToDatabase();
-  
-  const battle = await Battle.findOne({ 
-    displayName: { $regex: new RegExp(`^${displayName}$`, 'i') }
-  });
-  
+
+  const escapedName = displayName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const query: Record<string, unknown> = {
+    displayName: { $regex: new RegExp(`^${escapedName}$`, 'i') },
+  };
+  if (gameSlug) {
+    query.gameSlug = gameSlug;
+  }
+
+  const battle = await Battle.findOne(query);
+
   if (!battle) {
     return null;
   }
 
   const battleObj = battle.toObject();
-  const playerInfoMap = await getPlayerInfo([battleObj.player1DeviceId, battleObj.player2DeviceId], battleObj.gameSlug);
+  const playerInfoMap = await getPlayerInfo(battleObj.gameSlug, [battleObj.player1DeviceId, battleObj.player2DeviceId]);
 
   const p1Info = playerInfoMap.get(battleObj.player1DeviceId);
   const p2Info = battleObj.player2DeviceId ? playerInfoMap.get(battleObj.player2DeviceId) : null;
@@ -185,19 +170,19 @@ export async function getBattleByDisplayName(displayName: string): Promise<Battl
 
 export async function getBattleTurns(battleId: string): Promise<TurnData[]> {
   await connectToDatabase();
-  
-  const battle = await Battle.findOne({ battleId });
-  
+
+  const battle = await Battle.findOne({ battleId }).lean();
+
   if (!battle) {
     return [];
   }
-  
-  return battle.turns.sort((a, b) => b.turnNumber - a.turnNumber).map(turn => ({
+
+  return battle.turns.sort((a: any, b: any) => b.turnNumber - a.turnNumber).map((turn: any) => ({
     turnId: turn.turnId,
     deviceId: turn.deviceId,
     turnNumber: turn.turnNumber,
     actions: turn.actions,
-    timestamp: turn.timestamp.toISOString(),
+    timestamp: new Date(turn.timestamp).toISOString(),
     isValid: turn.isValid,
     validationErrors: turn.validationErrors
   }));
@@ -219,9 +204,9 @@ export interface HubStats {
 export async function getHubStats(): Promise<HubStats> {
   const { Game } = await import('@/models/Game');
   const { Score } = await import('@/models/Score');
-  
+
   await connectToDatabase();
-  
+
   const [games, playerCount, battleStats, topScores] = await Promise.all([
     Game.countDocuments({ active: true }),
     GameIdentity.countDocuments({ isActive: true }),

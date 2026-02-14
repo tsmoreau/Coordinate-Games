@@ -25,6 +25,14 @@ export interface PlayerProfile {
   };
 }
 
+export interface PlayerListEntry {
+  deviceId: string;
+  displayName: string;
+  avatar: string | null;
+  lastSeen: string;
+  isActive: boolean;
+}
+
 export interface BattleWithOpponent {
   battleId: string;
   displayName: string;
@@ -40,18 +48,52 @@ export interface BattleWithOpponent {
   updatedAt: string;
 }
 
-export async function getPlayerByDisplayName(displayName: string): Promise<PlayerProfile | null> {
+export async function getGamePlayersList(gameSlug: string, limit: number = 50): Promise<PlayerListEntry[]> {
   await connectToDatabase();
-  
-  const identity = await GameIdentity.findOne({ 
-    displayName: { $regex: new RegExp(`^${displayName}$`, 'i') }
+
+  const identities = await GameIdentity.find({ gameSlug, isActive: true })
+    .sort({ lastSeen: -1 })
+    .limit(limit);
+
+  return identities.map(identity => {
+    const obj = identity.toObject();
+    return {
+      deviceId: obj.deviceId,
+      displayName: obj.displayName || 'Unnamed Player',
+      avatar: obj.avatar || null,
+      lastSeen: obj.lastSeen.toISOString(),
+      isActive: obj.isActive,
+    };
   });
+}
+
+export async function getPlayerByDisplayName(displayName: string, gameSlug?: string): Promise<PlayerProfile | null> {
+  await connectToDatabase();
+
+  const escapedName = displayName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const query: Record<string, unknown> = {
+    displayName: { $regex: new RegExp(`^${escapedName}$`, 'i') },
+  };
+  if (gameSlug) {
+    query.gameSlug = gameSlug;
+  }
+
+  const identity = await GameIdentity.findOne(query);
   
   if (!identity) {
     return null;
   }
 
   const deviceId = identity.deviceId;
+  const slug = identity.gameSlug;
+
+  const playerFilter = {
+    gameSlug: slug,
+    $or: [
+      { player1DeviceId: deviceId },
+      { player2DeviceId: deviceId },
+    ],
+  };
 
   const [
     totalBattles,
@@ -61,63 +103,38 @@ export async function getPlayerByDisplayName(displayName: string): Promise<Playe
     activeBattles,
     pendingBattles
   ] = await Promise.all([
-    Battle.countDocuments({
-      $or: [
-        { player1DeviceId: deviceId },
-        { player2DeviceId: deviceId }
-      ]
-    }),
+    Battle.countDocuments(playerFilter),
     
     Battle.countDocuments({
+      ...playerFilter,
       status: 'completed',
       winnerId: deviceId,
-      $or: [
-        { player1DeviceId: deviceId },
-        { player2DeviceId: deviceId }
-      ]
     }),
     
     Battle.countDocuments({
+      ...playerFilter,
       status: 'completed',
       winnerId: { $nin: [deviceId, null] },
-      $or: [
-        { player1DeviceId: deviceId },
-        { player2DeviceId: deviceId }
-      ]
     }),
     
     Battle.countDocuments({
+      ...playerFilter,
       status: 'completed',
       winnerId: null,
-      $or: [
-        { player1DeviceId: deviceId },
-        { player2DeviceId: deviceId }
-      ]
     }),
     
     Battle.countDocuments({
+      ...playerFilter,
       status: 'active',
-      $or: [
-        { player1DeviceId: deviceId },
-        { player2DeviceId: deviceId }
-      ]
     }),
     
     Battle.countDocuments({
+      ...playerFilter,
       status: 'pending',
-      $or: [
-        { player1DeviceId: deviceId },
-        { player2DeviceId: deviceId }
-      ]
     })
   ]);
 
-  const battles = await Battle.find({
-    $or: [
-      { player1DeviceId: deviceId },
-      { player2DeviceId: deviceId }
-    ]
-  }).select('turns');
+  const battles = await Battle.find(playerFilter).select('turns');
   
   const totalTurnsSubmitted = battles.reduce((count, battle) => {
     return count + battle.turns.filter(t => t.deviceId === deviceId).length;
@@ -152,10 +169,11 @@ export async function getPlayerByDisplayName(displayName: string): Promise<Playe
   };
 }
 
-export async function getPlayerBattles(deviceId: string, limit: number = 10): Promise<BattleWithOpponent[]> {
+export async function getPlayerBattles(deviceId: string, gameSlug: string, limit: number = 10): Promise<BattleWithOpponent[]> {
   await connectToDatabase();
   
   const battles = await Battle.find({
+    gameSlug,
     $or: [
       { player1DeviceId: deviceId },
       { player2DeviceId: deviceId }
@@ -172,6 +190,7 @@ export async function getPlayerBattles(deviceId: string, limit: number = 10): Pr
   }).filter(Boolean) as string[];
 
   const opponents = await GameIdentity.find({
+    gameSlug,
     deviceId: { $in: opponentDeviceIds }
   }).select('deviceId displayName');
 

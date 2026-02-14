@@ -128,17 +128,21 @@ export default async function GamePage({ params }: Props) {
               <CardHeader>
                 <div className="flex items-center justify-between gap-4">
                   <div>
-                    <CardTitle>Recent Battles</CardTitle>
-                    <CardDescription>Latest battle activity</CardDescription>
+                    <CardTitle>Recent Matches</CardTitle>
+                    <CardDescription>Latest match activity</CardDescription>
                   </div>
+                  <Link href={`/${game.slug}/match`}>
+                    <Button variant="outline" size="sm">View All</Button>
+                  </Link>
                 </div>
               </CardHeader>
               <CardContent>
                 <BattlesList
                   battles={battles.slice(0, 5)}
+                  gameSlug={game.slug}
                   showFilters={false}
                   showCreatedDate={false}
-                  emptyMessage="No battles yet. Start one from your Playdate!"
+                  emptyMessage="No matches yet. Start one from your Playdate!"
                 />
               </CardContent>
             </Card>
@@ -150,6 +154,9 @@ export default async function GamePage({ params }: Props) {
                     <CardTitle>Recent Players</CardTitle>
                     <CardDescription>Latest player activity</CardDescription>
                   </div>
+                  <Link href={`/${game.slug}/player`}>
+                    <Button variant="outline" size="sm">View All</Button>
+                  </Link>
                 </div>
               </CardHeader>
               <CardContent>
@@ -164,7 +171,7 @@ export default async function GamePage({ params }: Props) {
                     {devices.map((device) => (
                       <Link
                         key={device.deviceId}
-                        href={`/player/${encodeURIComponent(device.displayName)}`}
+                        href={`/${game.slug}/player/${encodeURIComponent(device.displayName)}`}
                         className="block group"
                       >
                         <div className="hover:border-foreground/20 hover:bg-muted/50 transition-all cursor-pointer active:scale-[0.99] relative border border-border rounded-lg">
@@ -203,56 +210,64 @@ export default async function GamePage({ params }: Props) {
         )}
 
         {hasLeaderboard && leaderboards.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
-            {leaderboards.map((board) => (
-              <Card key={board.category}>
-                <CardHeader>
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <CardTitle className="flex items-center gap-2">
-                        <Trophy className="h-4 w-4" />
-                        {board.category === 'default' ? 'Leaderboard' : board.category}
-                      </CardTitle>
-                      <CardDescription>Top {board.scores.length} players.</CardDescription>
+          <div className="mt-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-bold uppercase tracking-tight">Leaderboards</h2>
+              <Link href={`/${game.slug}/score`}>
+                <Button variant="outline" size="sm">View All</Button>
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {leaderboards.map((board) => (
+                <Card key={board.category}>
+                  <CardHeader>
+                    <div className="flex items-center justify-between gap-4">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <Trophy className="h-4 w-4" />
+                          {board.category === 'default' ? 'Leaderboard' : board.category}
+                        </CardTitle>
+                        <CardDescription>Top {board.scores.length} players.</CardDescription>
+                      </div>
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  {board.scores.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Trophy className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                      <p>No scores yet</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {board.scores.map((entry) => (
-                        <Link
-                          key={`${entry.deviceId}-${entry.rank}`}
-                          href={`/player/${encodeURIComponent(entry.displayName)}`}
-                          className="block group"
-                        >
-                          <div className="hover:border-foreground/20 hover:bg-muted/50 transition-all cursor-pointer active:scale-[0.99] relative border border-border rounded-lg">
-                            <div className="flex items-center justify-between p-3">
-                              <div className="flex items-center gap-3">
-                                <span className="text-sm font-mono text-muted-foreground w-6 text-right">
-                                  {entry.rank}
+                  </CardHeader>
+                  <CardContent>
+                    {board.scores.length === 0 ? (
+                      <div className="text-center py-8 text-muted-foreground">
+                        <Trophy className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                        <p>No scores yet</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {board.scores.map((entry) => (
+                          <Link
+                            key={`${entry.deviceId}-${entry.rank}`}
+                            href={`/${game.slug}/player/${encodeURIComponent(entry.displayName)}`}
+                            className="block group"
+                          >
+                            <div className="hover:border-foreground/20 hover:bg-muted/50 transition-all cursor-pointer active:scale-[0.99] relative border border-border rounded-lg">
+                              <div className="flex items-center justify-between p-3">
+                                <div className="flex items-center gap-3">
+                                  <span className="text-sm font-mono text-muted-foreground w-6 text-right">
+                                    {entry.rank}
+                                  </span>
+                                  <p className="font-bold text-sm uppercase tracking-tight">
+                                    {entry.displayName}
+                                  </p>
+                                </div>
+                                <span className="text-sm font-bold font-mono">
+                                  {entry.score.toLocaleString()}
                                 </span>
-                                <p className="font-bold text-sm uppercase tracking-tight">
-                                  {entry.displayName}
-                                </p>
                               </div>
-                              <span className="text-sm font-bold font-mono">
-                                {entry.score.toLocaleString()}
-                              </span>
                             </div>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ))}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         )}
       </main>

@@ -19,6 +19,7 @@ import AvatarImage from '@/components/AvatarImage';
 
 interface BattlesListProps {
   battles: BattleWithDetails[];
+  gameSlug: string;
   showFilters?: boolean;
   showCreatedDate?: boolean;
   emptyMessage?: string;
@@ -26,9 +27,10 @@ interface BattlesListProps {
 
 export default function BattlesList({ 
   battles, 
+  gameSlug,
   showFilters = true,
   showCreatedDate = true,
-  emptyMessage = 'No battles found'
+  emptyMessage = 'No matches found'
 }: BattlesListProps) {
   const [filter, setFilter] = useState<string>('all');
 
@@ -89,11 +91,11 @@ export default function BattlesList({
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16">
             <Swords className="w-16 h-16 text-muted-foreground/50 mb-4" />
-            <h3 className="text-lg font-medium mb-2">No battles found</h3>
+            <h3 className="text-lg font-medium mb-2">No matches found</h3>
             <p className="text-muted-foreground text-sm text-center max-w-md">
               {filter === 'all' 
                 ? emptyMessage
-                : `No ${filter} battles at the moment.`}
+                : `No ${filter} matches at the moment.`}
             </p>
           </CardContent>
         </Card>
@@ -102,7 +104,7 @@ export default function BattlesList({
           {filteredBattles.map((battle) => (
             <Link
               key={battle.battleId}
-              href={`/battle/${encodeURIComponent(battle.displayName)}`}
+              href={`/${gameSlug}/match/${encodeURIComponent(battle.displayName)}`}
               data-testid={`battle-card-${battle.battleId}`}
               className="block group"
             >
