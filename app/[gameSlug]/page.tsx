@@ -131,7 +131,7 @@ export default async function GamePage({ params }: Props) {
                     <CardTitle>Recent Matches</CardTitle>
                     <CardDescription>Latest match activity</CardDescription>
                   </div>
-                  <Link href={`/${game.slug}/match`}>
+                  <Link href={`/${game.slug}/matches`}>
                     <Button variant="outline" size="sm">View All</Button>
                   </Link>
                 </div>
@@ -154,7 +154,7 @@ export default async function GamePage({ params }: Props) {
                     <CardTitle>Recent Players</CardTitle>
                     <CardDescription>Latest player activity</CardDescription>
                   </div>
-                  <Link href={`/${game.slug}/player`}>
+                  <Link href={`/${game.slug}/players`}>
                     <Button variant="outline" size="sm">View All</Button>
                   </Link>
                 </div>
@@ -171,7 +171,7 @@ export default async function GamePage({ params }: Props) {
                     {devices.map((device) => (
                       <Link
                         key={device.deviceId}
-                        href={`/${game.slug}/player/${encodeURIComponent(device.displayName)}`}
+                        href={`/${game.slug}/players/${encodeURIComponent(device.displayName)}`}
                         className="block group"
                       >
                         <div className="hover:border-foreground/20 hover:bg-muted/50 transition-all cursor-pointer active:scale-[0.99] relative border border-border rounded-lg">
@@ -242,7 +242,7 @@ export default async function GamePage({ params }: Props) {
                         {board.scores.map((entry) => (
                           <Link
                             key={`${entry.deviceId}-${entry.rank}`}
-                            href={`/${game.slug}/player/${encodeURIComponent(entry.displayName)}`}
+                            href={`/${game.slug}/players/${encodeURIComponent(entry.displayName)}`}
                             className="block group"
                           >
                             <div className="hover:border-foreground/20 hover:bg-muted/50 transition-all cursor-pointer active:scale-[0.99] relative border border-border rounded-lg">
