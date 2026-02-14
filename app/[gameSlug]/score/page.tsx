@@ -4,6 +4,7 @@ import Nav from '@/components/Nav';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Trophy } from 'lucide-react';
+import AvatarImage from '@/components/AvatarImage';
 import { getPublicGameBySlug, getGameLeaderboards } from '@/app/actions/games';
 
 export const dynamic = 'force-dynamic';
@@ -62,7 +63,7 @@ export default async function ScoreListPage({ params }: Props) {
                     {board.scores.map((entry) => (
                       <Link
                         key={`${entry.deviceId}-${entry.rank}`}
-                        href={`/${game.slug}/player/${encodeURIComponent(entry.displayName)}`}
+                        href={`/${game.slug}/players/${encodeURIComponent(entry.displayName)}`}
                         className="block group"
                       >
                         <div className="hover:border-foreground/20 hover:bg-muted/50 transition-all cursor-pointer active:scale-[0.99] relative border border-border rounded-lg">
@@ -71,6 +72,14 @@ export default async function ScoreListPage({ params }: Props) {
                               <span className="text-sm font-mono text-muted-foreground w-6 text-right">
                                 {entry.rank}
                               </span>
+                              <div className="w-8 h-8 shrink-0">
+                                <AvatarImage
+                                  gameSlug={game.slug}
+                                  avatarId={entry.avatar}
+                                  displayName={entry.displayName}
+                                  size={32}
+                                />
+                              </div>
                               <p className="font-bold text-sm uppercase tracking-tight">
                                 {entry.displayName}
                               </p>

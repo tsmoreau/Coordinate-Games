@@ -121,6 +121,7 @@ export interface PublicScoreEntry {
   rank: number;
   deviceId: string;
   displayName: string;
+  avatar: string | null;
   score: number;
   createdAt: string;
 }
@@ -149,11 +150,13 @@ export async function getGameLeaderboards(gameSlug: string, limit: number = 10):
   const allDeviceIds = [...new Set(allScores.flatMap(g => g.scores.map(s => s.deviceId)))];
   const identities = await GameIdentity.find(
     { gameSlug, deviceId: { $in: allDeviceIds } },
-    { deviceId: 1, displayName: 1 }
+    { deviceId: 1, displayName: 1, avatar: 1 }
   );
   const nameMap = new Map<string, string>();
+  const avatarMap = new Map<string, string | null>();
   for (const id of identities) {
     nameMap.set(id.deviceId, id.displayName);
+    avatarMap.set(id.deviceId, id.avatar || null);
   }
 
   const leaderboards: CategoryLeaderboard[] = allScores.map(({ category, scores }) => ({
@@ -162,6 +165,7 @@ export async function getGameLeaderboards(gameSlug: string, limit: number = 10):
       rank: index + 1,
       deviceId: s.deviceId,
       displayName: nameMap.get(s.deviceId) || s.displayName,
+      avatar: avatarMap.get(s.deviceId) ?? null,
       score: s.score,
       createdAt: s.createdAt.toISOString(),
     })),

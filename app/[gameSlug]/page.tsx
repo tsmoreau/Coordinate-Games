@@ -251,6 +251,14 @@ export default async function GamePage({ params }: Props) {
                                   <span className="text-sm font-mono text-muted-foreground w-6 text-right">
                                     {entry.rank}
                                   </span>
+                                  <div className="w-8 h-8 shrink-0">
+                                    <AvatarImage
+                                      gameSlug={game.slug}
+                                      avatarId={entry.avatar}
+                                      displayName={entry.displayName}
+                                      size={32}
+                                    />
+                                  </div>
                                   <p className="font-bold text-sm uppercase tracking-tight">
                                     {entry.displayName}
                                   </p>
