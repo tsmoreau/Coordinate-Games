@@ -31,6 +31,7 @@ export interface PlayerListEntry {
   displayName: string;
   avatar: string | null;
   lastSeen: string;
+  createdAt: string;
   isActive: boolean;
 }
 
@@ -63,6 +64,7 @@ export async function getGamePlayersList(gameSlug: string, limit: number = 50): 
       displayName: obj.displayName || 'Unnamed Player',
       avatar: obj.avatar || null,
       lastSeen: obj.lastSeen.toISOString(),
+      createdAt: obj.createdAt ? obj.createdAt.toISOString() : obj.lastSeen.toISOString(),
       isActive: obj.isActive,
     };
   });
@@ -80,7 +82,7 @@ export async function getPlayerByDisplayName(displayName: string, gameSlug?: str
   }
 
   const identity = await GameIdentity.findOne(query);
-  
+
   if (!identity) {
     return null;
   }
@@ -105,30 +107,30 @@ export async function getPlayerByDisplayName(displayName: string, gameSlug?: str
     pendingBattles
   ] = await Promise.all([
     Battle.countDocuments(playerFilter),
-    
+
     Battle.countDocuments({
       ...playerFilter,
       status: 'completed',
       winnerId: deviceId,
     }),
-    
+
     Battle.countDocuments({
       ...playerFilter,
       status: 'completed',
       winnerId: { $nin: [deviceId, null] },
     }),
-    
+
     Battle.countDocuments({
       ...playerFilter,
       status: 'completed',
       winnerId: null,
     }),
-    
+
     Battle.countDocuments({
       ...playerFilter,
       status: 'active',
     }),
-    
+
     Battle.countDocuments({
       ...playerFilter,
       status: 'pending',
@@ -136,7 +138,7 @@ export async function getPlayerByDisplayName(displayName: string, gameSlug?: str
   ]);
 
   const battles = await Battle.find(playerFilter).select('turns');
-  
+
   const totalTurnsSubmitted = battles.reduce((count, battle) => {
     return count + battle.turns.filter(t => t.deviceId === deviceId).length;
   }, 0);
@@ -153,7 +155,7 @@ export async function getPlayerByDisplayName(displayName: string, gameSlug?: str
     displayName: obj.displayName || 'Unknown Player',
     avatar: obj.avatar || null,
     gameSlug: obj.gameSlug,
-    createdAt: obj.createdAt.toISOString(),
+    createdAt: obj.createdAt ? obj.createdAt.toISOString() : obj.lastSeen.toISOString(),
     lastSeen: obj.lastSeen.toISOString(),
     isActive: obj.isActive,
     stats: {
@@ -172,7 +174,7 @@ export async function getPlayerByDisplayName(displayName: string, gameSlug?: str
 
 export async function getPlayerBattles(deviceId: string, gameSlug: string, limit: number = 10): Promise<BattleWithOpponent[]> {
   await connectToDatabase();
-  
+
   const battles = await Battle.find({
     gameSlug,
     $or: [
@@ -203,7 +205,7 @@ export async function getPlayerBattles(deviceId: string, gameSlug: string, limit
     const battleObj = battle.toObject();
     const isPlayer1 = battleObj.player1DeviceId === deviceId;
     const opponentDeviceId = isPlayer1 ? battleObj.player2DeviceId : battleObj.player1DeviceId;
-    
+
     return {
       battleId: battleObj.battleId,
       displayName: battleObj.displayName || 'Unnamed Battle',
