@@ -15,12 +15,16 @@ import {
   UserSearch,
   BookType,
   Save,
-  Tag
+  Tag,
+  Trophy,
+  Database
 } from 'lucide-react';
 import { 
   recoverPlayerByDeviceId, 
   resetAllBattles, 
-  purgeAllBattles, 
+  purgeAllBattles,
+  purgeAllScores,
+  purgeAllData,
   unbanAllPlayers,
   toggleGameMaintenance,
   updateGameMotd,
@@ -32,13 +36,14 @@ import type { AdminPlayerDetails } from '@/app/actions/admin';
 interface GameAdminPanelProps {
   gameSlug: string;
   gameName: string;
+  capabilities: string[];
   maintenance: boolean;
   motd: string | null;
   haikunator: { adjectives: string[]; nouns: string[] } | null;
   versioning: { minVersion: string; currentVersion: string; updateUrl: string | null } | null;
 }
 
-export default function GameAdminPanel({ gameSlug, gameName, maintenance, motd, haikunator, versioning }: GameAdminPanelProps) {
+export default function GameAdminPanel({ gameSlug, gameName, capabilities, maintenance, motd, haikunator, versioning }: GameAdminPanelProps) {
   const [deviceIdSearch, setDeviceIdSearch] = useState('');
   const [recoveredPlayer, setRecoveredPlayer] = useState<AdminPlayerDetails | null>(null);
   const [searchError, setSearchError] = useState<string | null>(null);
@@ -57,12 +62,16 @@ export default function GameAdminPanel({ gameSlug, gameName, maintenance, motd, 
   const [currentVersion, setCurrentVersion] = useState(versioning?.currentVersion ?? '');
   const [updateUrl, setUpdateUrl] = useState(versioning?.updateUrl ?? '');
 
+  const hasAsync = capabilities.includes('async');
+  const hasLeaderboard = capabilities.includes('leaderboard');
+  const hasData = capabilities.includes('data');
+
   async function handleRecoverPlayer() {
     if (!deviceIdSearch.trim()) return;
     setSearching(true);
     setSearchError(null);
     setRecoveredPlayer(null);
-    
+
     const result = await recoverPlayerByDeviceId(gameSlug, deviceIdSearch.trim());
     if (result.success && result.data) {
       setRecoveredPlayer(result.data);
@@ -96,6 +105,22 @@ export default function GameAdminPanel({ gameSlug, gameName, maintenance, motd, 
         result = await purgeAllBattles(gameSlug);
         if (result.success) {
           setActionResult({ type: 'success', message: `Deleted ${result.deleted} battles permanently` });
+        } else {
+          setActionResult({ type: 'error', message: result.error || 'Failed' });
+        }
+        break;
+      case 'purgeScores':
+        result = await purgeAllScores(gameSlug);
+        if (result.success) {
+          setActionResult({ type: 'success', message: `Deleted ${result.deleted} scores permanently` });
+        } else {
+          setActionResult({ type: 'error', message: result.error || 'Failed' });
+        }
+        break;
+      case 'purgeData':
+        result = await purgeAllData(gameSlug);
+        if (result.success) {
+          setActionResult({ type: 'success', message: `Deleted ${result.deleted} data entries permanently` });
         } else {
           setActionResult({ type: 'error', message: result.error || 'Failed' });
         }
@@ -251,64 +276,98 @@ export default function GameAdminPanel({ gameSlug, gameName, maintenance, motd, 
 
       <Card>
         <CardHeader>
-          <CardTitle className="uppercase flex items-center gap-2">
+          <CardTitle className="uppercase flex items-center gap-2 text-destructive">
             <AlertTriangle className="w-5 h-5" />
-            MASS RESETS
+            DANGER ZONE
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Bulk operations for {gameName}. These actions affect all players and battles in this game.
-          </p>
+        <CardContent className="space-y-3">
+          {hasAsync && (
+            <>
+              <div className="flex items-center justify-between gap-4 flex-wrap p-3 border rounded-md">
+                <div>
+                  <div className="font-medium text-sm uppercase">RESET BATTLES</div>
+                  <div className="text-xs text-muted-foreground">Cancels all active and pending battles. Completed battles remain.</div>
+                </div>
+                <Button 
+                  variant={confirmAction === 'resetBattles' ? 'destructive' : 'outline'}
+                  onClick={() => handleAction('resetBattles')}
+                  disabled={actionLoading !== null}
+                  data-testid="button-reset-battles"
+                >
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  {confirmAction === 'resetBattles' ? 'CONFIRM RESET' : 'RESET BATTLES'}
+                </Button>
+              </div>
 
-          <div className="space-y-3">
+              <div className="flex items-center justify-between gap-4 flex-wrap p-3 border rounded-md">
+                <div>
+                  <div className="font-medium text-sm uppercase">PURGE BATTLES</div>
+                  <div className="text-xs text-muted-foreground">Permanently deletes all battles including history. This cannot be undone.</div>
+                </div>
+                <Button 
+                  variant={confirmAction === 'purgeBattles' ? 'destructive' : 'outline'}
+                  onClick={() => handleAction('purgeBattles')}
+                  disabled={actionLoading !== null}
+                  data-testid="button-purge-battles"
+                >
+                  <Trash2 className="w-4 h-4 mr-2" />
+                  {confirmAction === 'purgeBattles' ? 'CONFIRM PURGE' : 'PURGE BATTLES'}
+                </Button>
+              </div>
+            </>
+          )}
+
+          {hasLeaderboard && (
             <div className="flex items-center justify-between gap-4 flex-wrap p-3 border rounded-md">
               <div>
-                <div className="font-medium text-sm uppercase">CANCEL ALL ACTIVE BATTLES</div>
-                <div className="text-xs text-muted-foreground">Abandons all active and pending battles for this game.</div>
+                <div className="font-medium text-sm uppercase">PURGE SCORES</div>
+                <div className="text-xs text-muted-foreground">Permanently deletes all score submissions and leaderboard data. This cannot be undone.</div>
               </div>
               <Button 
-                variant={confirmAction === 'resetBattles' ? 'destructive' : 'outline'}
-                onClick={() => handleAction('resetBattles')}
+                variant={confirmAction === 'purgeScores' ? 'destructive' : 'outline'}
+                onClick={() => handleAction('purgeScores')}
                 disabled={actionLoading !== null}
-                data-testid="button-reset-battles"
+                data-testid="button-purge-scores"
               >
-                <RotateCcw className="w-4 h-4 mr-2" />
-                {confirmAction === 'resetBattles' ? 'CONFIRM RESET' : 'RESET BATTLES'}
+                <Trophy className="w-4 h-4 mr-2" />
+                {confirmAction === 'purgeScores' ? 'CONFIRM PURGE' : 'PURGE SCORES'}
               </Button>
             </div>
+          )}
 
+          {hasData && (
             <div className="flex items-center justify-between gap-4 flex-wrap p-3 border rounded-md">
               <div>
-                <div className="font-medium text-sm uppercase">PURGE ALL BATTLE HISTORY</div>
-                <div className="text-xs text-muted-foreground">Permanently deletes every battle record for this game. Cannot be undone.</div>
+                <div className="font-medium text-sm uppercase">PURGE DATA</div>
+                <div className="text-xs text-muted-foreground">Permanently deletes all key-value data entries. This cannot be undone.</div>
               </div>
               <Button 
-                variant={confirmAction === 'purgeBattles' ? 'destructive' : 'outline'}
-                onClick={() => handleAction('purgeBattles')}
+                variant={confirmAction === 'purgeData' ? 'destructive' : 'outline'}
+                onClick={() => handleAction('purgeData')}
                 disabled={actionLoading !== null}
-                data-testid="button-purge-battles"
+                data-testid="button-purge-data"
               >
-                <Trash2 className="w-4 h-4 mr-2" />
-                {confirmAction === 'purgeBattles' ? 'CONFIRM PURGE' : 'PURGE BATTLES'}
+                <Database className="w-4 h-4 mr-2" />
+                {confirmAction === 'purgeData' ? 'CONFIRM PURGE' : 'PURGE DATA'}
               </Button>
             </div>
+          )}
 
-            <div className="flex items-center justify-between gap-4 flex-wrap p-3 border rounded-md">
-              <div>
-                <div className="font-medium text-sm uppercase">UNBAN ALL PLAYERS</div>
-                <div className="text-xs text-muted-foreground">Reactivates all banned players for this game.</div>
-              </div>
-              <Button 
-                variant={confirmAction === 'unbanAll' ? 'destructive' : 'outline'}
-                onClick={() => handleAction('unbanAll')}
-                disabled={actionLoading !== null}
-                data-testid="button-unban-all"
-              >
-                <Shield className="w-4 h-4 mr-2" />
-                {confirmAction === 'unbanAll' ? 'CONFIRM UNBAN' : 'UNBAN ALL'}
-              </Button>
+          <div className="flex items-center justify-between gap-4 flex-wrap p-3 border rounded-md">
+            <div>
+              <div className="font-medium text-sm uppercase">UNBAN ALL PLAYERS</div>
+              <div className="text-xs text-muted-foreground">Reactivates all banned players for this game.</div>
             </div>
+            <Button 
+              variant={confirmAction === 'unbanAll' ? 'destructive' : 'outline'}
+              onClick={() => handleAction('unbanAll')}
+              disabled={actionLoading !== null}
+              data-testid="button-unban-all"
+            >
+              <Shield className="w-4 h-4 mr-2" />
+              {confirmAction === 'unbanAll' ? 'CONFIRM UNBAN' : 'UNBAN ALL'}
+            </Button>
           </div>
         </CardContent>
       </Card>

@@ -133,16 +133,16 @@ async function requireAdminAuth(): Promise<{ success: true } | { success: false;
     if (!session?.user) {
       return { success: false, error: 'Unauthorized: Please log in' };
     }
-
+    
     const userEmail = session.user.email?.toLowerCase();
     if (!userEmail) {
       return { success: false, error: 'Unauthorized: No email associated with account' };
     }
-
+    
     if (ADMIN_EMAILS.length > 0 && !ADMIN_EMAILS.includes(userEmail)) {
       return { success: false, error: 'Unauthorized: Admin access required' };
     }
-
+    
     return { success: true };
   } catch {
     return { success: false, error: 'Authentication error' };
@@ -533,7 +533,7 @@ export async function getGameBattles(gameSlug: string, filter?: { status?: strin
 
     const allPlayerIds = battles.flatMap(b => [b.player1DeviceId, b.player2DeviceId].filter(Boolean));
     const uniquePlayerIds = [...new Set(allPlayerIds)];
-
+    
     const playersData = await GameIdentity.find({ gameSlug, deviceId: { $in: uniquePlayerIds } });
     const playerMap = new Map(playersData.map(p => [p.deviceId, { displayName: p.displayName, avatar: p.avatar }]));
 
@@ -688,7 +688,7 @@ export async function deletePlayer(gameSlug: string, deviceId: string): Promise<
     }
 
     await GameIdentity.deleteOne({ gameSlug, deviceId });
-
+    
     revalidatePath(`/dashboard/${gameSlug}`);
     return { success: true };
   } catch (error) {
@@ -722,7 +722,7 @@ export async function forfeitBattle(battleId: string, winnerId?: string): Promis
       });
     } else {
       const actualWinnerId = winnerId || (battle.currentPlayerIndex === 0 ? battle.player2DeviceId : battle.player1DeviceId);
-
+      
       await Battle.updateOne({ battleId }, {
         status: 'completed',
         winnerId: actualWinnerId,
@@ -852,6 +852,50 @@ export async function purgeAllBattles(gameSlug: string): Promise<{ success: bool
   } catch (error) {
     console.error('Error purging battles:', error);
     return { success: false, error: 'Failed to purge battles' };
+  }
+}
+
+export async function purgeAllScores(gameSlug: string): Promise<{ success: boolean; deleted?: number; error?: string }> {
+  const auth = await requireAdminAuth();
+  if (!auth.success) {
+    return { success: false, error: auth.error };
+  }
+
+  try {
+    await connectToDatabase();
+
+    const game = await Game.findOne({ slug: gameSlug });
+    if (!game) return { success: false, error: 'Game not found' };
+
+    const result = await Score.deleteMany({ gameSlug });
+
+    revalidatePath(`/dashboard/${gameSlug}`);
+    return { success: true, deleted: result.deletedCount };
+  } catch (error) {
+    console.error('Error purging scores:', error);
+    return { success: false, error: 'Failed to purge scores' };
+  }
+}
+
+export async function purgeAllData(gameSlug: string): Promise<{ success: boolean; deleted?: number; error?: string }> {
+  const auth = await requireAdminAuth();
+  if (!auth.success) {
+    return { success: false, error: auth.error };
+  }
+
+  try {
+    await connectToDatabase();
+
+    const game = await Game.findOne({ slug: gameSlug });
+    if (!game) return { success: false, error: 'Game not found' };
+
+    const result = await Data.deleteMany({ gameSlug });
+
+    revalidatePath(`/dashboard/${gameSlug}`);
+    return { success: true, deleted: result.deletedCount };
+  } catch (error) {
+    console.error('Error purging data:', error);
+    return { success: false, error: 'Failed to purge data' };
   }
 }
 

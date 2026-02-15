@@ -361,7 +361,8 @@ export default async function GameDashboardPage({ params }: Props) {
           <TabsContent value="admin">
             <GameAdminPanel 
               gameSlug={gameSlug} 
-              gameName={game.name} 
+              gameName={game.name}
+              capabilities={game.capabilities}
               maintenance={game.maintenance} 
               motd={game.motd} 
               haikunator={game.haikunator}
