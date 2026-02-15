@@ -75,7 +75,7 @@ export default function AvatarImage({
       alt={`${displayName} avatar`}
       width={size}
       height={size}
-      className={`rounded-full object-cover ${className}`}
+      className={`rounded-lg object-cover ${className}`}
       onError={() => setError(true)}
     />
   );

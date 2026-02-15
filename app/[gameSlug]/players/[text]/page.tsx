@@ -84,7 +84,7 @@ export default async function PlayerProfilePage({ params }: Props) {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
           <Card className="lg:col-span-1 lg:sticky lg:top-24 h-fit">
             <CardHeader className="text-center">
-              <div className="mx-auto w-24 h-24 rounded-full bg-muted flex items-center justify-center mb-4 border-2 border-border overflow-hidden">
+              <div className="mx-auto w-24 h-24 rounded-lg bg-muted flex items-center justify-center mb-4 border-2 border-border overflow-hidden">
                 <AvatarImage
                   gameSlug={game.slug}
                   avatarId={player.avatar}

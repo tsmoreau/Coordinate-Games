@@ -2,11 +2,10 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import Nav from '@/components/Nav';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Clock, Gamepad2 } from 'lucide-react';
-import AvatarImage from '@/components/AvatarImage';
+import { ArrowLeft, Gamepad2 } from 'lucide-react';
 import { getPublicGameBySlug } from '@/app/actions/games';
 import { getGamePlayersList } from '@/app/actions/players';
-import { formatRelativeTime } from '@/lib/utils';
+import { PlayerGrid } from './PlayerGrid';
 
 export const dynamic = 'force-dynamic';
 
@@ -52,44 +51,7 @@ export default async function PlayerListPage({ params }: Props) {
             <p className="text-sm">Register via the API</p>
           </div>
         ) : (
-          <div className="grid gap-4">
-            {players.map((player) => (
-              <Link
-                key={player.deviceId}
-                href={`/${game.slug}/players/${encodeURIComponent(player.displayName)}`}
-                className="block group"
-              >
-                <div className="hover:border-foreground/20 hover:bg-muted/50 transition-all cursor-pointer active:scale-[0.99] relative border border-border rounded-lg">
-                  <div className="flex items-center justify-between p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 shrink-0">
-                        <AvatarImage
-                          gameSlug={game.slug}
-                          avatarId={player.avatar}
-                          displayName={player.displayName}
-                          size={40}
-                        />
-                      </div>
-                      <div>
-                        <p className="font-bold text-sm uppercase tracking-tight">
-                          {player.displayName}
-                        </p>
-                        <p className="text-[10px] text-muted-foreground uppercase font-medium truncate max-w-[240px]">
-                          {player.deviceId}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-[11px] text-muted-foreground uppercase font-medium flex items-center gap-1">
-                        <Clock className="w-3 h-3" />
-                        {formatRelativeTime(player.lastSeen)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
+          <PlayerGrid players={players} gameSlug={game.slug} />
         )}
       </main>
     </div>
