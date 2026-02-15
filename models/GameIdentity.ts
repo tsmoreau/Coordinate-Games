@@ -53,6 +53,8 @@ const GameIdentitySchema = new Schema<IGameIdentityDocument>({
 
 GameIdentitySchema.index({ gameSlug: 1, deviceId: 1 }, { unique: true });
 GameIdentitySchema.index({ gameSlug: 1, tokenHash: 1 });
+GameIdentitySchema.index({ gameSlug: 1, isActive: 1, lastSeen: -1 });
+GameIdentitySchema.index({ gameSlug: 1, displayName: 1 });
 
 if (mongoose.models.GameIdentity) {
   delete mongoose.models.GameIdentity;

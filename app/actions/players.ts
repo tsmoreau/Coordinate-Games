@@ -82,7 +82,7 @@ export async function getPlayerByDisplayName(displayName: string, gameSlug?: str
   }
 
   const identity = await GameIdentity.findOne(query);
-
+  
   if (!identity) {
     return null;
   }
@@ -90,59 +90,66 @@ export async function getPlayerByDisplayName(displayName: string, gameSlug?: str
   const deviceId = identity.deviceId;
   const slug = identity.gameSlug;
 
-  const playerFilter = {
-    gameSlug: slug,
-    $or: [
-      { player1DeviceId: deviceId },
-      { player2DeviceId: deviceId },
-    ],
-  };
-
-  const [
-    totalBattles,
-    wins,
-    losses,
-    draws,
-    activeBattles,
-    pendingBattles
-  ] = await Promise.all([
-    Battle.countDocuments(playerFilter),
-
-    Battle.countDocuments({
-      ...playerFilter,
-      status: 'completed',
-      winnerId: deviceId,
-    }),
-
-    Battle.countDocuments({
-      ...playerFilter,
-      status: 'completed',
-      winnerId: { $nin: [deviceId, null] },
-    }),
-
-    Battle.countDocuments({
-      ...playerFilter,
-      status: 'completed',
-      winnerId: null,
-    }),
-
-    Battle.countDocuments({
-      ...playerFilter,
-      status: 'active',
-    }),
-
-    Battle.countDocuments({
-      ...playerFilter,
-      status: 'pending',
-    })
+  const [statsResult] = await Battle.aggregate([
+    {
+      $match: {
+        gameSlug: slug,
+        $or: [
+          { player1DeviceId: deviceId },
+          { player2DeviceId: deviceId },
+        ],
+      }
+    },
+    {
+      $group: {
+        _id: null,
+        totalBattles: { $sum: 1 },
+        wins: {
+          $sum: {
+            $cond: [{ $and: [{ $eq: ['$status', 'completed'] }, { $eq: ['$winnerId', deviceId] }] }, 1, 0]
+          }
+        },
+        losses: {
+          $sum: {
+            $cond: [{ $and: [
+              { $eq: ['$status', 'completed'] },
+              { $ne: ['$winnerId', null] },
+              { $ne: ['$winnerId', deviceId] }
+            ]}, 1, 0]
+          }
+        },
+        draws: {
+          $sum: {
+            $cond: [{ $and: [{ $eq: ['$status', 'completed'] }, { $eq: ['$winnerId', null] }] }, 1, 0]
+          }
+        },
+        activeBattles: {
+          $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] }
+        },
+        pendingBattles: {
+          $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] }
+        },
+        totalTurnsSubmitted: {
+          $sum: {
+            $size: {
+              $filter: {
+                input: '$turns',
+                as: 't',
+                cond: { $eq: ['$$t.deviceId', deviceId] }
+              }
+            }
+          }
+        },
+      }
+    }
   ]);
 
-  const battles = await Battle.find(playerFilter).select('turns');
+  const stats = statsResult || {
+    totalBattles: 0, wins: 0, losses: 0, draws: 0,
+    activeBattles: 0, pendingBattles: 0, totalTurnsSubmitted: 0
+  };
 
-  const totalTurnsSubmitted = battles.reduce((count, battle) => {
-    return count + battle.turns.filter(t => t.deviceId === deviceId).length;
-  }, 0);
-
+  const { totalBattles, wins, losses, draws, activeBattles, pendingBattles, totalTurnsSubmitted } = stats;
   const completedBattles = wins + losses + draws;
   const winRate = completedBattles > 0 
     ? ((wins / completedBattles) * 100).toFixed(1) 
@@ -174,7 +181,7 @@ export async function getPlayerByDisplayName(displayName: string, gameSlug?: str
 
 export async function getPlayerBattles(deviceId: string, gameSlug: string, limit: number = 10): Promise<BattleWithOpponent[]> {
   await connectToDatabase();
-
+  
   const battles = await Battle.find({
     gameSlug,
     $or: [
@@ -205,7 +212,7 @@ export async function getPlayerBattles(deviceId: string, gameSlug: string, limit
     const battleObj = battle.toObject();
     const isPlayer1 = battleObj.player1DeviceId === deviceId;
     const opponentDeviceId = isPlayer1 ? battleObj.player2DeviceId : battleObj.player1DeviceId;
-
+    
     return {
       battleId: battleObj.battleId,
       displayName: battleObj.displayName || 'Unnamed Battle',

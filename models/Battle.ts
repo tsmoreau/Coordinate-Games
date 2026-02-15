@@ -200,6 +200,8 @@ const BattleSchema = new Schema<IBattleDocument>({
 BattleSchema.index({ gameSlug: 1, status: 1 });
 BattleSchema.index({ gameSlug: 1, player1DeviceId: 1 });
 BattleSchema.index({ gameSlug: 1, player2DeviceId: 1 });
+BattleSchema.index({ gameSlug: 1, battleId: 1 });
+BattleSchema.index({ gameSlug: 1, displayName: 1 });
 
 if (mongoose.models.Battle) {
   delete mongoose.models.Battle;
