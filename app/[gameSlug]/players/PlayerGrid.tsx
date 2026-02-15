@@ -6,7 +6,15 @@ import { Clock, Search } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import AvatarImage from '@/components/AvatarImage';
 import { formatRelativeTime, formatDate } from '@/lib/utils';
-import type { PlayerListEntry } from '@/app/actions/players';
+
+interface PlayerListEntry {
+  deviceId: string;
+  displayName: string;
+  avatar: string | null;
+  lastSeen: string;
+  createdAt: string;
+  isActive: boolean;
+}
 
 interface PlayerGridProps {
   players: PlayerListEntry[];
