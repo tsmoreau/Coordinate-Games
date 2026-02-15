@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { formatRelativeTime } from '@/lib/utils';
 import { toast } from '@/hooks/use-toast';
+import AvatarImage from '@/components/AvatarImage';
 import {
   deleteScore,
   AdminScoreEntry,
@@ -130,6 +131,14 @@ export default function ScoreManagement({ scores: initialScores, gameSlug }: Sco
                     <span className="text-sm font-mono text-muted-foreground w-8 text-right">
                       #{index + 1}
                     </span>
+                    <div className="w-8 h-8 shrink-0">
+                      <AvatarImage
+                        gameSlug={score.gameSlug}
+                        avatarId={score.avatar}
+                        displayName={score.displayName}
+                        size={32}
+                      />
+                    </div>
                     <div>
                       <div className="font-medium" data-testid={`text-score-player-${score.id}`}>
                         {score.displayName}

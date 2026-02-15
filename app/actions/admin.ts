@@ -108,6 +108,8 @@ export interface AdminScoreEntry {
   id: string;
   deviceId: string;
   displayName: string;
+  avatar: string | null;
+  gameSlug: string;
   score: number;
   category: string;
   metadata: Record<string, unknown>;
@@ -131,16 +133,16 @@ async function requireAdminAuth(): Promise<{ success: true } | { success: false;
     if (!session?.user) {
       return { success: false, error: 'Unauthorized: Please log in' };
     }
-    
+
     const userEmail = session.user.email?.toLowerCase();
     if (!userEmail) {
       return { success: false, error: 'Unauthorized: No email associated with account' };
     }
-    
+
     if (ADMIN_EMAILS.length > 0 && !ADMIN_EMAILS.includes(userEmail)) {
       return { success: false, error: 'Unauthorized: Admin access required' };
     }
-    
+
     return { success: true };
   } catch {
     return { success: false, error: 'Authentication error' };
@@ -531,7 +533,7 @@ export async function getGameBattles(gameSlug: string, filter?: { status?: strin
 
     const allPlayerIds = battles.flatMap(b => [b.player1DeviceId, b.player2DeviceId].filter(Boolean));
     const uniquePlayerIds = [...new Set(allPlayerIds)];
-    
+
     const playersData = await GameIdentity.find({ gameSlug, deviceId: { $in: uniquePlayerIds } });
     const playerMap = new Map(playersData.map(p => [p.deviceId, { displayName: p.displayName, avatar: p.avatar }]));
 
@@ -686,7 +688,7 @@ export async function deletePlayer(gameSlug: string, deviceId: string): Promise<
     }
 
     await GameIdentity.deleteOne({ gameSlug, deviceId });
-    
+
     revalidatePath(`/dashboard/${gameSlug}`);
     return { success: true };
   } catch (error) {
@@ -720,7 +722,7 @@ export async function forfeitBattle(battleId: string, winnerId?: string): Promis
       });
     } else {
       const actualWinnerId = winnerId || (battle.currentPlayerIndex === 0 ? battle.player2DeviceId : battle.player1DeviceId);
-      
+
       await Battle.updateOne({ battleId }, {
         status: 'completed',
         winnerId: actualWinnerId,
@@ -1109,17 +1111,21 @@ export async function getGameScores(gameSlug: string): Promise<AdminScoreEntry[]
     const deviceIds = [...new Set(scores.map(s => s.deviceId))];
     const identities = await GameIdentity.find(
       { gameSlug, deviceId: { $in: deviceIds } },
-      { deviceId: 1, displayName: 1 }
+      { deviceId: 1, displayName: 1, avatar: 1 }
     );
     const nameMap = new Map<string, string>();
+    const avatarMap = new Map<string, string | null>();
     for (const id of identities) {
       nameMap.set(id.deviceId, id.displayName);
+      avatarMap.set(id.deviceId, id.avatar || null);
     }
 
     return scores.map((s) => ({
       id: String(s._id),
       deviceId: s.deviceId,
       displayName: nameMap.get(s.deviceId) || s.displayName,
+      avatar: avatarMap.get(s.deviceId) ?? null,
+      gameSlug,
       score: s.score,
       category: s.category || 'default',
       metadata: s.metadata || {},
