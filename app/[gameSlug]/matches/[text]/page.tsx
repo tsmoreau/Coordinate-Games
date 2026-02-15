@@ -14,7 +14,7 @@ import {
 import { formatRelativeTime, formatDate } from '@/lib/utils';
 import AvatarImage from '@/components/AvatarImage';
 import { DownloadBattleButton } from '@/components/DownloadBattleButton';
-import { getPublicGameBySlug } from '@/app/actions/games';
+import { getGameConfig } from '@/app/actions/games';
 import { getBattleByDisplayName, getBattleTurns } from '@/app/actions/battles';
 import { MatchTurnList } from './MatchTurnList';
 
@@ -43,7 +43,7 @@ export default async function MatchDetailPage({ params }: Props) {
   const { gameSlug, text } = await params;
   const displayName = decodeURIComponent(text);
 
-  const game = await getPublicGameBySlug(gameSlug);
+  const game = await getGameConfig(gameSlug);
   if (!game) {
     notFound();
   }

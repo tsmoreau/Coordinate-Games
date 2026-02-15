@@ -122,3 +122,10 @@
     @apply font-bold tracking-tight;
   }
 }
+
+/* Battle list filter — cards hidden via CSS, Links work before hydration */
+[data-battle-filter="active"] [data-status]:not([data-status="active"]),
+[data-battle-filter="pending"] [data-status]:not([data-status="pending"]),
+[data-battle-filter="completed"] [data-status]:not([data-status="completed"]) {
+  display: none;
+}

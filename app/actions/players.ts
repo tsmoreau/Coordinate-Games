@@ -89,70 +89,31 @@ export async function getPlayerByDisplayName(displayName: string, gameSlug?: str
 
   const deviceId = identity.deviceId;
   const slug = identity.gameSlug;
+  const s = identity.stats || { wins: 0, losses: 0, draws: 0, totalTurns: 0, totalBattles: 0 };
 
-  const [statsResult] = await Battle.aggregate([
+  // Only active/pending counts need a live query — they fluctuate
+  const liveCounts = await Battle.aggregate([
     {
       $match: {
         gameSlug: slug,
+        status: { $in: ['active', 'pending'] },
         $or: [
           { player1DeviceId: deviceId },
           { player2DeviceId: deviceId },
         ],
       }
     },
-    {
-      $group: {
-        _id: null,
-        totalBattles: { $sum: 1 },
-        wins: {
-          $sum: {
-            $cond: [{ $and: [{ $eq: ['$status', 'completed'] }, { $eq: ['$winnerId', deviceId] }] }, 1, 0]
-          }
-        },
-        losses: {
-          $sum: {
-            $cond: [{ $and: [
-              { $eq: ['$status', 'completed'] },
-              { $ne: ['$winnerId', null] },
-              { $ne: ['$winnerId', deviceId] }
-            ]}, 1, 0]
-          }
-        },
-        draws: {
-          $sum: {
-            $cond: [{ $and: [{ $eq: ['$status', 'completed'] }, { $eq: ['$winnerId', null] }] }, 1, 0]
-          }
-        },
-        activeBattles: {
-          $sum: { $cond: [{ $eq: ['$status', 'active'] }, 1, 0] }
-        },
-        pendingBattles: {
-          $sum: { $cond: [{ $eq: ['$status', 'pending'] }, 1, 0] }
-        },
-        totalTurnsSubmitted: {
-          $sum: {
-            $size: {
-              $filter: {
-                input: '$turns',
-                as: 't',
-                cond: { $eq: ['$$t.deviceId', deviceId] }
-              }
-            }
-          }
-        },
-      }
-    }
+    { $group: { _id: '$status', count: { $sum: 1 } } }
   ]);
 
-  const stats = statsResult || {
-    totalBattles: 0, wins: 0, losses: 0, draws: 0,
-    activeBattles: 0, pendingBattles: 0, totalTurnsSubmitted: 0
-  };
+  const countMap: Record<string, number> = {};
+  for (const { _id, count } of liveCounts) {
+    countMap[_id] = count;
+  }
 
-  const { totalBattles, wins, losses, draws, activeBattles, pendingBattles, totalTurnsSubmitted } = stats;
-  const completedBattles = wins + losses + draws;
-  const winRate = completedBattles > 0 
-    ? ((wins / completedBattles) * 100).toFixed(1) 
+  const completedBattles = s.wins + s.losses + s.draws;
+  const winRate = completedBattles > 0
+    ? ((s.wins / completedBattles) * 100).toFixed(1)
     : '0.0';
 
   const obj = identity.toObject();
@@ -166,15 +127,15 @@ export async function getPlayerByDisplayName(displayName: string, gameSlug?: str
     lastSeen: obj.lastSeen.toISOString(),
     isActive: obj.isActive,
     stats: {
-      totalBattles,
+      totalBattles: s.totalBattles,
       completedBattles,
-      activeBattles,
-      pendingBattles,
-      wins,
-      losses,
-      draws,
+      activeBattles: countMap.active || 0,
+      pendingBattles: countMap.pending || 0,
+      wins: s.wins,
+      losses: s.losses,
+      draws: s.draws,
       winRate: `${winRate}%`,
-      totalTurnsSubmitted
+      totalTurnsSubmitted: s.totalTurns
     }
   };
 }

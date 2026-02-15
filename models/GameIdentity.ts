@@ -1,5 +1,13 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
+export interface IGameIdentityStats {
+  wins: number;
+  losses: number;
+  draws: number;
+  totalTurns: number;
+  totalBattles: number;
+}
+
 export interface IGameIdentity {
   gameSlug: string;
   deviceId: string;
@@ -9,6 +17,7 @@ export interface IGameIdentity {
   createdAt: Date;
   lastSeen: Date;
   isActive: boolean;
+  stats: IGameIdentityStats;
 }
 
 export interface IGameIdentityDocument extends IGameIdentity, Document {}
@@ -48,6 +57,13 @@ const GameIdentitySchema = new Schema<IGameIdentityDocument>({
     type: Boolean,
     default: true,
     index: true
+  },
+  stats: {
+    wins: { type: Number, default: 0 },
+    losses: { type: Number, default: 0 },
+    draws: { type: Number, default: 0 },
+    totalTurns: { type: Number, default: 0 },
+    totalBattles: { type: Number, default: 0 },
   }
 });
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { Battle, IBattleDocument } from '@/models/Battle';
+import { GameIdentity } from '@/models/GameIdentity';
 import { authenticateDevice, unauthorizedResponse } from '@/lib/authMiddleware';
 import { validateAsyncGame, isGameContext } from '@/lib/gameMiddleware';
 import { generateSecureToken } from '@/lib/auth';
@@ -239,6 +240,34 @@ export async function POST(
     }
 
     await battle.save();
+
+    // Increment turn count for submitter
+    if (isValid) {
+      const incOps: Record<string, number> = { 'stats.totalTurns': 1 };
+      await GameIdentity.updateOne(
+        { gameSlug: gameResult.slug, deviceId: auth.deviceId },
+        { $inc: incOps }
+      );
+
+      // Increment wins/losses on battle completion
+      if (gameState?.winner) {
+        const winnerId = String(gameState.winner);
+        const loserId = winnerId === battle.player1DeviceId
+          ? battle.player2DeviceId
+          : battle.player1DeviceId;
+
+        await Promise.all([
+          GameIdentity.updateOne(
+            { gameSlug: gameResult.slug, deviceId: winnerId },
+            { $inc: { 'stats.wins': 1 } }
+          ),
+          loserId ? GameIdentity.updateOne(
+            { gameSlug: gameResult.slug, deviceId: loserId },
+            { $inc: { 'stats.losses': 1 } }
+          ) : Promise.resolve(),
+        ]);
+      }
+    }
 
     return NextResponse.json({
       success: true,

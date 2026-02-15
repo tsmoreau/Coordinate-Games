@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { connectToDatabase } from '@/lib/mongodb';
 import { Battle, IUnit, IBlockedTile } from '@/models/Battle';
+import { GameIdentity } from '@/models/GameIdentity';
 import { authenticateDevice, unauthorizedResponse } from '@/lib/authMiddleware';
 import { validateAsyncGame, isGameContext } from '@/lib/gameMiddleware';
 
@@ -136,6 +137,11 @@ export async function POST(
     battle.currentState = initialState;
 
     await battle.save();
+
+    await GameIdentity.updateOne(
+      { gameSlug: gameResult.slug, deviceId: auth.deviceId },
+      { $inc: { 'stats.totalBattles': 1 } }
+    );
 
     return NextResponse.json({
       success: true,

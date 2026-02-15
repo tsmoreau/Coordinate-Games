@@ -3,7 +3,7 @@ import Link from 'next/link';
 import Nav from '@/components/Nav';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Gamepad2 } from 'lucide-react';
-import { getPublicGameBySlug } from '@/app/actions/games';
+import { getGameConfig } from '@/app/actions/games';
 import { getGamePlayersList } from '@/app/actions/players';
 import { PlayerGrid } from './PlayerGrid';
 
@@ -15,7 +15,7 @@ interface Props {
 
 export default async function PlayerListPage({ params }: Props) {
   const { gameSlug } = await params;
-  const game = await getPublicGameBySlug(gameSlug);
+  const game = await getGameConfig(gameSlug);
 
   if (!game) {
     notFound();

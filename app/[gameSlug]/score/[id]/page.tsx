@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Trophy } from 'lucide-react';
 import { formatDate } from '@/lib/utils';
 import AvatarImage from '@/components/AvatarImage';
-import { getPublicGameBySlug, getScoreById } from '@/app/actions/games';
+import { getGameConfig, getScoreById } from '@/app/actions/games';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +18,7 @@ interface Props {
 export default async function ScoreDetailPage({ params }: Props) {
   const { gameSlug, id } = await params;
 
-  const game = await getPublicGameBySlug(gameSlug);
+  const game = await getGameConfig(gameSlug);
   if (!game || !game.capabilities.includes('leaderboard')) {
     notFound();
   }

@@ -300,6 +300,11 @@ export async function POST(
 
     await battle.save();
 
+    await GameIdentity.updateOne(
+      { gameSlug: gameResult.slug, deviceId: auth.deviceId },
+      { $inc: { 'stats.totalBattles': 1 } }
+    );
+
     return NextResponse.json({
       success: true,
       game: { slug: gameResult.slug, name: gameResult.game.name },

@@ -15,7 +15,7 @@ import {
 import { formatRelativeTime, formatDate } from '@/lib/utils';
 import Nav from '@/components/Nav';
 import AvatarImage from '@/components/AvatarImage';
-import { getPublicGameBySlug } from '@/app/actions/games';
+import { getGameConfig } from '@/app/actions/games';
 import { getPlayerByDisplayName, getPlayerBattles, getPlayerScores } from '@/app/actions/players';
 
 export const dynamic = 'force-dynamic';
@@ -49,7 +49,7 @@ export default async function PlayerProfilePage({ params }: Props) {
   const { gameSlug, text } = await params;
   const displayName = decodeURIComponent(text);
 
-  const game = await getPublicGameBySlug(gameSlug);
+  const game = await getGameConfig(gameSlug);
   if (!game) {
     notFound();
   }

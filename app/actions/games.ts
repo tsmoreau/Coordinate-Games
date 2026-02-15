@@ -6,7 +6,7 @@ import { GameIdentity } from '@/models/GameIdentity';
 import { Battle } from '@/models/Battle';
 import { Score } from '@/models/Score';
 
-export interface PublicGameInfo {
+export interface GameConfig {
   slug: string;
   name: string;
   description: string | null;
@@ -15,6 +15,27 @@ export interface PublicGameInfo {
   avatars: string[];
   maintenance: boolean;
   motd: string | null;
+}
+
+export async function getGameConfig(gameSlug: string): Promise<GameConfig | null> {
+  await connectToDatabase();
+
+  const game = await Game.findOne({ slug: gameSlug.toLowerCase(), active: true });
+  if (!game) return null;
+
+  return {
+    slug: game.slug,
+    name: game.name,
+    description: game.description || null,
+    tagline: game.tagline || null,
+    capabilities: game.capabilities,
+    avatars: game.avatars || [],
+    maintenance: game.maintenance,
+    motd: game.motd || null,
+  };
+}
+
+export interface PublicGameInfo extends GameConfig {
   playerCount: number;
   activeBattles: number;
   pendingBattles: number;

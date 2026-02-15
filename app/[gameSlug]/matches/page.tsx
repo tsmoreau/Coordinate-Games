@@ -4,7 +4,7 @@ import Nav from '@/components/Nav';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import BattlesList from '@/components/BattlesList';
-import { getPublicGameBySlug } from '@/app/actions/games';
+import { getGameConfig } from '@/app/actions/games';
 import { getBattles } from '@/app/actions/battles';
 
 export const dynamic = 'force-dynamic';
@@ -15,7 +15,7 @@ interface Props {
 
 export default async function MatchListPage({ params }: Props) {
   const { gameSlug } = await params;
-  const game = await getPublicGameBySlug(gameSlug);
+  const game = await getGameConfig(gameSlug);
 
   if (!game || !game.capabilities.includes('async')) {
     notFound();
