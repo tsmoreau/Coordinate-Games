@@ -42,7 +42,7 @@ export async function GET(
     const battle = await Battle.findOne({
       gameSlug: gameResult.slug,
       battleId: id,
-    });
+    }).select('-mapData');
 
     if (!battle) {
       return NextResponse.json({

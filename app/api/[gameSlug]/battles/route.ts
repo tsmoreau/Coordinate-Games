@@ -160,7 +160,7 @@ export async function GET(
       counts[_id] = count;
     }
 
-    let battlesQuery = Battle.find(baseQuery).sort({ _id: -1 });
+    let battlesQuery = Battle.find(baseQuery).select('-turns -currentState').sort({ _id: -1 });
     if (limit !== null) {
       battlesQuery = battlesQuery.limit(limit);
     }

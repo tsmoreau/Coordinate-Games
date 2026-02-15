@@ -8,23 +8,37 @@ export interface GameContext {
   capabilities: GameCapability[];
 }
 
+const gameCache = new Map<string, { context: GameContext; expiry: number }>();
+const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
 export async function validateGame(gameSlug: string): Promise<GameContext | null> {
+  const key = gameSlug.toLowerCase();
+  const cached = gameCache.get(key);
+  
+  if (cached && Date.now() < cached.expiry) {
+    return cached.context;
+  }
+
   await connectToDatabase();
   
   const game = await Game.findOne({ 
-    slug: gameSlug.toLowerCase(),
+    slug: key,
     active: true 
   });
 
   if (!game) {
+    gameCache.delete(key);
     return null;
   }
 
-  return {
+  const context: GameContext = {
     game,
     slug: game.slug,
     capabilities: game.capabilities
   };
+
+  gameCache.set(key, { context, expiry: Date.now() + CACHE_TTL_MS });
+  return context;
 }
 
 export function gameNotFoundResponse() {

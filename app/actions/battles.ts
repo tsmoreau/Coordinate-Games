@@ -40,6 +40,7 @@ export async function getBattles(options?: { includePrivate?: boolean; limit?: n
   const limit = options?.limit ?? 50;
 
   const battles = await Battle.find(query)
+    .select('-turns -currentState')
     .sort({ updatedAt: -1 })
     .limit(limit);
 
@@ -134,7 +135,7 @@ export async function getBattleByDisplayName(displayName: string, gameSlug?: str
     query.gameSlug = gameSlug;
   }
 
-  const battle = await Battle.findOne(query);
+  const battle = await Battle.findOne(query).select('-turns -currentState');
   
   if (!battle) {
     return null;
@@ -171,7 +172,7 @@ export async function getBattleByDisplayName(displayName: string, gameSlug?: str
 export async function getBattleTurns(battleId: string): Promise<TurnData[]> {
   await connectToDatabase();
   
-  const battle = await Battle.findOne({ battleId }).lean();
+  const battle = await Battle.findOne({ battleId }).select('turns').lean();
   
   if (!battle) {
     return [];

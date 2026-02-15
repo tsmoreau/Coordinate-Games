@@ -189,6 +189,7 @@ export async function getPlayerBattles(deviceId: string, gameSlug: string, limit
       { player2DeviceId: deviceId }
     ]
   })
+    .select('-turns -currentState -mapData')
     .sort({ updatedAt: -1 })
     .limit(limit);
 
