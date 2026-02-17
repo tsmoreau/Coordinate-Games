@@ -111,6 +111,7 @@ const DEFAULT_SETTINGS: ParticleSettings = {
   emissionRadius: 4,
   emissionWidth: 8, emissionHeight: 8,
   emissionAngle: 270, emissionSpread: 360,
+  emitterX: 0, emitterY: 0,
 
   orbitalZ: 0,
   radialVelocity: 0,
@@ -332,8 +333,8 @@ function emitParticles(
   particles: Particle[], s: ParticleSettings, rng: () => number,
   dt: number, emitAccum: number, frame: number,
 ): { particles: Particle[]; emitAccum: number } {
-  const cx = s.frameWidth / 2;
-  const cy = s.frameHeight / 2;
+  const cx = s.frameWidth / 2 + s.emitterX;
+  const cy = s.frameHeight / 2 + s.emitterY;
 
   if (s.emissionType === 'burst') {
     if (frame === 0) {
@@ -788,6 +789,10 @@ export default function ParticleSizzlerTool() {
               <div className="grid grid-cols-2 gap-2">
                 <NumField label="Angle" value={settings.emissionAngle} onChange={(v) => patch({ emissionAngle: v })} step={5} min={0} max={360} />
                 <NumField label="Spread" value={settings.emissionSpread} onChange={(v) => patch({ emissionSpread: Math.max(0, Math.min(360, v)) })} step={5} min={0} max={360} />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <NumField label="Emitter X" value={settings.emitterX} onChange={(v) => patch({ emitterX: v })} step={1} />
+                <NumField label="Emitter Y" value={settings.emitterY} onChange={(v) => patch({ emitterY: v })} step={1} />
               </div>
             </Section>
 
