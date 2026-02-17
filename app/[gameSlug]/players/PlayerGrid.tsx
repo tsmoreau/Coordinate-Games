@@ -14,6 +14,7 @@ interface PlayerListEntry {
   lastSeen: string;
   createdAt: string;
   isActive: boolean;
+  isSimulator?: boolean;
 }
 
 interface PlayerGridProps {
@@ -67,6 +68,9 @@ export function PlayerGrid({ players, gameSlug }: PlayerGridProps) {
                 </div>
                 <p className="font-bold text-sm uppercase tracking-tight truncate">
                   {player.displayName}
+                  {player.isSimulator && (
+                    <span className="inline-block w-2 h-2 rounded-full bg-yellow-500 ml-1 align-middle" title="Simulator" />
+                  )}
                 </p>
                 <p className="text-[10px] text-muted-foreground mt-1">
                   Joined {formatDate(player.createdAt)}

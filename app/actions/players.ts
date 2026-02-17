@@ -33,6 +33,7 @@ export interface PlayerListEntry {
   lastSeen: string;
   createdAt: string;
   isActive: boolean;
+  isSimulator?: boolean;
 }
 
 export interface BattleWithOpponent {
@@ -66,6 +67,7 @@ export async function getGamePlayersList(gameSlug: string, limit: number = 50): 
       lastSeen: obj.lastSeen.toISOString(),
       createdAt: obj.createdAt ? obj.createdAt.toISOString() : obj.lastSeen.toISOString(),
       isActive: obj.isActive,
+      isSimulator: obj.isSimulator === true,
     };
   });
 }
@@ -82,7 +84,7 @@ export async function getPlayerByDisplayName(displayName: string, gameSlug?: str
   }
 
   const identity = await GameIdentity.findOne(query);
-  
+
   if (!identity) {
     return null;
   }
@@ -142,7 +144,7 @@ export async function getPlayerByDisplayName(displayName: string, gameSlug?: str
 
 export async function getPlayerBattles(deviceId: string, gameSlug: string, limit: number = 10): Promise<BattleWithOpponent[]> {
   await connectToDatabase();
-  
+
   const battles = await Battle.find({
     gameSlug,
     $or: [
@@ -174,7 +176,7 @@ export async function getPlayerBattles(deviceId: string, gameSlug: string, limit
     const battleObj = battle.toObject();
     const isPlayer1 = battleObj.player1DeviceId === deviceId;
     const opponentDeviceId = isPlayer1 ? battleObj.player2DeviceId : battleObj.player1DeviceId;
-    
+
     return {
       battleId: battleObj.battleId,
       displayName: battleObj.displayName || 'Unnamed Battle',

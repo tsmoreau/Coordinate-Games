@@ -17,6 +17,7 @@ export interface IGameIdentity {
   createdAt: Date;
   lastSeen: Date;
   isActive: boolean;
+  isSimulator?: boolean;
   stats: IGameIdentityStats;
 }
 
@@ -57,6 +58,10 @@ const GameIdentitySchema = new Schema<IGameIdentityDocument>({
     type: Boolean,
     default: true,
     index: true
+  },
+  isSimulator: {
+    type: Boolean,
+    default: undefined
   },
   stats: {
     wins: { type: Number, default: 0 },

@@ -26,7 +26,7 @@ export async function POST(
     await connectToDatabase();
 
     const body = await request.json();
-    const { displayName, avatar } = body;
+    const { displayName, avatar, isSimulator } = body;
 
     const gameAvatars = gameContext.game.avatars || [];
 
@@ -44,6 +44,10 @@ export async function POST(
         if (trimmed.length >= 1 && trimmed.length <= 50) {
           updateFields.displayName = trimmed;
         }
+      }
+
+      if (typeof isSimulator === 'boolean') {
+        updateFields.isSimulator = isSimulator;
       }
 
       if (Object.keys(updateFields).length === 0) {
@@ -105,6 +109,7 @@ export async function POST(
       createdAt: new Date(),
       lastSeen: new Date(),
       isActive: true,
+      ...(typeof isSimulator === 'boolean' && { isSimulator }),
     });
 
     return NextResponse.json({
