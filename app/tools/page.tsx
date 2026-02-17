@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import Nav from '@/components/Nav';
-import { Type, ArrowRight } from 'lucide-react';
+import { Type, ArrowRight, Grid3X3 } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,6 +24,13 @@ const tools: Tool[] = [
     description: 'Convert TTF, OTF, WOFF and WOFF2 fonts into .fnt files for use with the Playdate SDK.',
     icon: Type,
     tags: ['PLAYDATE', 'FONT', 'CONVERTER'],
+  },
+  {
+    slug: 'dithergradient',
+    name: 'Dither Gradient',
+    description: 'Create 1-bit dither gradients with configurable patterns, directions, and GFXP-compatible Lua output.',
+    icon: Grid3X3,
+    tags: ['PLAYDATE', '1-BIT', 'DITHER', 'GFXP'],
   },
 ];
 
