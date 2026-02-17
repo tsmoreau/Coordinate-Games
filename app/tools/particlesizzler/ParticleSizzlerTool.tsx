@@ -67,6 +67,7 @@ interface ParticleSettings {
   emissionRadius: number;
   emissionWidth: number; emissionHeight: number;
   emissionAngle: number; emissionSpread: number;
+  emitterX: number; emitterY: number;
 
   orbitalZ: number;
   radialVelocity: number;
@@ -89,6 +90,7 @@ interface ParticleSettings {
   particleShape: 'square' | 'circle' | 'triangle';
   particleColor: 'white' | 'black';
   displayScale: number;
+  loopMode: 'off' | 'prewarm' | 'pingpong' | 'crossfade';
 }
 
 const MAX_PARTICLES = 2000;
@@ -131,6 +133,7 @@ const DEFAULT_SETTINGS: ParticleSettings = {
   particleShape: 'square',
   particleColor: 'white',
   displayScale: 6,
+  loopMode: 'off',
 };
 
 // ─── Presets ─────────────────────────────────────────────────────────────────
@@ -396,16 +399,27 @@ function renderFrame(
 
 // ─── Full simulation run (produces all frames) ──────────────────────────────
 
-function simulateAll(s: ParticleSettings): ImageData[] {
+const BAYER_8X8 = [
+   0, 32,  8, 40,  2, 34, 10, 42,
+  48, 16, 56, 24, 50, 18, 58, 26,
+  12, 44,  4, 36, 14, 46,  6, 38,
+  60, 28, 52, 20, 62, 30, 54, 22,
+   3, 35, 11, 43,  1, 33,  9, 41,
+  51, 19, 59, 27, 49, 17, 57, 25,
+  15, 47,  7, 39, 13, 45,  5, 37,
+  63, 31, 55, 23, 61, 29, 53, 21,
+];
+
+function simulateRaw(s: ParticleSettings, frameCount: number, preWarmOverride?: number): ImageData[] {
   const rng = mulberry32(s.seed);
   const dt = s.duration / s.frameCount;
   let particles: Particle[] = [];
   let emitAccum = 0;
   const frames: ImageData[] = [];
 
-  // Pre-warm: run simulation without capturing
-  if (s.preWarm > 0) {
-    const warmSteps = Math.ceil(s.preWarm / dt);
+  const warmTime = preWarmOverride !== undefined ? preWarmOverride : s.preWarm;
+  if (warmTime > 0) {
+    const warmSteps = Math.ceil(warmTime / dt);
     for (let i = 0; i < warmSteps; i++) {
       const emResult = emitParticles(particles, s, rng, dt, emitAccum, i);
       particles = emResult.particles; emitAccum = emResult.emitAccum;
@@ -417,7 +431,7 @@ function simulateAll(s: ParticleSettings): ImageData[] {
   offscreen.width = s.frameWidth; offscreen.height = s.frameHeight;
   const ctx = offscreen.getContext('2d')!;
 
-  for (let f = 0; f < s.frameCount; f++) {
+  for (let f = 0; f < frameCount; f++) {
     const emResult = emitParticles(particles, s, rng, dt, emitAccum, f);
     particles = emResult.particles; emitAccum = emResult.emitAccum;
     particles = simulateStep(particles, s, dt, f * dt);
@@ -426,6 +440,58 @@ function simulateAll(s: ParticleSettings): ImageData[] {
   }
 
   return frames;
+}
+
+function bayerCrossfade(frameA: ImageData, frameB: ImageData, blend: number, w: number, h: number): ImageData {
+  const out = new ImageData(w, h);
+  const threshold = blend * 64;
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < w; x++) {
+      const bayerVal = BAYER_8X8[(y % 8) * 8 + (x % 8)];
+      const src = bayerVal < threshold ? frameB : frameA;
+      const i = (y * w + x) * 4;
+      out.data[i] = src.data[i];
+      out.data[i + 1] = src.data[i + 1];
+      out.data[i + 2] = src.data[i + 2];
+      out.data[i + 3] = src.data[i + 3];
+    }
+  }
+  return out;
+}
+
+function simulateAll(s: ParticleSettings): ImageData[] {
+  if (s.loopMode === 'off') {
+    return simulateRaw(s, s.frameCount);
+  }
+
+  if (s.loopMode === 'prewarm') {
+    // Auto-calculate pre-warm: max lifetime ensures population is at steady state
+    const autoWarm = Math.max(s.preWarm, s.lifetimeMax * 2);
+    return simulateRaw(s, s.frameCount, autoWarm);
+  }
+
+  if (s.loopMode === 'pingpong') {
+    const forward = simulateRaw(s, s.frameCount);
+    // Reverse middle frames (skip first and last to avoid duplicate frames at seam)
+    const reversed = forward.slice(1, -1).reverse();
+    return [...forward, ...reversed];
+  }
+
+  if (s.loopMode === 'crossfade') {
+    // Simulate 2× frames, then Bayer-dither crossfade the two halves
+    const n = s.frameCount;
+    const raw = simulateRaw(s, n * 2);
+    const passA = raw.slice(0, n);
+    const passB = raw.slice(n, n * 2);
+    const out: ImageData[] = [];
+    for (let i = 0; i < n; i++) {
+      const blend = i / n; // 0 at start (all A), 1 at end (all B)
+      out.push(bayerCrossfade(passA[i], passB[i], blend, s.frameWidth, s.frameHeight));
+    }
+    return out;
+  }
+
+  return simulateRaw(s, s.frameCount);
 }
 
 // ─── UI helpers ──────────────────────────────────────────────────────────────
@@ -661,6 +727,22 @@ export default function ParticleSizzlerTool() {
               <div className="grid grid-cols-2 gap-2">
                 <NumField label="Pre-Warm (s)" value={settings.preWarm} onChange={(v) => patch({ preWarm: Math.max(0, v) })} step={0.1} min={0} />
                 <NumField label="Seed" value={settings.seed} onChange={(v) => patch({ seed: Math.round(v) })} step={1} />
+              </div>
+              <div>
+                <label className="text-xs text-muted-foreground uppercase block mb-1">Loop Mode</label>
+                <div className="flex flex-wrap gap-1">
+                  {(['off', 'prewarm', 'pingpong', 'crossfade'] as const).map(m => (
+                    <Button key={m} variant={settings.loopMode === m ? 'default' : 'outline'} size="sm"
+                      onClick={() => patch({ loopMode: m })} className="text-[10px] uppercase"
+                      data-testid={`button-loop-${m}`}>{m === 'prewarm' ? 'pre-warm' : m}</Button>
+                  ))}
+                </div>
+                <p className="text-[10px] text-muted-foreground mt-1">
+                  {settings.loopMode === 'off' && 'No looping — one-shot playback.'}
+                  {settings.loopMode === 'prewarm' && 'Auto pre-warm to steady state. Best for continuous emitters.'}
+                  {settings.loopMode === 'pingpong' && 'Play forward then reversed. Simple but visible on directional effects.'}
+                  {settings.loopMode === 'crossfade' && 'Bayer dither crossfade between two passes. Seamless loop for any effect.'}
+                </p>
               </div>
             </Section>
 
