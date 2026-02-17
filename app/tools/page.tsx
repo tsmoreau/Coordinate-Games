@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import Nav from '@/components/Nav';
-import { Type, ArrowRight, Grid3X3 } from 'lucide-react';
+import { Type, ArrowRight, Grid3X3, Sparkles } from 'lucide-react';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,9 +28,16 @@ const tools: Tool[] = [
   {
     slug: 'dithergradient',
     name: 'Dither Gradient',
-    description: 'Create 1-bit dither gradients with configurable patterns, directions, and GFXP-compatible Lua output.',
+    description: 'Create 1-bit dither gradients with Bayer ordered dithering and GFXP pattern output for Playdate.',
     icon: Grid3X3,
-    tags: ['PLAYDATE', '1-BIT', 'DITHER', 'GFXP'],
+    tags: ['PLAYDATE', 'DITHER', 'GRADIENT', 'GFXP'],
+  },
+  {
+    slug: 'particlesizzler',
+    name: 'Particle Sizzler',
+    description: 'Generate pre-baked particle effect spritesheets with full simulation. Exports Playdate ImageTable PNGs.',
+    icon: Sparkles,
+    tags: ['PLAYDATE', 'PARTICLES', 'SPRITESHEET', 'VFX'],
   },
 ];
 
