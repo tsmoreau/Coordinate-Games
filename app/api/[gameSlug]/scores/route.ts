@@ -241,7 +241,10 @@ export async function POST(
     return NextResponse.json({
       success: true,
       id: newScore._id.toString(),
-      game: { slug: gameResult.slug, name: gameResult.game.name },
+      game: {
+        slug: gameResult.slug,
+        name: gameResult.game.name
+      },
       score: {
         deviceId: newScore.deviceId,
         displayName: newScore.displayName,
