@@ -71,6 +71,7 @@ export async function GET(
             _id: '$category',
             entries: {
               $push: {
+                _id: '$_id',
                 score: '$score',
                 deviceId: '$deviceId',
                 displayName: '$displayName',
@@ -108,6 +109,7 @@ export async function GET(
       const formattedScores = topScores.map((group) => ({
         category: group._id || 'default',
         scores: group.entries.map((entry: Record<string, unknown>, index: number) => ({
+          id: (entry as any)._id?.toString(),
           rank: index + 1,
           deviceId: entry.deviceId,
           displayName: nameMap.get(entry.deviceId as string) || entry.displayName,
@@ -147,6 +149,7 @@ export async function GET(
     }
 
     const formattedScores = scores.map((score, index) => ({
+      id: score._id.toString(),
       rank: offset + index + 1,
       deviceId: score.deviceId,
       displayName: nameMap.get(score.deviceId) || score.displayName,
