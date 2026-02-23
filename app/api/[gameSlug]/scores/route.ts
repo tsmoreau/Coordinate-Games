@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { createHash } from "crypto";
 import { connectToDatabase } from "@/lib/mongodb";
 import { Score } from "@/models/Score";
 import { GameIdentity } from "@/models/GameIdentity";
@@ -19,6 +20,18 @@ const submitScoreSchema = z.object({
     .optional(),
   metadata: z.record(z.unknown()).optional(),
 });
+
+// Compute a short content hash for a category's top scores.
+// Inputs: id + score + displayName for each entry, in rank order.
+// Returns 6-char hex string.
+function categoryHash(
+  scores: Array<{ id: string; displayName: string; score: number }>,
+): string {
+  const raw = scores
+    .map((s) => `${s.id}:${s.score}:${s.displayName}`)
+    .join("|");
+  return createHash("md5").update(raw).digest("hex").slice(0, 6);
+}
 
 export async function GET(
   request: NextRequest,
@@ -139,6 +152,69 @@ export async function GET(
         ),
       }));
 
+      // Compute per-category content hashes
+      const hashes: Record<string, string> = {};
+      for (const group of formattedScores) {
+        hashes[group.category] = categoryHash(
+          group.scores.map((s: any) => ({
+            id: s.id,
+            score: s.score,
+            displayName: s.displayName,
+          })),
+        );
+      }
+
+      // Parse client hashes if provided (backward compatible — ignored if absent)
+      const chParam = searchParams.get("ch");
+      if (chParam) {
+        const clientHashes = new Map<string, string>();
+        for (const pair of chParam.split(",")) {
+          const [cat, hash] = pair.split(":");
+          if (cat && hash) clientHashes.set(cat, hash);
+        }
+
+        const changed: typeof formattedScores = [];
+        const unchanged: string[] = [];
+
+        for (const group of formattedScores) {
+          const clientHash = clientHashes.get(group.category);
+          if (clientHash && clientHash === hashes[group.category]) {
+            unchanged.push(group.category);
+          } else {
+            changed.push(group);
+          }
+        }
+
+        // Nothing changed at all
+        if (changed.length === 0) {
+          return NextResponse.json({
+            success: true,
+            game: { slug: gameResult.slug, name: gameResult.game.name },
+            filter: "top",
+            category: category || null,
+            categories,
+            scores: [],
+            unchanged: unchanged,
+            hashes,
+            total: 0,
+          });
+        }
+
+        // Partial update: only changed categories
+        return NextResponse.json({
+          success: true,
+          game: { slug: gameResult.slug, name: gameResult.game.name },
+          filter: "top",
+          category: category || null,
+          categories,
+          scores: changed,
+          unchanged: unchanged,
+          hashes,
+          total: changed.length,
+        });
+      }
+
+      // No client hashes — full response (backward compatible)
       return NextResponse.json({
         success: true,
         game: { slug: gameResult.slug, name: gameResult.game.name },
@@ -146,6 +222,7 @@ export async function GET(
         category: category || null,
         categories,
         scores: formattedScores,
+        hashes,
         total: formattedScores.length,
       });
     }
