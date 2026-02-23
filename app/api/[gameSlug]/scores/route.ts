@@ -18,7 +18,7 @@ export async function GET(
 ) {
   try {
     const { gameSlug } = await params;
-    
+
     const gameResult = await validateLeaderboardGame(gameSlug);
     if (!isGameContext(gameResult)) {
       return gameResult;
@@ -114,7 +114,6 @@ export async function GET(
           deviceId: entry.deviceId,
           displayName: nameMap.get(entry.deviceId as string) || entry.displayName,
           score: entry.score,
-          metadata: entry.metadata,
           createdAt: entry.createdAt,
         })),
       }));
@@ -155,7 +154,6 @@ export async function GET(
       displayName: nameMap.get(score.deviceId) || score.displayName,
       score: score.score,
       category: score.category || 'default',
-      metadata: score.metadata,
       createdAt: score.createdAt,
     }));
 
@@ -187,14 +185,14 @@ export async function POST(
 ) {
   try {
     const { gameSlug } = await params;
-    
+
     const gameResult = await validateLeaderboardGame(gameSlug);
     if (!isGameContext(gameResult)) {
       return gameResult;
     }
 
     const auth = await authenticateDevice(request, gameResult.slug);
-    
+
     if (!auth) {
       return unauthorizedResponse('Player authentication required');
     }
@@ -202,7 +200,7 @@ export async function POST(
     await connectToDatabase();
 
     const body = await request.json().catch(() => ({}));
-    
+
     const parsed = submitScoreSchema.safeParse(body);
     if (!parsed.success) {
       return NextResponse.json({
