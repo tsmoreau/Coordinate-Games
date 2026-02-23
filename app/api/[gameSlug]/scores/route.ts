@@ -1,20 +1,28 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { connectToDatabase } from '@/lib/mongodb';
-import { Score } from '@/models/Score';
-import { GameIdentity } from '@/models/GameIdentity';
-import { authenticateDevice, unauthorizedResponse } from '@/lib/authMiddleware';
-import { validateLeaderboardGame, isGameContext } from '@/lib/gameMiddleware';
-import { z } from 'zod';
+import { NextRequest, NextResponse } from "next/server";
+import { connectToDatabase } from "@/lib/mongodb";
+import { Score } from "@/models/Score";
+import { GameIdentity } from "@/models/GameIdentity";
+import { authenticateDevice, unauthorizedResponse } from "@/lib/authMiddleware";
+import { validateLeaderboardGame, isGameContext } from "@/lib/gameMiddleware";
+import { z } from "zod";
 
 const submitScoreSchema = z.object({
   score: z.number().int().min(0).max(999999999),
-  category: z.string().min(1).max(64).regex(/^[a-zA-Z0-9_-]+$/, 'Category must be alphanumeric with dashes/underscores').optional(),
+  category: z
+    .string()
+    .min(1)
+    .max(64)
+    .regex(
+      /^[a-zA-Z0-9_-]+$/,
+      "Category must be alphanumeric with dashes/underscores",
+    )
+    .optional(),
   metadata: z.record(z.unknown()).optional(),
 });
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ gameSlug: string }> }
+  { params }: { params: Promise<{ gameSlug: string }> },
 ) {
   try {
     const { gameSlug } = await params;
@@ -27,34 +35,42 @@ export async function GET(
     await connectToDatabase();
 
     const { searchParams } = new URL(request.url);
-    const limitParam = searchParams.get('limit');
-    const offsetParam = searchParams.get('offset');
-    const period = searchParams.get('period');
-    const category = searchParams.get('category');
-    const filter = searchParams.get('filter');
+    const limitParam = searchParams.get("limit");
+    const offsetParam = searchParams.get("offset");
+    const period = searchParams.get("period");
+    const category = searchParams.get("category");
+    const filter = searchParams.get("filter");
 
-    const limit = Math.min(Math.max(1, parseInt(limitParam || '100', 10)), 500);
-    const offset = Math.max(0, parseInt(offsetParam || '0', 10));
+    const limit = Math.min(Math.max(1, parseInt(limitParam || "100", 10)), 500);
+    const offset = Math.max(0, parseInt(offsetParam || "0", 10));
 
-    const baseQuery: Record<string, unknown> = { 
-      gameSlug: gameResult.slug 
+    const baseQuery: Record<string, unknown> = {
+      gameSlug: gameResult.slug,
     };
 
     if (category) {
       baseQuery.category = category;
     }
 
-    if (period === 'day') {
-      baseQuery.createdAt = { $gte: new Date(Date.now() - 24 * 60 * 60 * 1000) };
-    } else if (period === 'week') {
-      baseQuery.createdAt = { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) };
-    } else if (period === 'month') {
-      baseQuery.createdAt = { $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) };
+    if (period === "day") {
+      baseQuery.createdAt = {
+        $gte: new Date(Date.now() - 24 * 60 * 60 * 1000),
+      };
+    } else if (period === "week") {
+      baseQuery.createdAt = {
+        $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+      };
+    } else if (period === "month") {
+      baseQuery.createdAt = {
+        $gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+      };
     }
 
-    const categories = await Score.distinct('category', { gameSlug: gameResult.slug });
+    const categories = await Score.distinct("category", {
+      gameSlug: gameResult.slug,
+    });
 
-    if (filter === 'top') {
+    if (filter === "top") {
       const matchStage: Record<string, unknown> = { gameSlug: gameResult.slug };
       if (category) {
         matchStage.category = category;
@@ -68,25 +84,25 @@ export async function GET(
         { $sort: { score: -1, createdAt: 1 } },
         {
           $group: {
-            _id: '$category',
+            _id: "$category",
             entries: {
               $push: {
-                _id: '$_id',
-                score: '$score',
-                deviceId: '$deviceId',
-                displayName: '$displayName',
-                metadata: '$metadata',
-                createdAt: '$createdAt',
+                _id: "$_id",
+                score: "$score",
+                deviceId: "$deviceId",
+                displayName: "$displayName",
+                metadata: "$metadata",
+                createdAt: "$createdAt",
               },
             },
           },
         },
         {
           $project: {
-            entries: { $slice: ['$entries', 10] },
+            entries: { $slice: ["$entries", 10] },
           },
         },
-        { $sort: { '_id': 1 } },
+        { $sort: { _id: 1 } },
       ]);
 
       const allDeviceIds = new Set<string>();
@@ -96,10 +112,13 @@ export async function GET(
         }
       }
 
-      const identities = await GameIdentity.find({
-        gameSlug: gameResult.slug,
-        deviceId: { $in: Array.from(allDeviceIds) },
-      }, { deviceId: 1, displayName: 1 });
+      const identities = await GameIdentity.find(
+        {
+          gameSlug: gameResult.slug,
+          deviceId: { $in: Array.from(allDeviceIds) },
+        },
+        { deviceId: 1, displayName: 1 },
+      );
 
       const nameMap = new Map<string, string>();
       for (const id of identities) {
@@ -107,21 +126,24 @@ export async function GET(
       }
 
       const formattedScores = topScores.map((group) => ({
-        category: group._id || 'default',
-        scores: group.entries.map((entry: Record<string, unknown>, index: number) => ({
-          id: (entry as any)._id?.toString(),
-          rank: index + 1,
-          deviceId: entry.deviceId,
-          displayName: nameMap.get(entry.deviceId as string) || entry.displayName,
-          score: entry.score,
-          createdAt: entry.createdAt,
-        })),
+        category: group._id || "default",
+        scores: group.entries.map(
+          (entry: Record<string, unknown>, index: number) => ({
+            id: (entry as any)._id?.toString(),
+            rank: index + 1,
+            deviceId: entry.deviceId,
+            displayName:
+              nameMap.get(entry.deviceId as string) || entry.displayName,
+            score: entry.score,
+            createdAt: entry.createdAt,
+          }),
+        ),
       }));
 
       return NextResponse.json({
         success: true,
         game: { slug: gameResult.slug, name: gameResult.game.name },
-        filter: 'top',
+        filter: "top",
         category: category || null,
         categories,
         scores: formattedScores,
@@ -137,10 +159,13 @@ export async function GET(
       .limit(limit);
 
     const deviceIds = [...new Set(scores.map((s) => s.deviceId))];
-    const identities = await GameIdentity.find({
-      gameSlug: gameResult.slug,
-      deviceId: { $in: deviceIds },
-    }, { deviceId: 1, displayName: 1 });
+    const identities = await GameIdentity.find(
+      {
+        gameSlug: gameResult.slug,
+        deviceId: { $in: deviceIds },
+      },
+      { deviceId: 1, displayName: 1 },
+    );
 
     const nameMap = new Map<string, string>();
     for (const id of identities) {
@@ -153,7 +178,7 @@ export async function GET(
       deviceId: score.deviceId,
       displayName: nameMap.get(score.deviceId) || score.displayName,
       score: score.score,
-      category: score.category || 'default',
+      category: score.category || "default",
       createdAt: score.createdAt,
     }));
 
@@ -171,17 +196,20 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('Fetch scores error:', error);
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to fetch scores',
-    }, { status: 500 });
+    console.error("Fetch scores error:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to fetch scores",
+      },
+      { status: 500 },
+    );
   }
 }
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ gameSlug: string }> }
+  { params }: { params: Promise<{ gameSlug: string }> },
 ) {
   try {
     const { gameSlug } = await params;
@@ -194,7 +222,7 @@ export async function POST(
     const auth = await authenticateDevice(request, gameResult.slug);
 
     if (!auth) {
-      return unauthorizedResponse('Player authentication required');
+      return unauthorizedResponse("Player authentication required");
     }
 
     await connectToDatabase();
@@ -203,15 +231,18 @@ export async function POST(
 
     const parsed = submitScoreSchema.safeParse(body);
     if (!parsed.success) {
-      return NextResponse.json({
-        success: false,
-        error: 'Invalid request body',
-        details: parsed.error.issues,
-      }, { status: 400 });
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Invalid request body",
+          details: parsed.error.issues,
+        },
+        { status: 400 },
+      );
     }
 
     const { score, category, metadata } = parsed.data;
-    const resolvedCategory = category || 'default';
+    const resolvedCategory = category || "default";
 
     const newScore = new Score({
       gameSlug: gameResult.slug,
@@ -225,44 +256,52 @@ export async function POST(
 
     await newScore.save();
 
-    const rank = await Score.countDocuments({
-      gameSlug: gameResult.slug,
-      category: resolvedCategory,
-      score: { $gt: score }
-    }) + 1;
+    const rank =
+      (await Score.countDocuments({
+        gameSlug: gameResult.slug,
+        category: resolvedCategory,
+        score: { $gt: score },
+      })) + 1;
 
     const personalBest = await Score.findOne({
       gameSlug: gameResult.slug,
       category: resolvedCategory,
-      deviceId: auth.deviceId
+      deviceId: auth.deviceId,
     }).sort({ score: -1 });
 
     const isPersonalBest = personalBest ? personalBest.score <= score : true;
 
-    return NextResponse.json({
-      success: true,
-      id: newScore._id.toString(),
-      game: {
-        slug: gameResult.slug,
-        name: gameResult.game.name
+    return NextResponse.json(
+      {
+        success: true,
+        id: newScore._id.toString(),
+        game: {
+          slug: gameResult.slug,
+          name: gameResult.game.name,
+        },
+        score: {
+          deviceId: newScore.deviceId,
+          displayName: newScore.displayName,
+          score: newScore.score,
+          category: resolvedCategory,
+          rank,
+          isPersonalBest,
+          createdAt: newScore.createdAt,
+        },
+        message: isPersonalBest
+          ? "New personal best!"
+          : "Score submitted successfully",
       },
-      score: {
-        deviceId: newScore.deviceId,
-        displayName: newScore.displayName,
-        score: newScore.score,
-        category: resolvedCategory,
-        rank,
-        isPersonalBest,
-        createdAt: newScore.createdAt,
-      },
-      message: isPersonalBest ? 'New personal best!' : 'Score submitted successfully',
-    }, { status: 201 });
-
+      { status: 201 },
+    );
   } catch (error) {
-    console.error('Submit score error:', error);
-    return NextResponse.json({
-      success: false,
-      error: 'Failed to submit score',
-    }, { status: 500 });
+    console.error("Submit score error:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to submit score",
+      },
+      { status: 500 },
+    );
   }
 }
