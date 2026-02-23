@@ -91,7 +91,6 @@ export async function GET(
                 score: "$score",
                 deviceId: "$deviceId",
                 displayName: "$displayName",
-                metadata: "$metadata",
                 createdAt: "$createdAt",
               },
             },
