@@ -347,6 +347,45 @@ export async function POST(
 
     const isPersonalBest = personalBest ? personalBest.score <= score : true;
 
+    // Fetch updated top-10 for the submitted category so client can merge locally
+    const updatedTop = await Score.find({
+      gameSlug: gameResult.slug,
+      category: resolvedCategory,
+    })
+      .sort({ score: -1, createdAt: 1 })
+      .limit(10);
+
+    const topDeviceIds = [...new Set(updatedTop.map((s) => s.deviceId))];
+    const topIdentities = await GameIdentity.find(
+      {
+        gameSlug: gameResult.slug,
+        deviceId: { $in: topDeviceIds },
+      },
+      { deviceId: 1, displayName: 1 },
+    );
+
+    const topNameMap = new Map<string, string>();
+    for (const id of topIdentities) {
+      topNameMap.set(id.deviceId, id.displayName);
+    }
+
+    const updatedScores = updatedTop.map((s, index) => ({
+      id: s._id.toString(),
+      rank: index + 1,
+      deviceId: s.deviceId,
+      displayName: topNameMap.get(s.deviceId) || s.displayName,
+      score: s.score,
+      createdAt: s.createdAt,
+    }));
+
+    const updatedHash = categoryHash(
+      updatedScores.map((s) => ({
+        id: s.id,
+        score: s.score,
+        displayName: s.displayName,
+      })),
+    );
+
     return NextResponse.json(
       {
         success: true,
@@ -363,6 +402,11 @@ export async function POST(
           rank,
           isPersonalBest,
           createdAt: newScore.createdAt,
+        },
+        updatedCategory: {
+          category: resolvedCategory,
+          scores: updatedScores,
+          hash: updatedHash,
         },
         message: isPersonalBest
           ? "New personal best!"
